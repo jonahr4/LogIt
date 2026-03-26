@@ -4,10 +4,11 @@
 
 ## Design Principles
 
-1. **Canonical events are shared** — One game = one record. Many users attach to it.
+1. **Canonical events are shared** — One event = one record. Many users attach to it.
 2. **User data is personal** — Logs, notes, and privacy settings belong to the user.
 3. **Separation of concerns** — Event metadata vs. user attendance vs. social graph are distinct.
-4. **Extensible** — Schema should accommodate future event types (concerts, movies) without major rewrites.
+4. **Polymorphic events via child tables** — A shared `events` base table with type-specific child tables (`sports_events`, `movie_events`, etc.) for clean normalization and scalability.
+5. **Extensible** — Adding a new event type means creating a new child table — no existing tables change.
 
 ---
 
@@ -19,20 +20,45 @@ erDiagram
     EVENT ||--o{ USER_EVENT_LOG : "is logged in"
     USER ||--o{ FRIENDSHIP : "has friends"
     USER ||--o{ NOTIFICATION : receives
+    USER_EVENT_LOG ||--o{ COMMENT : "has comments"
+    USER_EVENT_LOG ||--o{ LOG_COMPANION : "has companions"
+    EVENT ||--o| SPORTS_EVENT : "extends (sports)"
+    EVENT ||--o| MOVIE_EVENT : "extends (movie)"
+    EVENT ||--o| CONCERT_EVENT : "extends (concert)"
+    EVENT ||--o| RESTAURANT_EVENT : "extends (restaurant)"
     USER {
-        string id PK
+        uuid id PK
         string email
         string username
+        string first_name
+        string last_name
         string display_name
         string avatar_url
         string bio
-        string[] favorite_teams
-        enum default_privacy "public | friends | private"
+        string[] event_preferences
+        enum default_privacy
         timestamp created_at
         timestamp updated_at
     }
     EVENT {
-        string id PK
+        uuid id PK
+        enum event_type "sports | movie | concert | restaurant | manual"
+        string title
+        enum status "upcoming | in_progress | completed"
+        timestamp event_date
+        string venue_name
+        string venue_city
+        string venue_state
+        float venue_lat
+        float venue_lng
+        string image_url
+        string external_id
+        string external_source
+        timestamp created_at
+        timestamp updated_at
+    }
+    SPORTS_EVENT {
+        uuid event_id FK
         enum sport "basketball | baseball | football | hockey"
         string league
         string season
@@ -42,22 +68,33 @@ erDiagram
         string away_team_name
         int home_score
         int away_score
-        enum status "scheduled | in_progress | final"
-        timestamp event_date
-        string venue_name
-        string venue_city
-        string venue_state
-        float venue_lat
-        float venue_lng
-        string external_id
-        string external_source
-        timestamp created_at
-        timestamp updated_at
+    }
+    MOVIE_EVENT {
+        uuid event_id FK
+        string genre
+        string director
+        int runtime_minutes
+        string tmdb_id
+        string[] cast
+    }
+    CONCERT_EVENT {
+        uuid event_id FK
+        string artist
+        string tour_name
+        string genre
+        string ticketmaster_id
+        string opener
+    }
+    RESTAURANT_EVENT {
+        uuid event_id FK
+        string cuisine
+        string price_level
+        string foursquare_id
     }
     USER_EVENT_LOG {
-        string id PK
-        string user_id FK
-        string event_id FK
+        uuid id PK
+        uuid user_id FK
+        uuid event_id FK
         string notes
         enum privacy "public | friends | private"
         int rating
@@ -65,22 +102,35 @@ erDiagram
         timestamp logged_at
         timestamp updated_at
     }
+    LOG_COMPANION {
+        uuid id PK
+        uuid log_id FK
+        uuid user_id FK "nullable - linked friend"
+        string name "freeform name if no account"
+    }
+    COMMENT {
+        uuid id PK
+        uuid log_id FK
+        uuid user_id FK
+        string text
+        timestamp created_at
+    }
     FRIENDSHIP {
-        string id PK
-        string requester_id FK
-        string addressee_id FK
+        uuid id PK
+        uuid requester_id FK
+        uuid addressee_id FK
         enum status "pending | accepted | declined | blocked"
         timestamp created_at
         timestamp updated_at
     }
     NOTIFICATION {
-        string id PK
-        string user_id FK
-        enum type "event_reminder | post_event_prompt | friend_request | friend_activity"
+        uuid id PK
+        uuid user_id FK
+        enum type "event_reminder | post_event_prompt | friend_request | friend_activity | comment | companion_tagged"
         string title
         string body
-        string reference_id
-        enum reference_type "event | log | friendship"
+        uuid reference_id
+        enum reference_type "event | log | friendship | comment"
         boolean read
         timestamp send_at
         timestamp created_at
@@ -97,24 +147,50 @@ The person using the app.
 
 | Field | Type | Description |
 |---|---|---|
-| `id` | string (UUID) | Primary key |
+| `id` | UUID | Primary key |
 | `email` | string | Unique, from auth provider |
-| `username` | string | Unique handle (e.g., `@jonah`) |
+| `username` | string | Unique handle (e.g., `@jonah`) — **publicly visible** |
+| `first_name` | string | User's first name — **friends + self only** |
+| `last_name` | string | User's last name — **friends + self only** |
 | `display_name` | string | Shown in feed and profile |
 | `avatar_url` | string | Profile photo URL |
 | `bio` | string | Optional short bio |
-| `favorite_teams` | string[] | Team IDs the user follows |
+| `event_preferences` | string[] | Event types the user is interested in (e.g., `["sports", "movies"]`) |
 | `default_privacy` | enum | Default log visibility: `public`, `friends`, `private` |
 | `created_at` | timestamp | Account creation |
 | `updated_at` | timestamp | Last profile update |
 
-### `Event`
+### `Event` (Base Table)
 
-A canonical sports game. One record per real-world game.
+The shared base for all event types. One record per real-world event.
 
 | Field | Type | Description |
 |---|---|---|
-| `id` | string (UUID) | Primary key |
+| `id` | UUID | Primary key |
+| `event_type` | enum | `sports`, `movie`, `concert`, `restaurant`, `manual` |
+| `title` | string | Display title (e.g., "Lakers vs Celtics", "Oppenheimer") |
+| `status` | enum | `upcoming`, `in_progress`, `completed` |
+| `event_date` | timestamp | Event date and time |
+| `venue_name` | string | Venue/location name |
+| `venue_city` | string | City |
+| `venue_state` | string | State |
+| `venue_lat` | float | Latitude for map features |
+| `venue_lng` | float | Longitude for map features |
+| `image_url` | string | Primary image (team logo, movie poster, artist photo) |
+| `external_id` | string | ID from source API |
+| `external_source` | string | Which API sourced this event |
+| `created_at` | timestamp | Record creation |
+| `updated_at` | timestamp | Last data refresh |
+
+### Child Tables (Type-Specific Metadata)
+
+Each child table has a **1:1 relationship** with `events` via `event_id` foreign key.
+
+#### `SportsEvent`
+
+| Field | Type | Description |
+|---|---|---|
+| `event_id` | UUID (FK → events) | Primary key, references base event |
 | `sport` | enum | `basketball`, `baseball`, `football`, `hockey` |
 | `league` | string | `NBA`, `MLB`, `NFL`, `NHL` |
 | `season` | string | e.g., `2025-26` |
@@ -124,17 +200,41 @@ A canonical sports game. One record per real-world game.
 | `away_team_name` | string | Denormalized for display |
 | `home_score` | int | Final or current score |
 | `away_score` | int | Final or current score |
-| `status` | enum | `scheduled`, `in_progress`, `final` |
-| `event_date` | timestamp | Game date and time |
-| `venue_name` | string | Arena/stadium name |
-| `venue_city` | string | City |
-| `venue_state` | string | State |
-| `venue_lat` | float | Latitude for map features |
-| `venue_lng` | float | Longitude for map features |
-| `external_id` | string | ID from source API (e.g., ESPN game ID) |
-| `external_source` | string | Which API sourced this event |
-| `created_at` | timestamp | Record creation |
-| `updated_at` | timestamp | Last data refresh |
+
+#### `MovieEvent`
+
+| Field | Type | Description |
+|---|---|---|
+| `event_id` | UUID (FK → events) | Primary key, references base event |
+| `genre` | string | Primary genre |
+| `director` | string | Director name |
+| `runtime_minutes` | int | Film length |
+| `tmdb_id` | string | TMDB API identifier |
+| `cast` | string[] | Major cast members |
+
+#### `ConcertEvent`
+
+| Field | Type | Description |
+|---|---|---|
+| `event_id` | UUID (FK → events) | Primary key, references base event |
+| `artist` | string | Primary performer |
+| `tour_name` | string | Tour name if applicable |
+| `genre` | string | Music genre |
+| `ticketmaster_id` | string | Ticketmaster event ID |
+| `opener` | string | Opening act |
+
+#### `RestaurantEvent`
+
+| Field | Type | Description |
+|---|---|---|
+| `event_id` | UUID (FK → events) | Primary key, references base event |
+| `cuisine` | string | Cuisine type |
+| `price_level` | string | Price indicator (`$`, `$$`, `$$$`, `$$$$`) |
+| `foursquare_id` | string | Foursquare venue ID |
+
+#### `ManualEvent` (future)
+
+For user-created events not in any external database. Uses the base `events` fields only (title, date, venue, notes). No child table needed — `event_type = 'manual'` with no child row.
 
 ### `UserEventLog`
 
@@ -142,9 +242,9 @@ The user's personal attendance record for an event.
 
 | Field | Type | Description |
 |---|---|---|
-| `id` | string (UUID) | Primary key |
-| `user_id` | string (FK) | Who logged it |
-| `event_id` | string (FK) | Which event (nullable for manual entries) |
+| `id` | UUID | Primary key |
+| `user_id` | UUID (FK) | Who logged it |
+| `event_id` | UUID (FK) | Which event (nullable for manual entries) |
 | `notes` | string | User's personal notes |
 | `privacy` | enum | `public`, `friends`, `private` |
 | `rating` | int | Optional 1-5 rating of the experience |
@@ -152,18 +252,58 @@ The user's personal attendance record for an event.
 | `logged_at` | timestamp | When the user created this log |
 | `updated_at` | timestamp | Last edit |
 
+### `LogCompanion`
+
+Who the user went with. Can be a linked friend or a freeform name.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | UUID | Primary key |
+| `log_id` | UUID (FK) | Which log entry |
+| `user_id` | UUID (FK, nullable) | Linked friend account (null if freeform) |
+| `name` | string | Display name — auto-filled from user profile if linked, freeform otherwise |
+
+> **Reassignment:** When a companion later creates an account, the user can edit the companion entry to link the `user_id`, converting a freeform name into a linked friend.
+
+### `Comment`
+
+Comments on a user's log entry (MVP).
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | UUID | Primary key |
+| `log_id` | UUID (FK) | Which log entry |
+| `user_id` | UUID (FK) | Who wrote the comment |
+| `text` | string | Comment text |
+| `created_at` | timestamp | When posted |
+
 ### `Friendship`
 
 Bidirectional friend relationship.
 
 | Field | Type | Description |
 |---|---|---|
-| `id` | string (UUID) | Primary key |
-| `requester_id` | string (FK) | Who sent the request |
-| `addressee_id` | string (FK) | Who received the request |
+| `id` | UUID | Primary key |
+| `requester_id` | UUID (FK) | Who sent the request |
+| `addressee_id` | UUID (FK) | Who received the request |
 | `status` | enum | `pending`, `accepted`, `declined`, `blocked` |
 | `created_at` | timestamp | Request sent |
 | `updated_at` | timestamp | Last status change |
+
+### `Notification`
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | UUID | Primary key |
+| `user_id` | UUID (FK) | Who receives it |
+| `type` | enum | `event_reminder`, `post_event_prompt`, `friend_request`, `friend_activity`, `comment`, `companion_tagged` |
+| `title` | string | Notification title |
+| `body` | string | Notification body text |
+| `reference_id` | UUID | ID of related entity |
+| `reference_type` | enum | `event`, `log`, `friendship`, `comment` |
+| `read` | boolean | Read status |
+| `send_at` | timestamp | Scheduled send time (for reminders) |
+| `created_at` | timestamp | Record creation |
 
 ---
 
@@ -171,11 +311,9 @@ Bidirectional friend relationship.
 
 | Entity | Purpose |
 |---|---|
-| `Team` | Normalized team data (name, logo, colors, sport, venue) |
+| `Team` | Normalized team data (name, logo URL, colors, sport, venue) — stored locally in Supabase |
 | `Venue` | Normalized venue data (name, city, capacity, geo) |
-| `Comment` | Comments on a UserEventLog |
 | `Reaction` | Reactions (likes, emoji) on a UserEventLog |
-| `ManualEvent` | User-created events not in the canonical DB |
 | `EventEntity` | Repeatable entity (artist, movie, team) that links to multiple Event Instances — for event discovery & reviews |
 
 ---
@@ -184,12 +322,20 @@ Bidirectional friend relationship.
 
 | Query | Fields Indexed | Priority |
 |---|---|---|
-| User's logbook (all logs) | `user_event_log.user_id` + `logged_at` | MVP |
-| Filter by sport | `event.sport` | MVP |
-| Filter by team | `event.home_team_id`, `event.away_team_id` | MVP |
-| Filter by date range | `event.event_date` | MVP |
-| Filter by venue | `event.venue_name` | MVP |
-| Feed (public logs) | `user_event_log.privacy` + `logged_at` | MVP |
-| Friends' logs | `friendship.status` + `user_event_log.user_id` | v1.5 |
-| Shared attendance | `user_event_log.event_id` (multiple users) | v2 |
-| Geo/map queries | `event.venue_lat`, `event.venue_lng` | v1.5 |
+| User's logbook (all logs) | `user_event_log(user_id, logged_at)` | MVP |
+| Filter by event type | `event(event_type)` | MVP |
+| Filter by date range | `event(event_date)` | MVP |
+| Filter by venue | `event(venue_name)` | MVP |
+| Full-text search (title, venue) | GIN index on `event(title, venue_name)` using `tsvector` | MVP |
+| Feed (public logs) | `user_event_log(privacy, logged_at)` | MVP |
+| Filter by sport (type-specific) | `sports_event(sport)` | MVP |
+| Filter by team | `sports_event(home_team_id)`, `sports_event(away_team_id)` | MVP |
+| Filter by league | `sports_event(league)` | MVP |
+| Comments on a log | `comment(log_id, created_at)` | MVP |
+| Companions of a log | `log_companion(log_id)` | MVP |
+| Friends' logs | `friendship(status)` + `user_event_log(user_id)` | v1.5 |
+| Shared attendance | `user_event_log(event_id)` (multiple users) | v2 |
+| Geo/map queries | `event(venue_lat, venue_lng)` | v1.5 |
+| Movie search | `movie_event(tmdb_id)`, `movie_event(genre)` | Future |
+| Concert search | `concert_event(artist)`, `concert_event(ticketmaster_id)` | Future |
+| Restaurant search | `restaurant_event(cuisine)`, `restaurant_event(foursquare_id)` | Future |

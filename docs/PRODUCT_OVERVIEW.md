@@ -4,19 +4,19 @@
 
 ## One-Line Concept
 
-A mobile-first app for logging the events you attend, starting with sports games, with structured event data, a personal logbook, and lightweight social discovery.
+A mobile-first app for logging the experiences you attend — sports games, concerts, movies, restaurants, and more — with structured event data, a personal logbook, and lightweight social discovery.
 
 ---
 
 ## Product Vision
 
-Log It turns messy notes into a clean, searchable history of real-life experiences. Instead of manually typing a list of games you went to, users can log structured events, revisit them later, and eventually discover overlap with friends.
+Log It turns messy notes into a clean, searchable history of real-life experiences. Instead of manually tracking events in Notes or spreadsheets, users can log structured events, revisit them later, and eventually discover overlap with friends.
 
 ## Core Positioning
 
 | Dimension | Detail |
 |---|---|
-| **Primary use case** | Track the sports games you attend |
+| **Primary use case** | Track the events and experiences you attend |
 | **Emotional value** | Memory, collection, identity, fandom |
 | **Functional value** | Searchable logbook with filters, stats, and event details |
 
@@ -25,17 +25,17 @@ Log It turns messy notes into a clean, searchable history of real-life experienc
 The app should feel like:
 
 - 🏛️ A **memory vault** — preserving your live experiences
-- 🏟️ A **fandom tracker** — showing your dedication
 - 📊 A **personal stats page** — quantifying your attendance
 - 📝 A **cleaner, structured version** of keeping notes manually
+- 🌍 A **discovery platform** — see what others are experiencing
 
 ## Key User Problem
 
-People who attend many games often track them in Notes, spreadsheets, photos, ticket apps, or memory. Those methods are:
+People who attend many events often track them in Notes, spreadsheets, photos, ticket apps, or memory. Those methods are:
 
 - **Fragmented** — scattered across multiple apps
-- **Unstructured** — no metadata like score, venue, teams
-- **Hard to filter** — can't quickly answer "how many Yankees games did I go to?"
+- **Unstructured** — no metadata like score, venue, teams, artists
+- **Hard to filter** — can't quickly answer "how many games did I go to this year?"
 - **Hard to revisit** — no timeline, no map, no stats
 
 ## Why This Is Compelling
@@ -43,37 +43,57 @@ People who attend many games often track them in Notes, spreadsheets, photos, ti
 1. **Structured event identity** instead of freeform notes
 2. **Better browsing** than a notepad
 3. **Personal collection feel**, similar to Letterboxd for movies
-4. **Natural social layer**: "you and your friend were both at this game"
-5. **Built-in metadata** (teams, score, venue, date) makes the log feel rich immediately
+4. **Natural social layer**: "you and your friend were both at this event"
+5. **Built-in metadata** (teams, score, venue, date, artist, etc.) makes the log feel rich immediately
+6. **Companion tracking** — remember who you went with
 
-## MVP Focus
+## Implementation Strategy
 
-Start with **sports only**, beginning with the **NBA**.
+Build sports first (starting with NBA) to prove the model, then expand across event types. The architecture is designed to be event-type agnostic from day one.
 
-| Sport | League(s) | MVP Priority |
+| Event Type | Data Source | Implementation |
 |---|---|---|
-| Basketball | NBA | ✅ **First league** |
-| Baseball | MLB | Later |
-| Football | NFL | Later |
-| Hockey | NHL | Later |
+| Sports (NBA) | Ball Don't Lie API | **First implementation** |
+| Sports (MLB/NFL/NHL) | TheSportsDB / API-Sports | Later |
+| Movies | TMDB API | v2.0+ |
+| Concerts | Ticketmaster API | v2.0+ |
+| Restaurants | Google Places / Foursquare | v2.0+ |
+| Manual / Custom | User-created | v2.0+ |
 
 ## MVP Goals
 
 1. ✅ Let a user **create an account** and onboard quickly
-2. ✅ Let a user **search for a sports game** from a structured database
-3. ✅ Let a user **log that they attended** the game
+2. ✅ Let a user **search for an event** from a structured database
+3. ✅ Let a user **log that they attended** the event
 4. ✅ Let a user **browse all past logs** in a clean personal logbook
-5. ✅ Let a user **view event details** with game context
+5. ✅ Let a user **view event details** with rich context
 6. ✅ Let a user optionally **share logs publicly or keep them private**
-7. ✅ Let a user see a **lightweight feed** of their own activity (and later, friends')
+7. ✅ Let a user see a **lightweight feed** of their own activity and everyone's public logs
+8. ✅ Let a user **tag companions** — who they went with
+9. ✅ Let a user **comment** on public logs
 
 ## MVP Additions
 
 - 📸 **Photo uploads** — Users can attach photos per log entry (stored in Supabase Storage)
 - 🔔 **Notifications** — Part of MVP:
-  - Upcoming event countdown reminders
-  - Post-event prompt to log attendance
-  - Friend activity notifications (later)
+  - Upcoming event reminders (configurable timing)
+  - Post-event prompt to add photos, rating, and notes
+  - Comment and companion tag alerts
+- 👥 **Companions** — Tag friends or enter freeform names for who you went with
+- 💬 **Comments** — Comment on any public log
+
+## External Media & Data APIs
+
+Event images and data are sourced from free external APIs:
+
+| Category | API | Strategy |
+|---|---|---|
+| **Sports logos** | TheSportsDB, API-Sports | Store locally in Supabase (finite set of teams) |
+| **Sports data/scores** | Ball Don't Lie (NBA) | Ingested via Vercel cron functions |
+| **Movie posters + data** | TMDB | Fetched on-demand via API |
+| **Concert/artist photos + data** | Ticketmaster, Muzooka | Fetched on-demand |
+| **Restaurant data** | Google Places ($200/mo free), Foursquare (10k free calls) | Fetched on-demand |
+| **Fallback images** | Unsplash API | Generic event imagery |
 
 ## Admin Backend Portal
 

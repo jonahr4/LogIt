@@ -29,7 +29,12 @@ This is the single source of truth for what we're building and how.
 ## Update Rules
 
 ### Always Do
-1. **Update the `Last updated` date** at the top of any doc you modify
+1. **Update the `Last updated` date AND add a change summary** at the top of any doc you modify. Format:
+   ```
+   > **Last updated:** 2026-03-26
+   > Updated: Brief summary of what changed (e.g., "Added companions to log creation, moved comments to MVP")
+   ```
+   The summary should be a single line describing the key changes made in this update.
 2. **Keep the feature roadmap checklists current** — mark `[x]` when a feature is implemented
 3. **Update the data model** whenever a database field or entity changes
 4. **Update the API doc** whenever an endpoint is added or its contract changes

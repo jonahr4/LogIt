@@ -10,12 +10,12 @@ gantt
     dateFormat  YYYY-MM-DD
     section MVP (v1.0)
     Auth + Onboarding           :a1, 2026-04-01, 7d
-    NBA Event Ingestion         :a2, after a1, 7d
+    Event Data Ingestion (NBA)  :a2, after a1, 7d
     Event Search                :a3, after a2, 5d
-    Log Creation + Photos       :a4, after a3, 5d
+    Log Creation + Companions   :a4, after a3, 5d
     Personal Logbook + Filters  :a5, after a4, 7d
     Event Detail Page           :a6, after a5, 5d
-    Simple Feed                 :a7, after a6, 5d
+    Simple Feed + Comments      :a7, after a6, 5d
     Notifications               :a8, after a7, 5d
     section v1.5
     Friend System               :b1, after a8, 7d
@@ -23,9 +23,9 @@ gantt
     Map View                    :b3, after b2, 5d
     section v2.0
     Shared Attendance           :c1, after b3, 5d
-    Comments + Reactions        :c2, after c1, 5d
+    Reactions                   :c2, after c1, 3d
     Event Discovery + Reviews   :c3, after c2, 7d
-    Multi-Sport Expansion       :c4, after c3, 10d
+    Multi-Type Expansion        :c4, after c3, 10d
     Admin Portal                :c5, after c4, 7d
 ```
 
@@ -33,62 +33,72 @@ gantt
 
 ## MVP (v1.0) — Core Product
 
-> **Goal:** A user can sign up, find a game, log it, and browse their history.
+> **Goal:** A user can sign up, find an event, log it, and browse their history. Starting with NBA games as the first event type, but the architecture supports all types from day one.
 
 ### 1. Auth & Onboarding
 - [ ] Email + password sign-up/sign-in
 - [ ] Google OAuth
 - [ ] Apple OAuth
 - [ ] Username selection
-- [ ] Favorite team picker
+- [ ] First name + last name collection
 - [ ] Profile creation (display name, avatar)
+- [ ] Event type preferences (choose which types you'll use: sports, movies, concerts, etc.)
+- [ ] Default privacy selection
 
-### 2. Sports Event Data (NBA First)
+### 2. Event Data (NBA First Implementation)
 - [ ] Integrate Ball Don't Lie API for NBA games
 - [ ] Vercel cron function for scheduled ingestion (daily sync)
-- [ ] Store canonical `Event` records in Supabase Postgres
+- [ ] Store canonical `Event` records in Supabase Postgres (base table + `sports_events` child)
 - [ ] Deduplication via `external_id`
 - [ ] Post-game score/status updates
+- [ ] Store sports team logos locally in Supabase Storage
 
 ### 3. Event Search
-- [ ] Full-text search (team names, venue)
-- [ ] Filter by sport, team, date range
+- [ ] Full-text search (title, venue, team names)
+- [ ] Filter by event type, date range
+- [ ] Type-specific filters (team, league, season for sports)
 - [ ] Paginated results
-- [ ] "Game not found" → manual entry fallback
+- [ ] "Event not found" → manual entry fallback
 
 ### 4. Log Creation
-- [ ] Select game from search results
+- [ ] Select event from search results
 - [ ] Add optional notes
 - [ ] Set privacy (public / friends / private)
 - [ ] Optional star rating (1-5)
 - [ ] Photo upload (up to a few per log, stored in Supabase Storage)
+- [ ] Add companions — tag friends or enter freeform names
 - [ ] Success confirmation with animation
 - [ ] Prevent duplicate logs for same event
 
 ### 5. Personal Logbook
 - [ ] Unified list of all logs, newest first
-- [ ] Filter by: sport, team, date range, venue, privacy
+- [ ] Filter by: event type, date range, venue, privacy, rating
+- [ ] Type-specific filters when event type is selected (team, sport, etc.)
 - [ ] Active filters shown as removable chips
 - [ ] Total count header ("47 events logged")
 - [ ] Tap to view event detail
 
 ### 6. Event Detail Page
-- [ ] Game header (teams, score, status)
+- [ ] Event header (title, type-specific display — e.g., teams + score for sports)
 - [ ] Date, time, venue with map link
-- [ ] User's attendance badge + notes + rating
+- [ ] User's attendance badge + notes + rating + companions
 - [ ] Edit/delete log from this screen
+- [ ] Photos gallery
 
-### 7. Simple Feed
+### 7. Simple Feed + Comments
 - [ ] "You" tab — own activity as a feed
-- [ ] "Everyone" tab — all public logs
-- [ ] Each post shows: user, event, date, notes
+- [ ] "Everyone" tab — all public logs from the entire platform
+- [ ] Each post shows: user, event, date, notes, rating, companion count, comment count
 - [ ] Tap card → event detail
+- [ ] Comments on any public log (post, read, delete)
 - [ ] Pull-to-refresh
 - [ ] Empty states for first-time users
 
 ### 8. Notifications (MVP)
-- [ ] Upcoming event countdown reminders
-- [ ] Post-event prompt to log attendance
+- [ ] Upcoming event reminders (configurable timing: 24h, 2h, 30min before)
+- [ ] Post-event prompt: add photos, rating, and notes after event concludes
+- [ ] Companion tagged notification
+- [ ] Comment notification
 - [ ] In-app notification center
 - [ ] Push notification infrastructure (Firebase Cloud Messaging)
 
@@ -98,30 +108,30 @@ gantt
 
 > **Goal:** Friends, stats, and the map unlock the "wow" features.
 
-### 8. Friend System
+### 9. Friend System
 - [ ] Search users by username
 - [ ] Send/accept/decline friend requests
 - [ ] Friends list management
 - [ ] "Friends" tab in feed (shows friends' public + friends-only logs)
 - [ ] Friend suggestions (later, from event overlap)
 
-### 9. Stats Dashboard
-- [ ] Total games attended
-- [ ] Favorite team (by attendance count)
-- [ ] Win/loss record when attending
+### 10. Stats Dashboard
+- [ ] Total events attended
+- [ ] Breakdown by event type
+- [ ] Favorite team / most-watched movie / most-seen artist (by attendance count)
+- [ ] Win/loss record when attending (sports)
 - [ ] Most visited venue
-- [ ] Attendance by sport breakdown
-- [ ] Games per month/year chart
+- [ ] Events per month/year chart
 - [ ] Attendance timeline
 
-### 10. Map View
+### 11. Map View
 - [ ] Map of all venues attended
 - [ ] Pins with attendance count per venue
-- [ ] Tap pin → list of games at that venue
+- [ ] Tap pin → list of events at that venue
 - [ ] Attendance by city/state
 
-### 11. Additional Sports
-- [ ] Add MLB support
+### 12. Additional Sports
+- [ ] Add MLB support (Ball Don't Lie or equivalent)
 - [ ] Add NFL support
 - [ ] Add NHL support
 - [ ] Multi-sport filter in logbook and feed
@@ -132,40 +142,39 @@ gantt
 
 > **Goal:** The app becomes social-first and opens beyond sports.
 
-### 12. Shared Attendance
+### 13. Shared Attendance
 - [ ] "Also attended" section on event detail
 - [ ] Notification: "You and @mike were both at this game"
 - [ ] Mutual attendance stats with friends
 - [ ] Shared absentee detection ("You both missed this one")
 
-### 13. Comments & Reactions
-- [ ] Comment on any public log
-- [ ] Emoji reactions (🔥 🏀 👏 etc.)
-- [ ] Notification for comments/reactions on your logs
+### 14. Reactions
+- [ ] Emoji reactions on logs (🔥 🏀 👏 ❤️ etc.)
+- [ ] Notification for reactions on your logs
 
-### 14. Event Discovery & Reviews
+### 15. Event Discovery & Reviews
 - [ ] Event detail pages become discovery surfaces
 - [ ] Aggregated reviews, photos, and sentiment from attendees
 - [ ] "See what people said" section
 - [ ] Support for Event Entity vs. Event Instance model
 
-### 15. Beyond Sports
-- [ ] Concerts
-- [ ] Movies / Theater
-- [ ] Restaurants
-- [ ] Custom/manual events
-- [ ] Generic "experience" event type
+### 16. Beyond Sports — New Event Types
+- [ ] Movies (TMDB API integration + `movie_events` child table)
+- [ ] Concerts (Ticketmaster API integration + `concert_events` child table)
+- [ ] Restaurants (Google Places / Foursquare integration + `restaurant_events` child table)
+- [ ] Manual / custom events (no child table needed)
+- [ ] Companion reassignment tool (link freeform names to new accounts)
 
-### 16. Advanced Features
+### 17. Advanced Features
 - [ ] Share log as image/story
 - [ ] Annual recap / "Year in Review"
 - [ ] Achievement badges
 - [ ] Profile customization (banner, theme)
 
-### 17. Admin Portal
+### 18. Admin Portal
 - [ ] Custom admin dashboard (Next.js)
 - [ ] User management and moderation
-- [ ] Content review tools
+- [ ] Content review tools (photos, comments)
 - [ ] Growth and activity analytics
 
 ---
@@ -176,16 +185,16 @@ gantt
 |---|---|---|---|
 | Auth + Onboarding | 🔴 High | 🟡 Medium | **P0 — MVP** |
 | Event Ingestion (NBA) | 🔴 High | 🟡 Medium | **P0 — MVP** |
-| Log Creation + Photos | 🔴 High | 🟡 Medium | **P0 — MVP** |
+| Log Creation + Companions | 🔴 High | 🟡 Medium | **P0 — MVP** |
 | Logbook + Filters | 🔴 High | 🟡 Medium | **P0 — MVP** |
 | Event Detail | 🟡 Medium | 🟢 Low | **P0 — MVP** |
-| Feed | 🟡 Medium | 🟡 Medium | **P0 — MVP** |
+| Feed + Comments | 🟡 Medium | 🟡 Medium | **P0 — MVP** |
 | Notifications | 🟡 Medium | 🟡 Medium | **P0 — MVP** |
 | Friend System | 🟡 Medium | 🟡 Medium | **P1 — v1.5** |
 | Stats Dashboard | 🔴 High | 🟡 Medium | **P1 — v1.5** |
 | Map View | 🔴 High | 🟡 Medium | **P1 — v1.5** |
 | Shared Attendance | 🟡 Medium | 🟡 Medium | **P2 — v2.0** |
 | Event Discovery | 🔴 High | 🔴 High | **P2 — v2.0** |
-| Comments/Reactions | 🟢 Low | 🟢 Low | **P2 — v2.0** |
+| Reactions | 🟢 Low | 🟢 Low | **P2 — v2.0** |
 | Beyond Sports | 🔴 High | 🔴 High | **P2 — v2.0** |
 | Admin Portal | 🟡 Medium | 🟡 Medium | **P2 — v2.0** |

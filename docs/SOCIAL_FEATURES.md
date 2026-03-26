@@ -38,7 +38,7 @@ Every log entry has a privacy setting:
 |---|---|
 | Viewing someone's profile | See only their `public` logs |
 | Viewing a friend's profile | See `public` + `friends` logs |
-| "Everyone" feed tab | Only `public` logs |
+| "Everyone" feed tab | Only `public` logs from the entire platform |
 | "Friends" feed tab | Friends' `public` + `friends` logs |
 | "You" feed tab | All your logs regardless of privacy |
 | Event detail "Also attended" | Only users with `public` or `friends` (if friends) logs |
@@ -47,16 +47,18 @@ Every log entry has a privacy setting:
 
 ## MVP Social (v1.0)
 
-Keep social lightweight, but include hooks that make the network more valuable over time.
+Keep social lightweight, but include hooks that make the network more valuable over time. The public feed is a strong MVP feature — users can see what everyone on the platform is logging.
 
 ### What's Included
 - [x] Per-log privacy selector (public / friends / private)
 - [x] Default privacy in settings
-- [x] "Everyone" feed showing public logs
+- [x] **"Everyone" feed showing all public logs on the platform**
 - [x] "You" feed showing own logs
 - [x] "Friends" tab visible (even when empty — drives invite/growth flows)
-- [ ] Basic user profiles (public view)
-- [ ] Notifications (event reminders, post-event log prompts)
+- [ ] Basic user profiles (public view — username, display name, avatar, bio)
+- [ ] **Comments on public logs** (post, read, delete)
+- [ ] **Companion tagging** — tag who you went with (friends or freeform names)
+- [ ] Notifications (event reminders, post-event log prompts, comment alerts, companion tags)
 
 ### Growth Incentives for Inviting Friends
 - Unlock overlap insights once you add friends
@@ -67,7 +69,7 @@ Keep social lightweight, but include hooks that make the network more valuable o
 ### What's NOT Included Yet
 - ❌ Full friend request flow (visible but teased)
 - ❌ Shared attendance detection
-- ❌ Comments or reactions
+- ❌ Reactions (emoji)
 
 ---
 
@@ -109,7 +111,7 @@ stateDiagram-v2
 
 ### Shared Attendance
 
-The killer social feature — "you were both at this game."
+The killer social feature — "you were both at this event."
 
 **Detection:**
 - When two friends have logged the same `event_id`, surface it
@@ -118,22 +120,25 @@ The killer social feature — "you were both at this game."
 
 **Stats:**
 - Mutual attendance count between friends
-- "You've been to 5 games with @mike"
+- "You've been to 5 events with @mike"
 
 ### Shared Absentee Detection
 
-- Detect when two friends both missed a notable game
+- Detect when two friends both missed a notable event
 - "You and @mike both missed Lakers vs Celtics!"
 - Lighter touch, fun engagement hook
 
-### Comments & Reactions
+### Reactions
 
 | Feature | Details |
 |---|---|
-| **Comments** | Text comments on any public/friends-visible log |
 | **Reactions** | Emoji reactions: 🔥 🏀 👏 ❤️ (tap to add, tap to remove) |
-| **Notifications** | Push + in-app for comments/reactions on your logs |
-| **Moderation** | Report/block capabilities |
+| **Notifications** | Push + in-app for reactions on your logs |
+
+### Companion Reassignment
+
+- When a freeform companion later creates an account, the original user can edit the companion entry to link the `user_id`
+- Auto-suggest: "Is 'Mike' actually @mike_r?" when a new friend matches a companion name
 
 ### Social Notifications
 
@@ -144,7 +149,8 @@ The killer social feature — "you were both at this game."
 | Comment on your log | Push + In-app | Medium |
 | Reaction on your log | In-app only | Low |
 | Shared attendance detected | Push + In-app | Medium |
-| Friend logged a game you were at | In-app | Low |
+| Friend logged an event you were at | In-app | Low |
+| Companion tagged | Push + In-app | Medium |
 
 ---
 
@@ -153,10 +159,10 @@ The killer social feature — "you were both at this game."
 | Idea | Description | Effort |
 |---|---|---|
 | **Groups** | Friend groups for group chats / shared logs | High |
-| **Leaderboards** | Most games attended among friends | Medium |
+| **Leaderboards** | Most events attended among friends | Medium |
 | **Event meetups** | "Who's going to tonight's game?" | Medium |
 | **Share to social** | Export log as story image for Instagram/X | Low |
-| **Activity digest** | Weekly email: "Your friends attended 12 games this week" | Medium |
+| **Activity digest** | Weekly email: "Your friends attended 12 events this week" | Medium |
 | **Profile badges** | Verified fan, milestone badges | Low |
 
 ---

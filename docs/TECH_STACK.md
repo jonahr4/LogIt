@@ -11,8 +11,12 @@
 | **Backend / API** | Vercel (serverless functions) | Integrates cleanly with serverless API layer |
 | **Auth** | Firebase Authentication | Familiar, mature, Google/Apple built-in |
 | **Database** | Supabase (Postgres) | Relational — natural fit for events, logs, friendships |
-| **Storage** | Supabase Storage | User photos, avatars |
-| **Sports Data API** | Ball Don't Lie (NBA first) | Free, well-documented, clean NBA data |
+| **Storage** | Supabase Storage | User photos, avatars, sports team logos |
+| **Event Data (Sports)** | Ball Don't Lie (NBA first) | Free, well-documented, clean NBA data |
+| **Event Data (Movies)** | TMDB | Free API key, movie posters + metadata |
+| **Event Data (Concerts)** | Ticketmaster Discovery API | Free, millions of events, artist data |
+| **Event Media (Sports)** | TheSportsDB / API-Sports | Team logos stored locally in Supabase |
+| **Event Media (Artists)** | Muzooka | Artist photos, free tier |
 | **State Management** | Zustand or React Context | Lightweight, no boilerplate |
 | **Language** | TypeScript | Type safety across the app |
 
@@ -55,8 +59,11 @@ graph TB
         Push[Push Notifications]
     end
 
-    subgraph External["🌐 External"]
+    subgraph External["🌐 External APIs"]
         SportsAPI[Ball Dont Lie API]
+        TMDB[TMDB API]
+        Ticketmaster[Ticketmaster API]
+        TheSportsDB[TheSportsDB]
     end
 
     UI --> State
@@ -67,32 +74,49 @@ graph TB
     API --> DB
     API --> Storage
     Cron --> SportsAPI
+    Cron --> TMDB
+    Cron --> Ticketmaster
     Cron --> DB
     Push --> UI
 ```
 
 ---
 
-## Sports Data Ingestion
+## Event Data Ingestion
 
 ### Strategy
 
-1. **Source:** Ball Don't Lie API for NBA game schedules and results
-2. **Ingestion:** Vercel cron function runs on a schedule (daily or per-game-day)
-3. **Storage:** Canonical `Event` records in Supabase Postgres
+1. **Source:** External APIs for each event type (starting with Ball Don't Lie for NBA)
+2. **Ingestion:** Vercel cron functions run on a schedule (daily or per-event-day)
+3. **Storage:** Canonical `Event` records in Supabase Postgres (base table + type-specific child tables)
 4. **Matching:** `external_id` + `external_source` fields prevent duplicates
-5. **Updates:** Score and status updates run post-game
+5. **Updates:** Status and score/result updates run post-event
 
-### API Candidates
+### Data APIs by Event Type
 
-| API | Sports | Free Tier | Notes |
+| Event Type | API | Free Tier | What It Provides |
 |---|---|---|---|
-| **Ball Don't Lie** | NBA | ✅ Free | Clean, well-documented — **MVP choice** |
-| **ESPN (unofficial)** | All major | Free (no key) | Undocumented, could change |
-| **SportsData.io** | All major | Free trial | Paid for production |
-| **The Sports DB** | All major | Free (limited) | Community-maintained |
+| **Sports (NBA)** | Ball Don't Lie | ✅ Free | NBA schedules, scores, teams — **MVP choice** |
+| **Sports (all)** | TheSportsDB | ✅ Free JSON API | Schedules, results, team data for NBA/MLB/NFL/NHL |
+| **Sports (all)** | API-Sports | 100 req/day free | Comprehensive sports data; logo calls are free |
+| **Sports (all)** | ESPN (unofficial) | Free (no key) | Undocumented, could change |
+| **Movies** | TMDB | ✅ Free API key | Movie metadata, posters, cast, genres, ratings |
+| **Concerts** | Ticketmaster Discovery | ✅ Free | Millions of events, artist data, venues, tour dates |
+| **Concerts** | Setlist.fm | ✅ Free (non-commercial) | Setlists, artist history, venue data |
+| **Restaurants** | Google Places | $200/mo free credits | Restaurant data, reviews, photos |
+| **Restaurants** | Foursquare | 10k free calls | Venue data, categories, tips |
 
-> **Decision:** Start with Ball Don't Lie for NBA. Evaluate broader APIs when adding MLB/NFL/NHL.
+### Media / Image APIs
+
+| Category | API | Strategy |
+|---|---|---|
+| **Sports team logos** | TheSportsDB, API-Sports | Download once, **store locally in Supabase Storage** (finite set of teams) |
+| **Movie posters** | TMDB | Fetch on-demand via `https://image.tmdb.org/t/p/w500/{path}` |
+| **Artist/concert photos** | Muzooka, Ticketmaster | Fetch on-demand |
+| **Restaurant photos** | Google Places, Foursquare | Fetch on-demand |
+| **Fallback/generic images** | Unsplash API (50 req/hr free) | Default event imagery |
+
+> **Decision:** Start with Ball Don't Lie for NBA. Sports logos are pre-downloaded to Supabase. Movie and concert API integrations come when those event types launch.
 
 ---
 

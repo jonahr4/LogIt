@@ -1,6 +1,7 @@
 # Log It — UI Design & User Flows
 
 > **Last updated:** 2026-03-26
+> Updated: Polymorphic event types, companions, comments, event-type-agnostic filters
 
 ## Navigation Structure
 
@@ -83,18 +84,20 @@ The power-user screen — your complete history.
 **Layout:**
 - Header with total count: "47 events logged"
 - Filter bar (collapsible or sheet):
-  - Sport (Basketball, Baseball, etc.)
-  - Team (searchable dropdown)
+  - Event Type (Sports, Movies, Concerts, Restaurants, Manual)
+  - Type-specific filters (Team, League, Artist, Genre, Cuisine — shown when type selected)
   - Date range (preset: This year, Last year, All time, Custom)
   - Venue
   - Privacy (Public / Friends / Private)
+  - Rating (minimum star filter)
 - Scrollable list of log entries, sorted newest first
-- Each entry: event title, date, venue, privacy badge
+- Each entry: event title, date, venue, privacy badge, companion count
 
 **Design Direction:**
 - Unified single list — filter down, don't force category navigation
 - Quick toggles for most common filters
 - Active filters shown as removable chips
+- Full-text search across event titles and venues
 
 ---
 
@@ -129,6 +132,10 @@ graph LR
 - Privacy selector: 🌍 Public · 👥 Friends · 🔒 Private
 - Rating (optional, 1-5 stars)
 - Photos (optional, up to a few per log — stored in Supabase Storage)
+- Companions — "Who'd you go with?" section:
+  - Search friends to tag (linked via `user_id`)
+  - Or type a freeform name (e.g., "My dad")
+  - Multiple companions supported
 - "Log It" confirmation button
 
 **Step 4 — Success:**
@@ -189,16 +196,16 @@ The rich view of a single game.
 ```mermaid
 graph LR
     A["Welcome Screen"] --> B["Sign Up / Sign In"]
-    B --> C["Choose Username"]
-    C --> D["Pick Favorite Teams"]
+    B --> C["Name + Username"]
+    C --> D["Event Preferences"]
     D --> E["Ready! → Feed"]
 ```
 
 **Screens:**
 1. **Welcome** — App name, tagline, illustration, "Get Started"
 2. **Auth** — Email, Google, Apple sign-in options
-3. **Username** — Choose unique handle
-4. **Favorite Teams** — Grid of team logos, multi-select, skippable
+3. **Name + Username** — First name, last name, choose unique handle
+4. **Event Preferences** — Choose which event types you'll use (sports, movies, concerts, restaurants). Lightweight, skippable. _Not_ picking specific teams/artists — that's future._
 5. **Done** — "You're all set!" → navigate to Feed
 
 ---
