@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary-fixed-variant": "#00664c",
+              "surface-container-low": "#0f141a",
+              "tertiary-dim": "#874cff",
+              "on-primary-fixed": "#004734",
+              "error-dim": "#d7383b",
+              "surface-variant": "#20262f",
+              "tertiary-container": "#7000ff",
+              "on-tertiary": "#290067",
+              "outline-variant": "#44484f",
+              "tertiary-fixed": "#bda1ff",
+              "secondary-dim": "#0070eb",
+              "inverse-on-surface": "#51555c",
+              "on-secondary-fixed-variant": "#004da6",
+              "primary-dim": "#00edb4",
+              "on-secondary-fixed": "#003270",
+              "error": "#ff716c",
+              "secondary": "#679cff",
+              "on-error": "#490006",
+              "on-primary-container": "#005c44",
+              "on-error-container": "#ffa8a3",
+              "on-secondary": "#001f4a",
+              "primary-container": "#00fdc1",
+              "background": "#0a0e14",
+              "surface-container-high": "#1b2028",
+              "primary": "#aaffdc",
+              "inverse-surface": "#f8f9ff",
+              "surface-container": "#151a21",
+              "outline": "#72757d",
+              "on-background": "#f1f3fc",
+              "on-primary": "#00654b",
+              "on-tertiary-fixed-variant": "#4700a7",
+              "on-secondary-container": "#f7f7ff",
+              "on-tertiary-container": "#f8f1ff",
+              "secondary-fixed-dim": "#a9c4ff",
+              "on-tertiary-fixed": "#1f0052",
+              "surface-container-highest": "#20262f",
+              "tertiary": "#ac89ff",
+              "secondary-fixed": "#bed2ff",
+              "inverse-primary": "#006c51",
+              "surface-dim": "#0a0e14",
+              "error-container": "#9f0519",
+              "tertiary-fixed-dim": "#b190ff",
+              "surface-tint": "#aaffdc",
+              "primary-fixed-dim": "#00edb4",
+              "surface-container-lowest": "#000000",
+              "surface-bright": "#262c36",
+              "on-surface": "#f1f3fc",
+              "secondary-container": "#005bc1",
+              "surface": "#0a0e14",
+              "on-surface-variant": "#a8abb3",
+              "primary-fixed": "#00fdc1"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tonal-shift-bg {
+            background: linear-gradient(180deg, rgba(15, 20, 26, 0.8) 0%, rgba(10, 14, 20, 0.9) 100%);
+        }
+        .glass-card {
+            background: rgba(32, 38, 47, 0.4);
+            backdrop-filter: blur(20px);
+        }
+        .trophy-glow {
+            box-shadow: 0 0 20px rgba(0, 255, 194, 0.1);
+        }
+        .map-mask {
+            mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-900/60 backdrop-blur-xl flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+</div>
+<h1 class="font-manrope font-bold tracking-widest uppercase text-xl font-black text-[#00FFC2] drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]">LOG IT</h1>
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-5xl mx-auto space-y-12">
+<!-- User Header Section -->
+<section class="flex flex-col md:flex-row items-center md:items-end gap-8 mb-16">
+<div class="relative group">
+<div class="absolute -inset-1 bg-gradient-to-tr from-primary to-secondary rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+<div class="relative w-32 h-32 rounded-full overflow-hidden border-4 border-surface-container-high">
+<img alt="Alex River Profile" class="w-full h-full object-cover" data-alt="Close-up portrait of a young man with a confident expression, outdoor urban setting with soft morning sunlight and bokeh background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzCOUQLvA_5qICCxhzgDja6ATRJ_a0gbYg5aqgklFYrMGeqpoT1cfe9tP5QVhRJ0Xmd_n2NM3aOgd7gmivwb9gTUeVYLKKF7Y2uZJXFrrwZQwBCa9JujTV_9p7O5zDbkPXNwOWtpSJPxU-hJsfObEs0LGOVoD7wPDqPjlYjbm-y8CfKcCa8fkQHjcpCG0rd9EtprJ9J576lhyK7oYd-iULC_rYVDilUDbV7HGEvYMDKmG4aDTCOTxSOEMVoFqzeg9zOhahmy0aCKPL"/>
+</div>
+</div>
+<div class="text-center md:text-left space-y-2">
+<h2 class="font-headline text-4xl font-extrabold tracking-tight">Alex River</h2>
+<div class="flex items-center justify-center md:justify-start gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="calendar_today">calendar_today</span>
+<span class="font-label text-sm uppercase tracking-widest">Joined October 2023</span>
+</div>
+</div>
+<div class="md:ml-auto flex gap-4">
+<button class="px-6 py-2 bg-surface-container-highest text-primary border border-primary/10 rounded-full font-label text-sm font-bold uppercase tracking-wider hover:bg-primary/5 transition-colors">
+                    Edit Profile
+                </button>
+</div>
+</section>
+<!-- Wrapped Style Stats Dashboard -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Total Games -->
+<div class="relative group overflow-hidden rounded-[2rem] p-8 aspect-square flex flex-col justify-between bg-surface-container-high transition-all hover:scale-[1.02]">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-8xl" data-icon="sports_basketball">sports_basketball</span>
+</div>
+<p class="font-label text-on-surface-variant text-sm font-bold uppercase tracking-[0.2em]">Total Games</p>
+<div>
+<span class="font-headline text-7xl font-black text-primary drop-shadow-[0_0_15px_rgba(0,255,194,0.3)]">24</span>
+<p class="text-on-surface-variant mt-2">Logged experiences</p>
+</div>
+</div>
+<!-- Favorite Team -->
+<div class="relative group overflow-hidden rounded-[2rem] p-8 aspect-square flex flex-col justify-between bg-secondary-container/20 border border-secondary/10 transition-all hover:scale-[1.02]">
+<div class="absolute -bottom-10 -right-10 opacity-20 transform -rotate-12">
+<span class="material-symbols-outlined text-[12rem]" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<p class="font-label text-secondary-fixed text-sm font-bold uppercase tracking-[0.2em]">Top Interest</p>
+<div class="space-y-1">
+<p class="font-headline text-5xl font-black text-on-secondary-container leading-tight">Celtics</p>
+<p class="text-secondary-fixed font-medium">12 Games Attended</p>
+</div>
+</div>
+<!-- Record -->
+<div class="relative group overflow-hidden rounded-[2rem] p-8 aspect-square flex flex-col justify-between bg-tertiary-container/20 border border-tertiary/10 transition-all hover:scale-[1.02]">
+<p class="font-label text-tertiary-fixed text-sm font-bold uppercase tracking-[0.2em]">Win Ratio</p>
+<div class="relative">
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-7xl font-black text-tertiary">18-6</span>
+</div>
+<div class="h-2 w-full bg-surface-container-lowest rounded-full mt-4 overflow-hidden">
+<div class="h-full bg-tertiary rounded-full w-[75%] shadow-[0_0_10px_rgba(172,137,255,0.5)]"></div>
+</div>
+<p class="text-tertiary-fixed mt-4 text-sm font-medium">75% Victory Log Rate</p>
+</div>
+</div>
+</section>
+<!-- Milestones Section -->
+<section class="space-y-8">
+<h3 class="font-headline text-2xl font-bold tracking-tight">Milestones</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-surface-container-low rounded-2xl p-6 flex flex-col items-center text-center space-y-4 border border-outline-variant/5">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center text-primary shadow-[0_0_20px_rgba(0,255,194,0.1)]">
+<span class="material-symbols-outlined text-3xl" data-icon="military_tech">military_tech</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">10 Games</p>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest mt-1">Veteran</p>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-2xl p-6 flex flex-col items-center text-center space-y-4 border border-outline-variant/5">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center text-secondary shadow-[0_0_20px_rgba(103,156,255,0.1)]">
+<span class="material-symbols-outlined text-3xl" data-icon="stars">stars</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">First Log</p>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest mt-1">Origin</p>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-2xl p-6 flex flex-col items-center text-center space-y-4 border border-outline-variant/5">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center text-tertiary shadow-[0_0_20px_rgba(172,137,255,0.1)]">
+<span class="material-symbols-outlined text-3xl" data-icon="local_fire_department">local_fire_department</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">Hot Streak</p>
+<p class="text-xs text-on-surface-variant uppercase tracking-widest mt-1">5 Log Week</p>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-2xl p-6 flex flex-col items-center text-center space-y-4 border border-outline-variant/5 opacity-50">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-3xl" data-icon="lock">lock</span>
+</div>
+<div>
+<p class="font-headline font-bold text-outline">50 Games</p>
+<p class="text-xs text-outline uppercase tracking-widest mt-1">Legend</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Map Visualization Section -->
+<section class="space-y-6">
+<div class="flex justify-between items-end">
+<div class="space-y-1">
+<h3 class="font-headline text-2xl font-bold tracking-tight">Your Journey</h3>
+<p class="text-on-surface-variant text-sm">Visualizing your event locations across the country.</p>
+</div>
+<button class="text-primary text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                    Full Map <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<div class="relative h-[400px] rounded-[2.5rem] overflow-hidden bg-surface-container-lowest border border-outline-variant/10">
+<img alt="Map Journey Visualization" class="w-full h-full object-cover opacity-40 grayscale contrast-125 map-mask" data-alt="Abstract dark stylized map of North America with glowing cyan connection lines and pulse points indicating event locations" data-location="Boston, USA" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy3PCBDCQBfFx-dc-jWXF2hgvMRSWP_UZAF2MJfSDkKD6KFp1XxAm-ZHYoWXKoAEFVo_D7Z2D7e3Jplt8fc72p_X4FRvhlvEj5Nwc0jVJH0_L2R5e62044jw6A3oBzqTehJ5shUh2IMDsWEEzxuHshR4iKVWPg_KuoVtcYPbD5wymzx2NB514TIYoxiS7cuR2PvA0f6Zf7M-0CVcyFripo3b2nSwzxFc3E6Ie6yWIHAnZ-IucF17--Am0y_5XldjpJY8FwZKpRU5OU"/>
+<div class="absolute bottom-10 left-10 glass-card p-6 rounded-2xl border border-white/5 max-w-xs">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+</div>
+<div>
+<p class="text-xs text-on-surface-variant font-bold uppercase tracking-widest">Furthest Event</p>
+<p class="font-headline font-bold text-lg">Los Angeles, CA</p>
+</div>
+</div>
+</div>
+<div class="absolute top-1/2 left-1/3 w-3 h-3 bg-primary rounded-full shadow-[0_0_15px_#00FFC2]"></div>
+<div class="absolute top-1/4 left-3/4 w-3 h-3 bg-primary rounded-full shadow-[0_0_15px_#00FFC2]"></div>
+<div class="absolute top-[60%] left-[80%] w-3 h-3 bg-primary rounded-full shadow-[0_0_15px_#00FFC2]"></div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-8 pb-6 pt-3 bg-[#0a0e14]/80 backdrop-blur-[20px] rounded-t-[2rem] z-50 shadow-[0_-10px_40px_rgba(170,255,220,0.05)]">
+<a class="flex flex-col items-center justify-center text-slate-500 opacity-60 hover:text-[#aaffdc] transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-inter text-[10px] font-medium tracking-tight">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 opacity-60 hover:text-[#aaffdc] transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span class="font-inter text-[10px] font-medium tracking-tight">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00FFC2] bg-[#20262f] rounded-2xl px-4 py-2 shadow-[0_0_15px_rgba(0,255,194,0.2)] active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-inter text-[10px] font-medium tracking-tight">Profile</span>
+</a>
+</nav>
+</body></html>

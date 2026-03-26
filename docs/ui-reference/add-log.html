@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary-fixed-variant": "#00664c",
+              "surface-container-low": "#0f141a",
+              "tertiary-dim": "#874cff",
+              "on-primary-fixed": "#004734",
+              "error-dim": "#d7383b",
+              "surface-variant": "#20262f",
+              "tertiary-container": "#7000ff",
+              "on-tertiary": "#290067",
+              "outline-variant": "#44484f",
+              "tertiary-fixed": "#bda1ff",
+              "secondary-dim": "#0070eb",
+              "inverse-on-surface": "#51555c",
+              "on-secondary-fixed-variant": "#004da6",
+              "primary-dim": "#00edb4",
+              "on-secondary-fixed": "#003270",
+              "error": "#ff716c",
+              "secondary": "#679cff",
+              "on-error": "#490006",
+              "on-primary-container": "#005c44",
+              "on-error-container": "#ffa8a3",
+              "on-secondary": "#001f4a",
+              "primary-container": "#00fdc1",
+              "background": "#0a0e14",
+              "surface-container-high": "#1b2028",
+              "primary": "#aaffdc",
+              "inverse-surface": "#f8f9ff",
+              "surface-container": "#151a21",
+              "outline": "#72757d",
+              "on-background": "#f1f3fc",
+              "on-primary": "#00654b",
+              "on-tertiary-fixed-variant": "#4700a7",
+              "on-secondary-container": "#f7f7ff",
+              "on-tertiary-container": "#f8f1ff",
+              "secondary-fixed-dim": "#a9c4ff",
+              "on-tertiary-fixed": "#1f0052",
+              "surface-container-highest": "#20262f",
+              "tertiary": "#ac89ff",
+              "secondary-fixed": "#bed2ff",
+              "inverse-primary": "#006c51",
+              "surface-dim": "#0a0e14",
+              "error-container": "#9f0519",
+              "tertiary-fixed-dim": "#b190ff",
+              "surface-tint": "#aaffdc",
+              "primary-fixed-dim": "#00edb4",
+              "surface-container-lowest": "#000000",
+              "surface-bright": "#262c36",
+              "on-surface": "#f1f3fc",
+              "secondary-container": "#005bc1",
+              "surface": "#0a0e14",
+              "on-surface-variant": "#a8abb3",
+              "primary-fixed": "#00fdc1"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tonal-shift-bg {
+            background: linear-gradient(180deg, rgba(15, 20, 26, 0.8) 0%, rgba(10, 14, 20, 0.9) 100%);
+        }
+        .glass-card {
+            background: rgba(32, 38, 47, 0.6);
+            backdrop-filter: blur(20px);
+        }
+        .liquid-light {
+            background: linear-gradient(135deg, #aaffdc 0%, #00fdc1 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Shell (TopAppBar) -->
+<header class="fixed top-0 w-full z-50 bg-slate-900/60 backdrop-blur-xl flex justify-between items-center px-6 h-16 w-full shadow-none">
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+</div>
+<div class="font-manrope font-bold tracking-widest uppercase text-xl font-black text-[#00FFC2] drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]">
+            LOG IT
+        </div>
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-4xl mx-auto space-y-10">
+<!-- Hero Section -->
+<section class="space-y-2">
+<h1 class="font-headline text-5xl font-extrabold tracking-tight text-on-surface">Log an Event</h1>
+<p class="text-on-surface-variant font-medium">Add a new trophy to your digital vault.</p>
+</section>
+<!-- Search Section -->
+<section class="relative group">
+<div class="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-xl blur opacity-30 group-focus-within:opacity-100 transition duration-500"></div>
+<div class="relative flex items-center bg-surface-container-lowest rounded-xl px-5 py-4 shadow-2xl">
+<span class="material-symbols-outlined text-primary-dim mr-4" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface placeholder:text-outline font-medium text-lg" placeholder="Search for a game..." type="text"/>
+<span class="material-symbols-outlined text-outline-variant" data-icon="tune">tune</span>
+</div>
+</section>
+<!-- Bento Grid Results -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Card 1 (Active/Selected State Inspired) -->
+<div class="glass-card rounded-xl p-6 border border-white/5 shadow-2xl relative overflow-hidden group cursor-pointer active:scale-[0.98] transition-all">
+<div class="absolute top-0 right-0 p-3">
+<span class="material-symbols-outlined text-primary" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex flex-col h-full justify-between">
+<div>
+<span class="text-secondary text-[10px] font-bold tracking-widest uppercase mb-2 block">NBA • REGULAR SEASON</span>
+<h3 class="font-headline text-2xl font-bold leading-tight mb-1">Warriors vs Suns</h3>
+<div class="flex items-center text-on-surface-variant text-sm gap-2">
+<span class="material-symbols-outlined text-xs" data-icon="location_on">location_on</span>
+<span>Chase Center, San Francisco</span>
+</div>
+</div>
+<div class="mt-8 flex justify-between items-end">
+<div class="space-y-0.5">
+<p class="text-[10px] text-outline uppercase tracking-tighter">Event Date</p>
+<p class="font-headline font-bold text-on-surface">OCT 24, 2023</p>
+</div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary-fixed-dim" data-icon="sports_basketball">sports_basketball</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-low rounded-xl p-6 hover:bg-surface-container-high transition-colors cursor-pointer group">
+<div class="flex flex-col h-full justify-between">
+<div>
+<span class="text-on-surface-variant text-[10px] font-bold tracking-widest uppercase mb-2 block">NBA • PRESEASON</span>
+<h3 class="font-headline text-2xl font-bold leading-tight mb-1">Lakers vs Kings</h3>
+<div class="flex items-center text-on-surface-variant text-sm gap-2">
+<span class="material-symbols-outlined text-xs" data-icon="location_on">location_on</span>
+<span>Crypto.com Arena, LA</span>
+</div>
+</div>
+<div class="mt-8 flex justify-between items-end">
+<div class="space-y-0.5">
+<p class="text-[10px] text-outline uppercase tracking-tighter">Event Date</p>
+<p class="font-headline font-bold text-on-surface">OCT 22, 2023</p>
+</div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center group-hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-outline" data-icon="sports_basketball">sports_basketball</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Log Details Form -->
+<section class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+<div class="h-px bg-gradient-to-r from-transparent via-outline-variant/30 to-transparent"></div>
+<div class="grid grid-cols-1 gap-8">
+<div class="space-y-4">
+<label class="font-headline text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="edit_note">edit_note</span>
+                        Memories &amp; Notes
+                    </label>
+<textarea class="w-full bg-surface-container-lowest border-none rounded-xl p-5 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/50 transition-all font-body text-base" placeholder="What stood out? The buzzer beater, the atmosphere, the company..." rows="4"></textarea>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 bg-surface-container-low rounded-2xl">
+<div class="flex items-center gap-4">
+<div class="p-3 bg-surface-container-highest rounded-xl">
+<span class="material-symbols-outlined text-primary-dim" data-icon="visibility">visibility</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">Privacy Settings</p>
+<p class="text-sm text-on-surface-variant">Make this log visible to your feed</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-14 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-on-surface-variant after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-secondary peer-checked:after:bg-white"></div>
+<span class="ml-3 text-sm font-medium text-on-surface uppercase tracking-wider">Public</span>
+</label>
+</div>
+<button class="liquid-light w-full py-5 rounded-xl font-headline font-extrabold text-on-primary-fixed uppercase tracking-[0.2em] shadow-[0_10px_30px_rgba(0,253,193,0.2)] hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+<span class="material-symbols-outlined" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                    Save Log
+                </button>
+</div>
+</section>
+</main>
+<!-- Navigation Shell (BottomNavBar) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-8 pb-6 pt-3 bg-[#0a0e14]/80 backdrop-blur-20px rounded-t-[2rem] z-50 shadow-[0_-10px_40px_rgba(170,255,220,0.05)]">
+<a class="flex flex-col items-center justify-center text-slate-500 opacity-60 hover:text-[#aaffdc] transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="grid_view">grid_view</span>
+<span class="font-inter text-[10px] font-medium tracking-tight">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00FFC2] bg-[#20262f] rounded-2xl px-4 py-2 shadow-[0_0_15px_rgba(0,255,194,0.2)] active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="add_circle" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+<span class="font-inter text-[10px] font-medium tracking-tight">Log</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 opacity-60 hover:text-[#aaffdc] transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span class="font-inter text-[10px] font-medium tracking-tight">Profile</span>
+</a>
+</nav>
+<!-- Decorative Atmosphere -->
+<div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] -z-10"></div>
+<div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 rounded-full blur-[120px] -z-10"></div>
+</body></html>

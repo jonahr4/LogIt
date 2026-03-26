@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Log It - Event Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-container-low":"#0f141a","surface-variant":"#20262f","outline-variant":"#44484f","primary-dim":"#00edb4","error":"#ff716c","secondary":"#679cff","primary-container":"#00fdc1","background":"#0a0e14","surface-container-high":"#1b2028","primary":"#aaffdc","surface-container":"#151a21","outline":"#72757d","on-background":"#f1f3fc","on-primary":"#00654b","on-primary-fixed":"#004734","surface-container-highest":"#20262f","on-surface":"#f1f3fc","surface":"#0a0e14","on-surface-variant":"#a8abb3","primary-fixed":"#00fdc1","surface-container-lowest":"#000000"},fontFamily:{headline:["Manrope"],body:["Inter"],label:["Inter"]},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"}}}}</script>
+<style>.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}body{min-height:max(884px,100dvh)}</style>
+</head>
+<body class="bg-background text-on-surface font-body min-h-screen pb-32">
+<header class="bg-slate-900/60 backdrop-blur-xl fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16">
+<span class="material-symbols-outlined text-slate-400 cursor-pointer">search</span>
+<div class="font-manrope font-bold tracking-widest uppercase text-xl text-[#00FFC2] drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]">LOG IT</div>
+<span class="material-symbols-outlined text-slate-400 cursor-pointer">notifications</span>
+</header>
+<main class="pt-24 px-6 max-w-5xl mx-auto space-y-8">
+<!-- Scoreboard Hero -->
+<section class="relative overflow-hidden bg-surface-container-high rounded-xl p-8">
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 blur-[100px] rounded-full"></div>
+<div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full"></div>
+<div class="relative z-10 flex flex-col items-center justify-between gap-8 md:flex-row">
+<div class="flex flex-col items-center md:items-start space-y-4 flex-1">
+<div class="w-24 h-24 rounded-full bg-surface-container-highest p-4 flex items-center justify-center shadow-lg border border-outline-variant/15">
+<span class="material-symbols-outlined text-5xl text-primary">sports_basketball</span>
+</div>
+<h2 class="font-headline text-2xl font-extrabold">Celtics</h2>
+</div>
+<div class="flex flex-col items-center space-y-2">
+<div class="flex items-center gap-6">
+<span class="font-headline text-6xl font-black text-primary drop-shadow-[0_0_15px_rgba(0,255,194,0.3)]">112</span>
+<span class="font-headline text-2xl text-on-surface-variant">vs</span>
+<span class="font-headline text-6xl font-black text-on-surface">108</span>
+</div>
+<div class="flex items-center gap-2 bg-primary-container/10 px-4 py-1.5 rounded-full">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings:'FILL' 1">verified</span>
+<span class="font-label text-xs font-bold text-primary tracking-wider uppercase">You Attended</span>
+</div>
+</div>
+<div class="flex flex-col items-center md:items-end space-y-4 flex-1">
+<div class="w-24 h-24 rounded-full bg-surface-container-highest p-4 flex items-center justify-center shadow-lg border border-outline-variant/15">
+<span class="material-symbols-outlined text-5xl text-secondary">sports_basketball</span>
+</div>
+<h2 class="font-headline text-2xl font-extrabold">Lakers</h2>
+</div>
+</div>
+</section>
+<!-- Detail Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="md:col-span-2 bg-surface-container-high rounded-xl p-6 space-y-6">
+<div class="grid grid-cols-2 gap-8">
+<div class="space-y-1">
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-bold">Location</p>
+<p class="font-headline text-xl font-bold">TD Garden</p>
+<p class="text-on-surface-variant text-sm">Boston, MA</p>
+</div>
+<div class="space-y-1">
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-bold">Date &amp; Time</p>
+<p class="font-headline text-xl font-bold">Oct 24, 2023</p>
+<p class="text-on-surface-variant text-sm">7:30 PM EST</p>
+</div>
+</div>
+<div class="h-px bg-outline-variant/10"></div>
+<div class="space-y-4">
+<p class="text-on-surface-variant text-xs uppercase tracking-widest font-bold">Personal Note</p>
+<div class="bg-surface-container-lowest p-5 rounded-xl border-l-4 border-primary/40 italic">"What an atmosphere! The energy was unmatched. Fourth quarter comeback was legendary."</div>
+</div>
+</div>
+<div class="space-y-6">
+<div class="bg-surface-container-high rounded-xl p-6 flex flex-col gap-4">
+<button class="w-full py-4 px-6 rounded-xl bg-gradient-to-br from-primary to-primary-dim text-on-primary-fixed font-bold flex items-center justify-center gap-3 shadow-[0_4px_15px_rgba(0,255,194,0.3)]"><span class="material-symbols-outlined">share</span>Share Trophy</button>
+<button class="w-full py-4 px-6 rounded-xl bg-surface-variant/40 border border-outline-variant/20 text-on-surface font-bold flex items-center justify-center gap-3"><span class="material-symbols-outlined">edit</span>Edit Log</button>
+<button class="w-full py-4 px-6 rounded-xl bg-surface-variant/40 border border-outline-variant/20 text-secondary font-bold flex items-center justify-center gap-3"><span class="material-symbols-outlined">analytics</span>View Analytics</button>
+</div>
+</div>
+</div>
+<!-- Friends -->
+<section class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="font-headline text-lg font-extrabold">Who else was there</h3>
+<span class="text-secondary text-sm font-bold cursor-pointer hover:underline">View All</span>
+</div>
+<div class="flex flex-wrap gap-4">
+<div class="flex -space-x-4">
+<div class="w-12 h-12 rounded-full border-4 border-surface bg-primary/30 flex items-center justify-center text-xs font-bold">JD</div>
+<div class="w-12 h-12 rounded-full border-4 border-surface bg-secondary/30 flex items-center justify-center text-xs font-bold">SM</div>
+<div class="w-12 h-12 rounded-full border-4 border-surface bg-[#874cff]/30 flex items-center justify-center text-xs font-bold">AK</div>
+<div class="w-12 h-12 rounded-full border-4 border-surface bg-surface-container-highest flex items-center justify-center text-xs font-bold text-on-surface-variant">+12</div>
+</div>
+<div class="flex flex-col justify-center">
+<p class="text-sm font-bold">3 Friends + 12 Others</p>
+<p class="text-xs text-on-surface-variant">Logged this event from your circle</p>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-8 pb-6 pt-3 bg-[#0a0e14]/80 backdrop-blur-[20px] rounded-t-[2rem] z-50">
+<a class="flex flex-col items-center text-slate-500 opacity-60" href="#"><span class="material-symbols-outlined">grid_view</span><span class="text-[10px]">Feed</span></a>
+<a class="flex flex-col items-center text-[#00FFC2] bg-[#20262f] rounded-2xl px-4 py-2" href="#"><span class="material-symbols-outlined">add_circle</span><span class="text-[10px]">Log</span></a>
+<a class="flex flex-col items-center text-slate-500 opacity-60" href="#"><span class="material-symbols-outlined">person</span><span class="text-[10px]">Profile</span></a>
+</nav>
+</body></html>

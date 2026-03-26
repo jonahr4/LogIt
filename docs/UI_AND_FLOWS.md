@@ -205,26 +205,66 @@ graph LR
 
 ## Design System Notes
 
-### Colors (Direction)
-- Dark mode primary (feels premium, sports-broadcast energy)
-- Accent color: vibrant (electric blue or energetic orange)
-- Card backgrounds: elevated surface color
-- Team colors used contextually on event cards
+### UI Reference Mockups
+
+Interactive HTML mockups live in [`docs/ui-reference/`](./ui-reference/). Open in a browser to preview. These are **inspiration/direction**, not strict specs.
+
+| Mockup | Screen | Key Patterns |
+|---|---|---|
+| [add-log.html](./ui-reference/add-log.html) | Add Log | Glass cards, gradient search glow, game select, notes/privacy form, "Save Log" CTA |
+| [profile.html](./ui-reference/profile.html) | Profile | Avatar with gradient ring, bento stats grid, milestones/badges, map visualization |
+| [event-detail.html](./ui-reference/event-detail.html) | Event Detail | Scoreboard hero with atmospheric blur, metadata grid, action buttons, friends avatars |
+| [logbook.html](./ui-reference/logbook.html) | Logbook | Filter chips, sorted cards with win/loss/draw color-coded borders, FAB |
+
+### Color Palette (from mockups)
+
+| Token | Hex | Usage |
+|---|---|---|
+| `background` | `#0a0e14` | App background |
+| `surface-container-high` | `#1b2028` | Card backgrounds |
+| `surface-container-lowest` | `#000000` | Input fields, deep surfaces |
+| `primary` | `#aaffdc` | Text accents, highlights |
+| `primary-container` / `primary-fixed` | `#00fdc1` | CTA buttons, badges |
+| `secondary` | `#679cff` | Secondary accents, links |
+| `tertiary` | `#ac89ff` | Stats, win ratio, badges |
+| `error` | `#ff716c` | Loss indicators |
+| `on-surface` | `#f1f3fc` | Primary text |
+| `on-surface-variant` | `#a8abb3` | Secondary text |
+| Brand glow | `#00FFC2` | Logo, nav highlights, glows |
 
 ### Typography
-- Clean sans-serif (Inter, SF Pro, or similar)
-- Large bold headers
-- Readable body text for notes
+- **Headlines**: Manrope (extrabold, tight tracking)
+- **Body/Labels**: Inter (400–600 weight)
+- Large bold headers with uppercase tracking for labels
+- `10px` uppercase tracking for metadata labels
+
+### Visual Techniques
+- **Glassmorphism**: `backdrop-blur-xl` + semi-transparent backgrounds
+- **Atmospheric glow**: Large blurred circles (`blur-[100px]`) in primary/secondary behind hero sections
+- **Gradient CTAs**: `linear-gradient(135deg, #aaffdc, #00fdc1)` with box-shadow glow
+- **Border-left color coding**: Green (win), Blue (draw), Red (loss) on logbook cards
+- **Neon glow**: `drop-shadow` and `box-shadow` with primary color on brand elements
+
+### Icons
+- **Google Material Symbols Outlined** (variable weight/fill)
+- Filled variant (`FILL 1`) for active states and CTAs
+- Sport-specific icons: `sports_basketball`, `sports_soccer`, etc.
 
 ### Component Patterns
 - **Cards** — Primary UI pattern for logs and events
-- **Chips** — For filters, tags, team badges
+- **Glass Cards** — Semi-transparent with backdrop blur for selected/featured items
+- **Chips** — Rounded-full filter buttons with icons
 - **Bottom Sheet** — For filter panels, quick actions
-- **Floating Action** — The ➕ log button
+- **Bottom Nav** — Rounded top corners, backdrop blur, glow on active item
+- **Floating Action Button** — Gradient primary, visible on mobile only
 - **Skeleton Loading** — For feed and logbook
+- **Avatar stacks** — Overlapping `-space-x-4` with border rings
 
 ### Animations
-- Card press/expand
+- Card press/expand (`active:scale-[0.98]`)
+- Hover scale (`hover:scale-[1.02]`) on stat cards
 - Log creation celebration (confetti or checkmark)
 - Tab transitions
 - Pull-to-refresh with custom animation
+- Opacity reveal on hover (chevron arrows on logbook cards)
+
