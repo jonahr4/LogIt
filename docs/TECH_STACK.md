@@ -1,22 +1,31 @@
 # Log It — Tech Stack & Architecture
 
-> **Last updated:** 2026-03-24
+> **Last updated:** 2026-03-26
 
 ## Platform
 
 | Layer | Choice | Rationale |
 |---|---|---|
-| **Client** | React Native (Expo) | Cross-platform mobile-first, fast iteration, OTA updates |
+| **Client** | React Native (iOS-first, Android later) | Cross-platform mobile-first, fast iteration |
 | **Navigation** | Expo Router | File-based routing, deep linking support |
-| **Backend** | Firebase / Supabase | Auth, DB, storage, real-time — minimal backend code |
-| **Database** | Firestore _or_ Supabase Postgres | See decision below |
-| **Auth** | Firebase Auth _or_ Supabase Auth | Email, Google, Apple sign-in |
-| **Storage** | Firebase Storage / Supabase Storage | User photos, avatars |
-| **Sports Data API** | ESPN API / SportsData.io / Ball Don't Lie | Canonical game data ingestion |
+| **Backend / API** | Vercel (serverless functions) | Integrates cleanly with serverless API layer |
+| **Auth** | Firebase Authentication | Familiar, mature, Google/Apple built-in |
+| **Database** | Supabase (Postgres) | Relational — natural fit for events, logs, friendships |
+| **Storage** | Supabase Storage | User photos, avatars |
+| **Sports Data API** | Ball Don't Lie (NBA first) | Free, well-documented, clean NBA data |
 | **State Management** | Zustand or React Context | Lightweight, no boilerplate |
-| **Styling** | NativeWind (Tailwind for RN) _or_ StyleSheet | TBD based on preference |
+| **Language** | TypeScript | Type safety across the app |
 
-> **Decision needed:** Firebase vs. Supabase — see trade-offs below.
+### Rationale
+
+- **Postgres** fits relational data (events, logs, friendships, stats) naturally
+- **Supabase** provides a free tier and built-in dashboard (acts as initial admin panel)
+- **Firebase Auth** keeps existing familiarity and fast setup
+- **Vercel** integrates cleanly with a serverless API layer
+
+### Initial Cost Target
+
+**$0/month** on free tiers during MVP and early usage.
 
 ---
 
@@ -30,41 +39,37 @@ graph TB
         Nav[Expo Router]
     end
 
-    subgraph Backend["☁️ Backend Services"]
-        Auth[Authentication]
-        DB[(Database)]
+    subgraph Vercel["⚡ Vercel Serverless"]
+        API[API Routes]
+        Cron[Scheduled Functions]
+    end
+
+    subgraph Supabase["🟢 Supabase"]
+        DB[(Postgres Database)]
         Storage[File Storage]
-        Functions[Cloud Functions / Edge Functions]
+        Realtime[Realtime Subscriptions]
+    end
+
+    subgraph Firebase["🔥 Firebase"]
+        Auth[Authentication]
+        Push[Push Notifications]
     end
 
     subgraph External["🌐 External"]
-        SportsAPI[Sports Data API]
+        SportsAPI[Ball Dont Lie API]
     end
 
     UI --> State
     UI --> Nav
+    State --> API
     State --> Auth
-    State --> DB
-    State --> Storage
-    Functions --> SportsAPI
-    Functions --> DB
+    State --> Realtime
+    API --> DB
+    API --> Storage
+    Cron --> SportsAPI
+    Cron --> DB
+    Push --> UI
 ```
-
----
-
-## Firebase vs. Supabase
-
-| Factor | Firebase (Firestore) | Supabase (Postgres) |
-|---|---|---|
-| **Data model fit** | Document-based — flexible but denormalized | Relational — natural fit for events ↔ logs |
-| **Querying** | Limited compound queries, no JOINs | Full SQL, JOINs, complex filters |
-| **Real-time** | Excellent built-in | Good, via subscriptions |
-| **Auth** | Mature, Google/Apple built-in | Good, supports same providers |
-| **Pricing** | Free tier generous, pay-per-read | Free tier generous, predictable |
-| **Ecosystem** | Huge community, more RN libraries | Growing fast, great docs |
-| **Recommendation** | ✅ Good for speed to MVP | ✅ Better long-term for relational data |
-
-> **Leaning:** Supabase may be the better fit given the relational nature of events, logs, and friendships. Firebase is fine if speed-to-MVP is the top priority.
 
 ---
 
@@ -72,9 +77,9 @@ graph TB
 
 ### Strategy
 
-1. **Source:** Use a free/affordable sports API for game schedules and results
-2. **Ingestion:** Cloud function runs on a schedule (daily or per-game-day)
-3. **Storage:** Canonical `Event` records in the database
+1. **Source:** Ball Don't Lie API for NBA game schedules and results
+2. **Ingestion:** Vercel cron function runs on a schedule (daily or per-game-day)
+3. **Storage:** Canonical `Event` records in Supabase Postgres
 4. **Matching:** `external_id` + `external_source` fields prevent duplicates
 5. **Updates:** Score and status updates run post-game
 
@@ -82,12 +87,21 @@ graph TB
 
 | API | Sports | Free Tier | Notes |
 |---|---|---|---|
+| **Ball Don't Lie** | NBA | ✅ Free | Clean, well-documented — **MVP choice** |
 | **ESPN (unofficial)** | All major | Free (no key) | Undocumented, could change |
-| **Ball Don't Lie** | NBA | Free | Clean, well-documented |
 | **SportsData.io** | All major | Free trial | Paid for production |
 | **The Sports DB** | All major | Free (limited) | Community-maintained |
 
-> **Recommendation:** Start with Ball Don't Lie (NBA) for MVP if basketball is the first sport. Supplement with ESPN unofficial API for broader coverage.
+> **Decision:** Start with Ball Don't Lie for NBA. Evaluate broader APIs when adding MLB/NFL/NHL.
+
+---
+
+## Admin & Internal Tools
+
+| Phase | Approach |
+|---|---|
+| **MVP** | Supabase dashboard — inspect users, logs, events, photos |
+| **Later** | Custom admin portal (Next.js on Vercel) or tools like Retool/Appsmith |
 
 ---
 
@@ -110,7 +124,12 @@ LogIt/
 ├── types/                  # TypeScript type definitions
 ├── constants/              # Colors, config, enums
 ├── assets/                 # Images, fonts
-├── functions/              # Cloud/edge functions (data ingestion)
+├── api/                    # Vercel serverless functions
+│   ├── events/
+│   ├── logs/
+│   ├── feed/
+│   ├── friends/
+│   └── cron/               # Scheduled data ingestion
 └── docs/                   # This documentation
 ```
 
@@ -124,4 +143,5 @@ LogIt/
 | **ESLint + Prettier** | Code quality and formatting |
 | **Expo EAS** | Builds, updates, submissions |
 | **Git + GitHub** | Version control |
+| **Vercel** | API hosting + cron jobs |
 | **Figma** (optional) | Design mockups |

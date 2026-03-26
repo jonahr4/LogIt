@@ -1,6 +1,6 @@
 # Log It — Feature Roadmap
 
-> **Last updated:** 2026-03-24
+> **Last updated:** 2026-03-26
 
 ## Build Phases
 
@@ -10,20 +10,23 @@ gantt
     dateFormat  YYYY-MM-DD
     section MVP (v1.0)
     Auth + Onboarding           :a1, 2026-04-01, 7d
-    Sports Event Ingestion      :a2, after a1, 7d
+    NBA Event Ingestion         :a2, after a1, 7d
     Event Search                :a3, after a2, 5d
-    Log Creation                :a4, after a3, 5d
+    Log Creation + Photos       :a4, after a3, 5d
     Personal Logbook + Filters  :a5, after a4, 7d
     Event Detail Page           :a6, after a5, 5d
     Simple Feed                 :a7, after a6, 5d
+    Notifications               :a8, after a7, 5d
     section v1.5
-    Friend System               :b1, after a7, 7d
+    Friend System               :b1, after a8, 7d
     Stats Dashboard             :b2, after b1, 7d
     Map View                    :b3, after b2, 5d
     section v2.0
     Shared Attendance           :c1, after b3, 5d
     Comments + Reactions        :c2, after c1, 5d
-    Multi-Sport Expansion       :c3, after c2, 10d
+    Event Discovery + Reviews   :c3, after c2, 7d
+    Multi-Sport Expansion       :c4, after c3, 10d
+    Admin Portal                :c5, after c4, 7d
 ```
 
 ---
@@ -40,10 +43,10 @@ gantt
 - [ ] Favorite team picker
 - [ ] Profile creation (display name, avatar)
 
-### 2. Sports Event Data
-- [ ] Integrate sports data API (start with one league)
-- [ ] Scheduled ingestion function (daily sync)
-- [ ] Store canonical `Event` records in DB
+### 2. Sports Event Data (NBA First)
+- [ ] Integrate Ball Don't Lie API for NBA games
+- [ ] Vercel cron function for scheduled ingestion (daily sync)
+- [ ] Store canonical `Event` records in Supabase Postgres
 - [ ] Deduplication via `external_id`
 - [ ] Post-game score/status updates
 
@@ -58,6 +61,7 @@ gantt
 - [ ] Add optional notes
 - [ ] Set privacy (public / friends / private)
 - [ ] Optional star rating (1-5)
+- [ ] Photo upload (up to a few per log, stored in Supabase Storage)
 - [ ] Success confirmation with animation
 - [ ] Prevent duplicate logs for same event
 
@@ -81,6 +85,12 @@ gantt
 - [ ] Tap card → event detail
 - [ ] Pull-to-refresh
 - [ ] Empty states for first-time users
+
+### 8. Notifications (MVP)
+- [ ] Upcoming event countdown reminders
+- [ ] Post-event prompt to log attendance
+- [ ] In-app notification center
+- [ ] Push notification infrastructure (Firebase Cloud Messaging)
 
 ---
 
@@ -126,25 +136,37 @@ gantt
 - [ ] "Also attended" section on event detail
 - [ ] Notification: "You and @mike were both at this game"
 - [ ] Mutual attendance stats with friends
+- [ ] Shared absentee detection ("You both missed this one")
 
 ### 13. Comments & Reactions
 - [ ] Comment on any public log
 - [ ] Emoji reactions (🔥 🏀 👏 etc.)
 - [ ] Notification for comments/reactions on your logs
 
-### 14. Beyond Sports
+### 14. Event Discovery & Reviews
+- [ ] Event detail pages become discovery surfaces
+- [ ] Aggregated reviews, photos, and sentiment from attendees
+- [ ] "See what people said" section
+- [ ] Support for Event Entity vs. Event Instance model
+
+### 15. Beyond Sports
 - [ ] Concerts
 - [ ] Movies / Theater
 - [ ] Restaurants
 - [ ] Custom/manual events
 - [ ] Generic "experience" event type
 
-### 15. Advanced Features
-- [ ] Push notifications
+### 16. Advanced Features
 - [ ] Share log as image/story
 - [ ] Annual recap / "Year in Review"
 - [ ] Achievement badges
 - [ ] Profile customization (banner, theme)
+
+### 17. Admin Portal
+- [ ] Custom admin dashboard (Next.js)
+- [ ] User management and moderation
+- [ ] Content review tools
+- [ ] Growth and activity analytics
 
 ---
 
@@ -153,14 +175,17 @@ gantt
 | Feature | Impact | Effort | Priority |
 |---|---|---|---|
 | Auth + Onboarding | 🔴 High | 🟡 Medium | **P0 — MVP** |
-| Event Ingestion | 🔴 High | 🟡 Medium | **P0 — MVP** |
-| Log Creation | 🔴 High | 🟢 Low | **P0 — MVP** |
+| Event Ingestion (NBA) | 🔴 High | 🟡 Medium | **P0 — MVP** |
+| Log Creation + Photos | 🔴 High | 🟡 Medium | **P0 — MVP** |
 | Logbook + Filters | 🔴 High | 🟡 Medium | **P0 — MVP** |
 | Event Detail | 🟡 Medium | 🟢 Low | **P0 — MVP** |
 | Feed | 🟡 Medium | 🟡 Medium | **P0 — MVP** |
+| Notifications | 🟡 Medium | 🟡 Medium | **P0 — MVP** |
 | Friend System | 🟡 Medium | 🟡 Medium | **P1 — v1.5** |
 | Stats Dashboard | 🔴 High | 🟡 Medium | **P1 — v1.5** |
 | Map View | 🔴 High | 🟡 Medium | **P1 — v1.5** |
 | Shared Attendance | 🟡 Medium | 🟡 Medium | **P2 — v2.0** |
+| Event Discovery | 🔴 High | 🔴 High | **P2 — v2.0** |
 | Comments/Reactions | 🟢 Low | 🟢 Low | **P2 — v2.0** |
 | Beyond Sports | 🔴 High | 🔴 High | **P2 — v2.0** |
+| Admin Portal | 🟡 Medium | 🟡 Medium | **P2 — v2.0** |

@@ -1,6 +1,6 @@
 # Log It — Product Overview
 
-> **Last updated:** 2026-03-24
+> **Last updated:** 2026-03-26
 
 ## One-Line Concept
 
@@ -48,16 +48,14 @@ People who attend many games often track them in Notes, spreadsheets, photos, ti
 
 ## MVP Focus
 
-Start with **sports only**. Supported sports over time:
+Start with **sports only**, beginning with the **NBA**.
 
 | Sport | League(s) | MVP Priority |
 |---|---|---|
-| Basketball | NBA | 🔜 Strong candidate for first |
+| Basketball | NBA | ✅ **First league** |
 | Baseball | MLB | Later |
 | Football | NFL | Later |
 | Hockey | NHL | Later |
-
-> **Decision needed:** Which league should be first? See [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md)
 
 ## MVP Goals
 
@@ -68,6 +66,35 @@ Start with **sports only**. Supported sports over time:
 5. ✅ Let a user **view event details** with game context
 6. ✅ Let a user optionally **share logs publicly or keep them private**
 7. ✅ Let a user see a **lightweight feed** of their own activity (and later, friends')
+
+## MVP Additions
+
+- 📸 **Photo uploads** — Users can attach photos per log entry (stored in Supabase Storage)
+- 🔔 **Notifications** — Part of MVP:
+  - Upcoming event countdown reminders
+  - Post-event prompt to log attendance
+  - Friend activity notifications (later)
+
+## Admin Backend Portal
+
+| Phase | Approach |
+|---|---|
+| **MVP** | Use Supabase dashboard for user/data inspection and moderation |
+| **Later** | Custom admin portal (Next.js) for cleaner navigation and moderation workflows |
+
+Admin needs: view users, view logs + attached events, view uploaded photos, review public/private content, inspect growth and event activity, moderate comments/photos later.
+
+## Event Discovery & Reviews (Future)
+
+A key future expansion is turning events into **discovery surfaces**, not just logs.
+
+**Concept:** Users can tap into an event (or artist/team) and see aggregated experiences — reviews, photos, notes, overall sentiment.
+
+**Important model distinction:**
+- Sports events are **time-specific** (one game = one instance)
+- Concerts/movies are **repeatable entities** (same artist, multiple showings)
+
+The data model should support both **Event Instance** (specific game/date) and **Event Entity** (artist, movie, team) to enable this.
 
 ## Future Expansion (Post-MVP)
 

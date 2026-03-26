@@ -47,6 +47,9 @@ Some changes require updating multiple docs:
 | Tech decision made | `TECH_STACK.md`, remove from open questions in `PRODUCT_OVERVIEW.md` |
 | Privacy rule changed | `SOCIAL_FEATURES.md`, `API_DESIGN.md` |
 | New social feature | `SOCIAL_FEATURES.md`, `FEATURE_ROADMAP.md`, `UI_AND_FLOWS.md`, `API_DESIGN.md` |
+| Notification behavior changed | `SOCIAL_FEATURES.md`, `API_DESIGN.md`, `DATA_MODELS.md` |
+| Photo handling changed | `UI_AND_FLOWS.md`, `API_DESIGN.md`, `DATA_MODELS.md` |
+| Admin portal updated | `TECH_STACK.md`, `PRODUCT_OVERVIEW.md` |
 
 ### Format Consistency
 - Use tables for structured comparisons

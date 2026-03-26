@@ -1,6 +1,6 @@
 # Log It — UI Design & User Flows
 
-> **Last updated:** 2026-03-24
+> **Last updated:** 2026-03-26
 
 ## Navigation Structure
 
@@ -48,6 +48,7 @@ graph TB
 | **Other User Profile** | Feed | View another user's public logs |
 | **Settings** | Profile | Account, privacy defaults, notifications |
 | **Friends List** | Profile | Manage friends |
+| **Notifications** | Bell icon / Profile | Reminders, post-event prompts, friend activity |
 | **Onboarding** | First launch | Account creation + team selection |
 
 ---
@@ -65,13 +66,13 @@ The default screen when opening the app.
 - Tapping a card → Event Detail
 
 **Behavior:**
-- If no friends → `Friends` tab prompts add-friend flow
+- `Friends` tab stays visible even when empty — prompts invite/add-friend flows to drive growth
 - Privacy controls filter what appears (public logs only in `Everyone`)
 - Pull-to-refresh
 
 **Empty States:**
 - First time: "Welcome! Log your first game →"
-- No friends: "Add friends to see their activity"
+- No friends: Growth-focused prompt — invite friends, tease overlap insights, early adopter badges
 
 ---
 
@@ -127,7 +128,7 @@ graph LR
 - Notes field (optional, multiline)
 - Privacy selector: 🌍 Public · 👥 Friends · 🔒 Private
 - Rating (optional, 1-5 stars)
-- Photos (optional, future)
+- Photos (optional, up to a few per log — stored in Supabase Storage)
 - "Log It" confirmation button
 
 **Step 4 — Success:**
@@ -167,7 +168,7 @@ The rich view of a single game.
 **Sections:**
 1. **Game header** — Teams, score, status
 2. **Game info** — Date, time, venue with map link
-3. **Your log** — Attendance badge, notes, rating
+3. **Your log** — Attendance badge, notes, rating, photos
 4. **Social** (future) — Who else attended, comments
 
 ---

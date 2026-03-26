@@ -15,29 +15,33 @@ People who attend games track them in Notes, spreadsheets, photos, or memory. Th
 | Feature | Description |
 |---|---|
 | 🔍 **Game Search** | Find any game from a structured sports database |
-| ✅ **Log Attendance** | One tap to log that you were there, with optional notes and rating |
+| ✅ **Log Attendance** | One tap to log that you were there, with optional notes, rating, and photos |
 | 📖 **Personal Logbook** | Browse and filter your full history by sport, team, venue, or date |
 | 📊 **Event Detail** | Rich game context — teams, score, venue, date |
 | 📡 **Feed** | See your activity and discover what others are logging |
 | 🔒 **Privacy Controls** | Each log can be public, friends-only, or private |
+| 🔔 **Notifications** | Event reminders and post-game prompts to log |
+| 📸 **Photos** | Attach photos to your log entries |
 
-## Planned Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Client | React Native (Expo) |
-| Navigation | Expo Router |
-| Backend | Supabase or Firebase |
-| Sports Data | Ball Don't Lie / ESPN API |
+| Frontend | React Native (iOS-first) |
+| Backend / API | Vercel (serverless functions) |
+| Auth | Firebase Authentication |
+| Database | Supabase (Postgres) |
+| Storage | Supabase Storage |
+| Sports Data | Ball Don't Lie (NBA first) |
 | Language | TypeScript |
 
 ## Roadmap
 
 | Phase | Focus |
 |---|---|
-| **MVP (v1.0)** | Auth, game search, log creation, logbook, event detail, feed |
+| **MVP (v1.0)** | Auth, NBA game search, log creation with photos, logbook, event detail, feed, notifications |
 | **v1.5** | Friend system, stats dashboard, map view, multi-sport |
-| **v2.0** | Shared attendance, comments/reactions, expansion beyond sports |
+| **v2.0** | Shared attendance, event discovery & reviews, comments/reactions, expansion beyond sports |
 
 ## Documentation
 

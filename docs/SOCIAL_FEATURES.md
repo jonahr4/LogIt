@@ -1,6 +1,6 @@
 # Log It — Social Features
 
-> **Last updated:** 2026-03-24
+> **Last updated:** 2026-03-26
 
 ## Philosophy
 
@@ -47,18 +47,25 @@ Every log entry has a privacy setting:
 
 ## MVP Social (v1.0)
 
-Minimal social layer — just enough to make the feed useful.
+Keep social lightweight, but include hooks that make the network more valuable over time.
 
 ### What's Included
 - [x] Per-log privacy selector (public / friends / private)
 - [x] Default privacy in settings
 - [x] "Everyone" feed showing public logs
 - [x] "You" feed showing own logs
+- [x] "Friends" tab visible (even when empty — drives invite/growth flows)
 - [ ] Basic user profiles (public view)
+- [ ] Notifications (event reminders, post-event log prompts)
+
+### Growth Incentives for Inviting Friends
+- Unlock overlap insights once you add friends
+- Milestone for first friend added
+- "Find people you've overlapped with" teaser
+- Small social badges for early friend activity
 
 ### What's NOT Included Yet
-- ❌ Friend requests
-- ❌ "Friends" feed tab (visible but prompts "coming soon" or "add friends")
+- ❌ Full friend request flow (visible but teased)
 - ❌ Shared attendance detection
 - ❌ Comments or reactions
 
@@ -112,6 +119,12 @@ The killer social feature — "you were both at this game."
 **Stats:**
 - Mutual attendance count between friends
 - "You've been to 5 games with @mike"
+
+### Shared Absentee Detection
+
+- Detect when two friends both missed a notable game
+- "You and @mike both missed Lakers vs Celtics!"
+- Lighter touch, fun engagement hook
 
 ### Comments & Reactions
 

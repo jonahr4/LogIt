@@ -1,6 +1,6 @@
 # Log It — Data Models
 
-> **Last updated:** 2026-03-24
+> **Last updated:** 2026-03-26
 
 ## Design Principles
 
@@ -18,6 +18,7 @@ erDiagram
     USER ||--o{ USER_EVENT_LOG : creates
     EVENT ||--o{ USER_EVENT_LOG : "is logged in"
     USER ||--o{ FRIENDSHIP : "has friends"
+    USER ||--o{ NOTIFICATION : receives
     USER {
         string id PK
         string email
@@ -71,6 +72,18 @@ erDiagram
         enum status "pending | accepted | declined | blocked"
         timestamp created_at
         timestamp updated_at
+    }
+    NOTIFICATION {
+        string id PK
+        string user_id FK
+        enum type "event_reminder | post_event_prompt | friend_request | friend_activity"
+        string title
+        string body
+        string reference_id
+        enum reference_type "event | log | friendship"
+        boolean read
+        timestamp send_at
+        timestamp created_at
     }
 ```
 
@@ -163,7 +176,7 @@ Bidirectional friend relationship.
 | `Comment` | Comments on a UserEventLog |
 | `Reaction` | Reactions (likes, emoji) on a UserEventLog |
 | `ManualEvent` | User-created events not in the canonical DB |
-| `Notification` | In-app notification records |
+| `EventEntity` | Repeatable entity (artist, movie, team) that links to multiple Event Instances — for event discovery & reviews |
 
 ---
 

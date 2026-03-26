@@ -1,10 +1,10 @@
 # Log It — API Design
 
-> **Last updated:** 2026-03-24
+> **Last updated:** 2026-03-26
 
 ## Overview
 
-This document defines the API layer — whether using direct Supabase client calls (RPC + REST) or a custom API (e.g., Edge Functions, Express). The endpoints and contracts below apply regardless of backend choice.
+This document defines the API layer, hosted as **Vercel serverless functions**. Auth is via **Firebase Authentication**, and data lives in **Supabase Postgres**. Photos are stored in **Supabase Storage**.
 
 ---
 
@@ -17,7 +17,7 @@ This document defines the API layer — whether using direct Supabase client cal
 | `auth/logout` | POST | Sign out |
 | `auth/me` | GET | Get current user profile |
 
-**Auth strategy:** JWT-based via Supabase Auth or Firebase Auth. Token passed in `Authorization: Bearer <token>` header.
+**Auth strategy:** JWT-based via **Firebase Auth**. Token passed in `Authorization: Bearer <token>` header. Verified server-side in Vercel functions.
 
 **OAuth providers:** Google, Apple (minimum for iOS App Store).
 
@@ -116,7 +116,8 @@ This document defines the API layer — whether using direct Supabase client cal
   "event_id": "evt_abc123",
   "notes": "Incredible game, went to OT!",
   "privacy": "public",
-  "rating": 5
+  "rating": 5,
+  "photo_urls": ["https://storage.supabase.co/..."]
 }
 ```
 
@@ -130,6 +131,7 @@ This document defines the API layer — whether using direct Supabase client cal
   "notes": "Incredible game, went to OT!",
   "privacy": "public",
   "rating": 5,
+  "photo_urls": ["https://storage.supabase.co/..."],
   "logged_at": "2026-03-15T23:45:00Z"
 }
 ```
@@ -213,6 +215,44 @@ This document defines the API layer — whether using direct Supabase client cal
 
 ```json
 { "friendship_id": "fr_abc", "action": "accept" }
+```
+
+---
+
+## Notifications
+
+| Endpoint | Method | Auth | Description |
+|---|---|---|---|
+| `GET /notifications` | GET | Yes | Get current user's notifications |
+| `PATCH /notifications/:id/read` | PATCH | Yes | Mark a notification as read |
+| `POST /notifications/settings` | POST | Yes | Update notification preferences |
+
+### Notification Types
+
+| Type | Trigger | Timing |
+|---|---|---|
+| `event_reminder` | Upcoming event the user might attend | Hours before event |
+| `post_event_prompt` | Game ended, prompt to log attendance | After game concludes |
+| `friend_request` | Someone sent a friend request | Immediate |
+| `friend_activity` | A friend logged an event | Near-realtime |
+
+### `GET /notifications` — Response
+
+```json
+{
+  "data": [
+    {
+      "id": "ntf_001",
+      "type": "post_event_prompt",
+      "title": "Were you at the game?",
+      "body": "Lakers vs Celtics just ended. Log it!",
+      "reference_id": "evt_abc123",
+      "reference_type": "event",
+      "read": false,
+      "created_at": "2026-03-15T22:30:00Z"
+    }
+  ]
+}
 ```
 
 ---
