@@ -4,7 +4,7 @@
 
 export const Config = {
   app: {
-    name: 'Log It',
+    name: 'LogIt',
     tagline: 'Log the events you live.',
     version: '1.0.0',
   },

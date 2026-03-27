@@ -1,7 +1,7 @@
 # Log It — UI Design & User Flows
 
 > **Last updated:** 2026-03-27
-> Updated: Adopted spatial-green-v2 design language across auth/onboarding. Updated color palette (bg #030712, glass tokens), replaced emojis with Ionicons, added pulsing progress bars and circle-in-circle done screen motif.
+> Updated: Built all tab screens (Feed, Logbook, Add Log, Profile) with spatial-green-v2 design. Implemented floating pill nav bar with Ionicons. Added GlassCard and OrbBackground shared components. Rebranded "LOG IT" to "LogIt" across app.
 
 ## Navigation Structure
 

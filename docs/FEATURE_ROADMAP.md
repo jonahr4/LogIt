@@ -1,7 +1,7 @@
 # Log It — Feature Roadmap
 
 > **Last updated:** 2026-03-27
-> Updated: Added nightlife (clubs, bars, nights out) as a future event type under v2.0
+> Updated: Tab screen UI shells implemented (Feed, Logbook, Add Log, Profile) with spatial-green-v2 design and mock data. Floating pill nav bar built.
 
 ## Build Phases
 

@@ -25,7 +25,7 @@ export default function WelcomeScreen() {
       <View style={[styles.content, isWide && styles.contentWide]}>
         {/* Logo area */}
         <View style={styles.logoArea}>
-          <Text style={[styles.logoText, isWide && { fontSize: 52 }]}>LOG IT</Text>
+          <Text style={[styles.logoText, isWide && { fontSize: 52 }]}>LogIt</Text>
           <Text style={[styles.tagline, isWide && { fontSize: 18 }]}>Log the events you live.</Text>
         </View>
 
