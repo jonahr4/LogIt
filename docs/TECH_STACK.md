@@ -1,6 +1,7 @@
 # Log It — Tech Stack & Architecture
 
 > **Last updated:** 2026-03-26
+> Updated: Updated project structure to match Phase 1 implementation (auth/onboarding groups, API layer, store, actual dependencies)
 
 ## Platform
 
@@ -134,27 +135,31 @@ graph TB
 ```
 LogIt/
 ├── app/                    # Expo Router screens
+│   ├── (auth)/             # Auth group (welcome, sign-in, sign-up)
+│   ├── (onboarding)/       # Post-auth (profile-setup, preferences, done)
 │   ├── (tabs)/             # Tab-based navigation
 │   │   ├── feed.tsx
 │   │   ├── logbook.tsx
+│   │   ├── add-log.tsx
 │   │   └── profile.tsx
-│   ├── event/[id].tsx      # Event detail
-│   ├── log/new.tsx         # Log creation
-│   └── _layout.tsx
-├── components/             # Reusable UI components
-├── lib/                    # Utilities, API clients, helpers
-├── hooks/                  # Custom React hooks
-├── store/                  # State management
-├── types/                  # TypeScript type definitions
-├── constants/              # Colors, config, enums
-├── assets/                 # Images, fonts
+│   ├── index.tsx           # Entry redirect (auth-aware)
+│   └── _layout.tsx         # Root layout with auth gate
 ├── api/                    # Vercel serverless functions
-│   ├── events/
-│   ├── logs/
-│   ├── feed/
-│   ├── friends/
-│   └── cron/               # Scheduled data ingestion
-└── docs/                   # This documentation
+│   ├── auth/               # Auth endpoints (signup, me)
+│   ├── users/              # User endpoints (profile, username check)
+│   ├── middleware/         # Auth middleware (Firebase token verification)
+│   └── lib/                # Server-side utilities (Supabase admin)
+├── components/             # Reusable UI components
+│   └── ui/                 # Base UI (Button, Input)
+├── constants/              # Colors, typography, config, enums
+├── hooks/                  # Custom React hooks
+├── lib/                    # Client-side utilities (Supabase, Firebase, API client)
+├── store/                  # Zustand state management
+├── types/                  # TypeScript type definitions
+├── assets/                 # Images, fonts
+├── supabase/               # Database migrations
+│   └── migrations/
+└── docs/                   # Planning documentation
 ```
 
 ---

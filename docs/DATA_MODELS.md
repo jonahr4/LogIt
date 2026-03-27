@@ -1,6 +1,7 @@
 # Log It — Data Models
 
-> **Last updated:** 2026-03-26
+> **Last updated:** 2026-03-27
+> Updated: Added `nightlife_events` child table for clubs/bars/nights out
 
 ## Design Principles
 
@@ -26,6 +27,7 @@ erDiagram
     EVENT ||--o| MOVIE_EVENT : "extends (movie)"
     EVENT ||--o| CONCERT_EVENT : "extends (concert)"
     EVENT ||--o| RESTAURANT_EVENT : "extends (restaurant)"
+    EVENT ||--o| NIGHTLIFE_EVENT : "extends (nightlife)"
     USER {
         uuid id PK
         string email
@@ -42,7 +44,7 @@ erDiagram
     }
     EVENT {
         uuid id PK
-        enum event_type "sports | movie | concert | restaurant | manual"
+        enum event_type "sports | movie | concert | restaurant | nightlife | manual"
         string title
         enum status "upcoming | in_progress | completed"
         timestamp event_date
@@ -90,6 +92,15 @@ erDiagram
         string cuisine
         string price_level
         string foursquare_id
+    }
+    NIGHTLIFE_EVENT {
+        uuid event_id FK
+        enum venue_type "club | bar | lounge | rooftop | pub"
+        string vibe
+        string dress_code
+        string music_genre
+        string price_level
+        string google_place_id
     }
     USER_EVENT_LOG {
         uuid id PK
@@ -235,6 +246,20 @@ Each child table has a **1:1 relationship** with `events` via `event_id` foreign
 #### `ManualEvent` (future)
 
 For user-created events not in any external database. Uses the base `events` fields only (title, date, venue, notes). No child table needed — `event_type = 'manual'` with no child row.
+
+#### `NightlifeEvent` (future)
+
+| Field | Type | Description |
+|---|---|---|
+| `event_id` | UUID (FK → events) | Primary key, references base event |
+| `venue_type` | enum | `club`, `bar`, `lounge`, `rooftop`, `pub` |
+| `vibe` | string | Vibe description (e.g., "chill", "high-energy", "underground") |
+| `dress_code` | string | Dress code if applicable |
+| `music_genre` | string | Music genre (e.g., "house", "hip-hop", "live DJ") |
+| `price_level` | string | Price indicator (`$`, `$$`, `$$$`, `$$$$`) |
+| `google_place_id` | string | Google Places ID for venue lookup |
+
+> **Social angle:** Nightlife is inherently social — most logs will tag companions and be shared with friends. Venue discovery ("have my friends been here?", browse photos/ratings before going out) is a natural fit for the existing companion + feed infrastructure.
 
 ### `UserEventLog`
 

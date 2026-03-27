@@ -1,6 +1,7 @@
 # Log It — Feature Roadmap
 
-> **Last updated:** 2026-03-26
+> **Last updated:** 2026-03-27
+> Updated: Added nightlife (clubs, bars, nights out) as a future event type under v2.0
 
 ## Build Phases
 
@@ -36,14 +37,14 @@ gantt
 > **Goal:** A user can sign up, find an event, log it, and browse their history. Starting with NBA games as the first event type, but the architecture supports all types from day one.
 
 ### 1. Auth & Onboarding
-- [ ] Email + password sign-up/sign-in
-- [ ] Google OAuth
-- [ ] Apple OAuth
-- [ ] Username selection
-- [ ] First name + last name collection
-- [ ] Profile creation (display name, avatar)
-- [ ] Event type preferences (choose which types you'll use: sports, movies, concerts, etc.)
-- [ ] Default privacy selection
+- [x] Email + password sign-up/sign-in
+- [x] Google OAuth
+- [x] Apple OAuth
+- [x] Username selection
+- [x] First name + last name collection
+- [x] Profile creation (display name, avatar)
+- [x] Event type preferences (choose which types you'll use: sports, movies, concerts, etc.)
+- [x] Default privacy selection
 
 ### 2. Event Data (NBA First Implementation)
 - [ ] Integrate Ball Don't Lie API for NBA games
@@ -162,6 +163,10 @@ gantt
 - [ ] Movies (TMDB API integration + `movie_events` child table)
 - [ ] Concerts (Ticketmaster API integration + `concert_events` child table)
 - [ ] Restaurants (Google Places / Foursquare integration + `restaurant_events` child table)
+- [ ] Nightlife — clubs, bars, nights out (Google Places / Foursquare / Yelp + `nightlife_events` child table)
+  - Venue discovery: see if friends have been, browse photos/reviews before going
+  - Social-first: tag friends, shared group outings, public/private visibility
+  - BeReal/Paparazzi-style social energy — logging nights out drives engagement
 - [ ] Manual / custom events (no child table needed)
 - [ ] Companion reassignment tool (link freeform names to new accounts)
 

@@ -57,7 +57,7 @@ All planning docs live in [`docs/`](./docs/):
 
 ## Status
 
-🟡 **Planning phase** — no code yet, documentation in progress.
+🟢 **Phase 1 (Auth + Onboarding)** — implemented. Email, Google, and Apple sign-in. Onboarding flow with profile setup and event preferences. Vercel API endpoints and Supabase database ready.
 
 ---
 

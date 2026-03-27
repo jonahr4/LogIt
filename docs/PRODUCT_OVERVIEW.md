@@ -1,6 +1,7 @@
 # Log It — Product Overview
 
-> **Last updated:** 2026-03-26
+> **Last updated:** 2026-03-27
+> Updated: Added nightlife (clubs, bars, nights out) as a future event type
 
 ## One-Line Concept
 
@@ -58,6 +59,7 @@ Build sports first (starting with NBA) to prove the model, then expand across ev
 | Movies | TMDB API | v2.0+ |
 | Concerts | Ticketmaster API | v2.0+ |
 | Restaurants | Google Places / Foursquare | v2.0+ |
+| Nightlife (clubs, bars) | Google Places / Foursquare / Yelp | v2.0+ |
 | Manual / Custom | User-created | v2.0+ |
 
 ## MVP Goals
@@ -124,9 +126,10 @@ Not for MVP, but the long-term vision:
 - 🎭 Theater
 - 🍽️ Restaurants
 - 🎵 Concerts
+- 🍸 Nightlife — clubs, bars, cocktail bars, nights out
 - 🎯 Custom events
 
-**Long-term idea:** Log It becomes a general "log experiences" platform, but sports should prove the model first.
+**Long-term idea:** Log It becomes a general "log experiences" platform, but sports should prove the model first. Nightlife is a high-engagement category — people naturally want to share nights out, see where friends are going, and check out venues before they go. The social discovery angle (photos, ratings, friend activity at venues) aligns with BeReal/Paparazzi-style energy.
 
 ## Naming Note
 
