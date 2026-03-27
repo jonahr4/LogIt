@@ -62,6 +62,7 @@ export default function SignInScreen() {
         scopes: ['openid', 'profile', 'email'],
         redirectUri,
         responseType: AuthSession.ResponseType.IdToken,
+        usePKCE: false,
       });
 
       const result = await request.promptAsync(discovery);

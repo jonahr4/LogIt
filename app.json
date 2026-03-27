@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.logit.app",
+      "bundleIdentifier": "com.logitapp.app",
       "usesAppleSignIn": true
     },
     "android": {
@@ -21,7 +21,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.logit.app"
+      "package": "com.logitapp.app"
     },
     "web": {
       "output": "static",

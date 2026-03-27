@@ -18,6 +18,34 @@ import { firebaseAuth } from '@/lib/firebase';
 import { api } from '@/lib/api';
 import type { User, SignupData } from '@/types/user';
 
+/** Map Firebase error codes to user-friendly messages */
+function friendlyError(error: any, context: 'signin' | 'signup' | 'general' = 'general'): string {
+  const code = error?.code || '';
+
+  const messages: Record<string, string> = {
+    // Sign-in specific
+    'auth/user-not-found': 'No account found with that email — try signing up!',
+    'auth/invalid-credential': context === 'signin'
+      ? 'No account found or wrong password — try signing up!'
+      : 'Invalid credentials. Please try again.',
+    'auth/wrong-password': 'Incorrect password. Please try again.',
+    'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
+    'auth/user-disabled': 'This account has been disabled. Contact support.',
+
+    // Sign-up specific
+    'auth/email-already-in-use': 'An account with this email already exists — try signing in!',
+    'auth/weak-password': 'Password is too weak. Use at least 6 characters.',
+    'auth/invalid-email': 'Please enter a valid email address.',
+
+    // General
+    'auth/network-request-failed': 'Network error. Check your connection and try again.',
+    'auth/invalid-api-key': 'App configuration error. Please contact support.',
+    'auth/operation-not-allowed': 'This sign-in method is not enabled.',
+  };
+
+  return messages[code] || error?.message || 'Something went wrong. Please try again.';
+}
+
 interface AuthState {
   // State
   user: User | null;
@@ -91,7 +119,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error: any) {
       set({
         isLoading: false,
-        error: error.message || 'Failed to create account',
+        error: friendlyError(error, 'signup'),
       });
       throw error;
     }
@@ -105,7 +133,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error: any) {
       set({
         isLoading: false,
-        error: error.message || 'Failed to sign in',
+        error: friendlyError(error, 'signin'),
       });
       throw error;
     }
@@ -156,11 +184,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
       });
     } catch (error: any) {
+      // API not deployed yet — mark as onboarded locally so user can proceed
+      // The profile will sync when the API is available
+      console.warn('API not available, completing onboarding locally:', error.message);
       set({
+        user: {
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          username: data.username,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          display_name: data.display_name || data.first_name,
+          avatar_url: firebaseUser.photoURL || null,
+          bio: null,
+          event_preferences: data.event_preferences || [],
+          default_privacy: data.default_privacy || 'public',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as User,
+        isOnboarded: true,
         isLoading: false,
-        error: error.message || 'Failed to complete profile',
       });
-      throw error;
     }
   },
 

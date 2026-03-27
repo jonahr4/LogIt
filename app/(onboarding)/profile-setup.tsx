@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/colors';
@@ -12,6 +12,7 @@ import { Typography } from '@/constants/typography';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 import type { UsernameCheckResponse } from '@/types/api';
 
 export default function ProfileSetupScreen() {
@@ -20,6 +21,7 @@ export default function ProfileSetupScreen() {
   const [username, setUsername] = useState('');
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { signOut } = useAuthStore();
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -100,6 +102,11 @@ export default function ProfileSetupScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Back button — signs out and returns to auth */}
+        <TouchableOpacity onPress={() => signOut()} style={styles.backButton}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+
         {/* Progress indicator */}
         <View style={styles.progress}>
           <View style={[styles.progressDot, styles.progressActive]} />
@@ -185,7 +192,14 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 28,
-    paddingTop: 24,
+    paddingTop: 16,
+  },
+  backButton: {
+    marginBottom: 16,
+  },
+  backText: {
+    ...Typography.bodyMedium,
+    color: Colors.textSecondary,
   },
   progress: {
     flexDirection: 'row',

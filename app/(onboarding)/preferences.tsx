@@ -67,6 +67,11 @@ export default function PreferencesScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* Back button */}
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+
         {/* Progress indicator */}
         <View style={styles.progress}>
           <View style={[styles.progressDot, styles.progressComplete]} />
@@ -172,7 +177,14 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 28,
-    paddingTop: 24,
+    paddingTop: 16,
+  },
+  backButton: {
+    marginBottom: 16,
+  },
+  backText: {
+    ...Typography.bodyMedium,
+    color: Colors.textSecondary,
   },
   progress: {
     flexDirection: 'row',
