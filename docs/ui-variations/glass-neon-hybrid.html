@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Var 4: Glass Neon Hybrid</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { 
+            bg: 'var(--bg)', 
+            primary: '#00FFC2', 
+            text: 'var(--text)', 
+            muted: 'var(--muted)' 
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Manrope', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --glass: rgba(255, 255, 255, 0.7);
+      --glass-hover: rgba(255, 255, 255, 0.9);
+      --glass-border: rgba(255, 255, 255, 0.5);
+    }
+    .dark {
+      --bg: #0a0e14;
+      --text: #f1f3fc;
+      --muted: #a8abb3;
+      --glass: rgba(27, 32, 40, 0.5);
+      --glass-hover: rgba(27, 32, 40, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.08);
+    }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; position: relative; }
+    
+    /* Concentric Background Effects */
+    .bg-glow-1 { position: absolute; top: -10vw; left: -10vw; width: 60vw; height: 60vw; border-radius: 50%; background: radial-gradient(circle, rgba(0,255,194,0.15) 0%, transparent 60%); filter: blur(60px); z-index: -1; pointer-events: none; }
+    .bg-glow-2 { position: absolute; bottom: 10vw; right: -20vw; width: 80vw; height: 80vw; border-radius: 50%; background: radial-gradient(circle, rgba(103,156,255,0.1) 0%, transparent 70%); filter: blur(80px); z-index: -1; pointer-events: none; }
+    .ring-bg { position: absolute; top: 10%; left: 50%; transform: translateX(-50%); width: 120vw; aspect-ratio: 1/1; border-radius: 50%; border: 1px solid rgba(255,255,255,0.03); z-index: -2; pointer-events: none; transition: border-color 0.3s; }
+    html:not(.dark) .ring-bg { border-color: rgba(0,0,0,0.03); }
+    
+    .screen { display: none; padding-bottom: 120px; }
+    .screen.active { display: block; animation: fadeIn 0.3s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .glass-panel {
+      background: var(--glass);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .photo-gradient-overlay {
+      background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 50%, transparent 100%);
+    }
+
+    .neon-bar {
+      position: absolute; top: 0; left: 0; width: 4px; height: 100%; 
+      background: var(--primary);
+      box-shadow: 0 0 15px rgba(0, 255, 194, 0.6);
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="transition-colors duration-300">
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+  <div class="ring-bg hidden sm:block"></div>
+
+  <header class="fixed top-0 w-full z-40 px-6 py-4 flex justify-between items-center bg-bg/60 backdrop-blur-xl border-b border-[var(--glass-border)]">
+    <div class="font-display font-bold text-xl tracking-widest uppercase text-primary drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]">LOG IT</div>
+    <div class="flex items-center gap-4">
+      <button id="theme-toggle" class="p-2 rounded-full glass-panel transition">
+        <span class="material-symbols-outlined text-muted" id="theme-icon">light_mode</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="pt-24 px-4 max-w-lg mx-auto min-h-screen">
+    
+    <!-- Feed Screen -->
+    <div id="screen-feed" class="screen active gap-6 flex flex-col">
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+        <button class="px-5 py-2 rounded-full glass-panel text-sm font-medium whitespace-nowrap">Everyone</button>
+        <button class="px-5 py-2 rounded-full bg-primary/20 text-primary border border-primary/30 text-sm font-medium whitespace-nowrap shadow-[0_0_15px_rgba(0,255,194,0.15)]">You</button>
+        <button class="px-5 py-2 rounded-full glass-panel text-sm font-medium whitespace-nowrap">Friends</button>
+      </div>
+
+      <div class="glass-panel rounded-[1.5rem] relative overflow-hidden group cursor-pointer" onclick="switchTab('detail')">
+        <div class="neon-bar"></div>
+        <div class="relative h-56 w-full overflow-hidden">
+           <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-105 transition duration-700 blur-[2px]">
+           <div class="absolute inset-0 photo-gradient-overlay flex flex-col justify-between p-5">
+             <div class="flex justify-between items-start pl-2">
+               <div class="flex gap-3 items-center">
+                 <img src="https://i.pravatar.cc/100?img=33" class="w-10 h-10 rounded-full border border-white/20 shadow-lg">
+                 <div>
+                   <p class="font-medium text-sm text-white drop-shadow-md">@jonah <span class="text-white/70">logged a game</span></p>
+                   <p class="text-xs text-white/50 drop-shadow-md">2 hours ago</p>
+                 </div>
+               </div>
+               <div class="glass-panel rounded-full px-3 py-1 flex items-center gap-2 border border-white/10 ml-2 shadow-lg">
+                 <span class="material-symbols-outlined text-[16px] text-white">sports_basketball</span>
+                 <span class="text-xs font-bold uppercase text-white tracking-widest">NBA</span>
+               </div>
+             </div>
+             <div class="pl-2">
+                <h3 class="font-display font-bold text-2xl text-white drop-shadow-lg">Celtics vs Lakers</h3>
+                <p class="text-xs text-primary font-bold uppercase tracking-widest mt-1 drop-shadow-[0_0_8px_rgba(0,255,194,0.8)]">Crypto.com Arena</p>
+             </div>
+           </div>
+        </div>
+        <div class="p-5 pl-7 bg-[var(--glass)] border-t border-[var(--glass-border)] flex items-center justify-between">
+           <p class="text-sm italic border-l-2 border-primary/30 pl-3 leading-relaxed flex-1 text-muted">Incredible game, went to OT! Tatum was on fire.</p>
+           <div class="text-right pl-4">
+             <span class="block text-xs uppercase tracking-widest text-muted font-bold font-display">Final Score</span>
+             <span class="font-display font-black text-2xl text-primary drop-shadow-[0_0_8px_rgba(0,255,194,0.3)]">112-108</span>
+           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logbook Screen -->
+    <div id="screen-logbook" class="screen flex flex-col gap-5">
+      <h2 class="font-display text-3xl font-bold tracking-tight">Logbook</h2>
+      <div class="relative mb-2">
+        <span class="material-symbols-outlined absolute left-4 top-3.5 text-muted">search</span>
+        <input type="text" placeholder="Search events..." class="w-full glass-panel rounded-xl py-3.5 pl-12 pr-4 outline-none focus:border-primary/50 text-sm placeholder:text-muted">
+      </div>
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+        <button class="px-4 py-2 rounded-full glass-panel flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-primary">sports_basketball</span> <span class="text-xs font-medium text-primary">Sports</span></button>
+        <button class="px-4 py-2 rounded-full glass-panel flex items-center gap-2"><span class="material-symbols-outlined text-[16px]">movie</span> <span class="text-xs font-medium">Movies</span></button>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div class="glass-panel rounded-2xl p-4 relative overflow-hidden flex justify-between items-center group cursor-pointer" onclick="switchTab('detail')">
+          <div class="neon-bar"></div>
+          <div class="flex gap-4 items-center pl-3">
+             <div class="w-14 h-14 rounded-xl overflow-hidden relative shadow-lg">
+               <div class="absolute inset-0 bg-black/40 z-10 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-white text-[20px]">sports_basketball</span>
+               </div>
+               <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=200&auto=format&fit=crop" class="w-full h-full object-cover">
+             </div>
+             <div>
+               <h4 class="font-display font-bold text-lg">Lakers @ Celtics</h4>
+               <p class="text-[10px] text-muted font-bold tracking-widest uppercase mt-0.5">TD Garden • Feb 1</p>
+             </div>
+          </div>
+          <span class="font-display font-black text-2xl text-primary drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]">W</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Detail Screen -->
+    <div id="screen-detail" class="screen flex flex-col gap-6">
+      <button class="text-muted flex items-center gap-1 hover:text-text w-fit text-sm font-medium glass-panel px-3 py-1.5 rounded-full" onclick="switchTab('feed')">
+        <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back
+      </button>
+
+      <div class="glass-panel rounded-[2rem] overflow-hidden relative shadow-2xl">
+        <div class="neon-bar"></div>
+        <div class="relative h-48 w-full overflow-hidden">
+           <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover blur-[1px]">
+           <div class="absolute inset-0 bg-black/60 flex flex-col justify-center items-center backdrop-blur-[2px]">
+              <div class="glass-panel px-4 py-1.5 rounded-full backdrop-blur-md mb-4 flex items-center gap-2 border border-white/10">
+                 <span class="material-symbols-outlined text-white text-[14px]">sports_basketball</span>
+                 <span class="text-[10px] font-bold tracking-widest uppercase text-white">Final - OT</span>
+              </div>
+              <div class="flex justify-between items-center w-full px-8">
+                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/1200px-Boston_Celtics.svg.png" class="w-16 h-16 object-contain drop-shadow-2xl">
+                <div class="flex justify-center items-center gap-4 text-white">
+                  <span class="font-display font-extrabold text-5xl">112</span>
+                  <span class="text-white/50">-</span>
+                  <span class="font-display font-extrabold text-5xl text-white/50">108</span>
+                </div>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/1200px-Los_Angeles_Lakers_logo.svg.png" class="w-16 h-16 object-contain drop-shadow-2xl">
+              </div>
+           </div>
+        </div>
+        
+        <div class="p-5 pl-7">
+          <div class="grid grid-cols-2 gap-3 text-left border-b border-[var(--glass-border)] pb-5 mb-5">
+            <div>
+              <p class="text-[10px] uppercase text-muted tracking-widest font-bold mb-1">Date</p>
+              <p class="text-sm font-semibold">Mar 15, 2026</p>
+            </div>
+            <div>
+               <p class="text-[10px] uppercase text-muted tracking-widest font-bold mb-1">Venue</p>
+               <p class="text-sm font-semibold truncate flex items-center gap-1"><span class="material-symbols-outlined text-primary text-[16px]">location_on</span> Crypto.com Arena</p>
+            </div>
+          </div>
+          <p class="text-sm text-muted leading-relaxed">Incredible game, went to OT! Tatum was on fire in the 4th.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Screen -->
+    <div id="screen-add" class="screen flex flex-col gap-6">
+      <h2 class="font-display text-3xl font-bold tracking-tight">New Log</h2>
+      <div class="glass-panel rounded-2xl p-1 relative shadow-xl">
+        <div class="neon-bar"></div>
+        <input type="text" placeholder="Search team, game..." class="w-full bg-transparent p-4 pl-8 outline-none font-medium">
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div id="screen-profile" class="screen flex flex-col gap-6">
+      <div class="flex flex-col items-center mt-4">
+        <img src="https://i.pravatar.cc/200?img=33" class="w-28 h-28 rounded-full border border-primary p-1">
+        <h2 class="font-display text-2xl font-bold tracking-tight mt-2">Jonah Rothman</h2>
+      </div>
+    </div>
+  </main>
+
+  <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm glass-panel rounded-[2rem] px-2 py-2 flex justify-between items-center z-50">
+    <button onclick="switchTab('feed')" id="nav-feed" class="nav-item flex-1 flex flex-col items-center p-2 rounded-[1.5rem] transition active">
+      <span class="material-symbols-outlined text-xl mb-1 icon text-primary fill">home</span>
+    </button>
+    <button onclick="switchTab('logbook')" id="nav-logbook" class="nav-item flex-1 flex flex-col items-center p-2 rounded-[1.5rem] transition">
+      <span class="material-symbols-outlined text-xl mb-1 icon text-muted">book</span>
+    </button>
+    <button onclick="switchTab('add')" id="nav-add" class="relative -top-6 flex-shrink-0 w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-black border-4 border-bg">
+      <span class="material-symbols-outlined text-3xl font-bold">add</span>
+    </button>
+    <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex-1 flex flex-col items-center p-2 rounded-[1.5rem] transition">
+      <span class="material-symbols-outlined text-xl mb-1 icon text-muted">person</span>
+    </button>
+  </nav>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const tgt = document.getElementById('screen-' + tabId);
+      if (tgt) tgt.classList.add('active');
+      window.scrollTo({top: 0});
+
+      document.querySelectorAll('.nav-item .icon').forEach(icon => {
+        icon.classList.remove('text-primary', 'fill');
+        icon.classList.add('text-muted');
+      });
+
+      const activeNav = document.getElementById('nav-' + tabId);
+      if(activeNav) {
+        const icon = activeNav.querySelector('.icon');
+        icon.classList.remove('text-muted');
+        icon.classList.add('text-primary', 'fill');
+      }
+    }
+    const html = document.documentElement;
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      html.classList.toggle('dark');
+      document.getElementById('theme-icon').textContent = html.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+    });
+  </script>
+</body>
+</html>

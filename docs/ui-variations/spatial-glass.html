@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Var 2: Spatial Glass</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { 
+            bg: 'var(--bg)', 
+            primary: '#00FFC2', 
+            text: 'var(--text)', 
+            muted: 'var(--muted)' 
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --glass: rgba(255, 255, 255, 0.6);
+      --glass-hover: rgba(255, 255, 255, 0.8);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --glass-shadow: 0 10px 40px rgba(0,0,0,0.05);
+      --mesh-1: #cbd5e1;
+      --mesh-2: #e2e8f0;
+    }
+    .dark {
+      --bg: #000000;
+      --text: #ffffff;
+      --muted: #94a3b8;
+      --glass: rgba(255, 255, 255, 0.05);
+      --glass-hover: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --glass-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      --mesh-1: #0f172a;
+      --mesh-2: #020617;
+    }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+    .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; position: relative; }
+    
+    /* Spatial Mesh Background */
+    .mesh-gradient {
+      position: fixed; inset: 0; z-index: -2;
+      background: radial-gradient(at 0% 0%, var(--mesh-1) 0px, transparent 50%),
+                  radial-gradient(at 100% 100%, var(--mesh-2) 0px, transparent 50%);
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(80px); z-index: -1; pointer-events: none; opacity: 0.5; }
+    .orb-1 { top: 20%; left: 10%; width: 40vw; height: 40vw; background: rgba(0, 255, 194, 0.1); }
+    .orb-2 { bottom: 10%; right: 10%; width: 50vw; height: 50vw; background: rgba(56, 189, 248, 0.1); }
+
+    .glass-panel {
+      background: var(--glass);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid var(--glass-border);
+      border-top: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: var(--glass-shadow);
+    }
+    
+    .screen { display: none; padding-bottom: 140px; }
+    .screen.active { display: block; animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes scaleUp { from { opacity: 0; transform: scale(0.97) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  </style>
+</head>
+<body class="transition-colors duration-500 font-sans tracking-tight">
+  <div class="mesh-gradient transition-colors duration-500"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Spatial Floating Header -->
+  <header class="fixed top-6 left-4 right-4 z-40">
+    <div class="max-w-lg mx-auto glass-panel rounded-full px-6 py-3 flex justify-between items-center">
+      <div class="font-bold text-lg tracking-wider">LOG IT</div>
+      <button id="theme-toggle" class="p-2 rounded-full hover:bg-white/10 transition">
+        <span class="material-symbols-outlined text-muted" id="theme-icon">light_mode</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="pt-28 px-4 max-w-lg mx-auto min-h-screen">
+    
+    <!-- Feed Screen -->
+    <div id="screen-feed" class="screen active flex flex-col gap-6">
+      <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-1">
+        <button class="px-6 py-2 rounded-full glass-panel text-sm font-medium hover:bg-white/10 transition">Everyone</button>
+        <button class="px-6 py-2 rounded-full glass-panel bg-white/20 text-white font-medium shadow-[0_0_15px_rgba(255,255,255,0.1)] transition text-sm">You</button>
+        <button class="px-6 py-2 rounded-full glass-panel text-sm font-medium hover:bg-white/10 transition">Friends</button>
+      </div>
+
+      <!-- Spatial Card -->
+      <div class="glass-panel rounded-[2rem] p-1 overflow-hidden group cursor-pointer" onclick="switchTab('detail')">
+        <div class="bg-gradient-to-b from-white/5 to-transparent rounded-[1.8rem] p-5">
+          <div class="flex items-center gap-3 mb-5">
+             <div class="w-10 h-10 rounded-full overflow-hidden border border-white/20 shadow-md">
+                <img src="https://i.pravatar.cc/100?img=33" class="w-full h-full object-cover">
+             </div>
+             <div>
+               <p class="font-semibold text-sm">@jonah <span class="text-muted font-normal">logged a game</span></p>
+               <p class="text-xs text-muted">2 hours ago</p>
+             </div>
+          </div>
+          
+          <div class="relative rounded-2xl overflow-hidden mb-4 shadow-xl">
+             <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop" class="w-full h-48 object-cover opacity-80 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-105 transition duration-700">
+             <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
+               <h3 class="font-bold text-xl text-white">Celtics vs Lakers</h3>
+               <p class="text-white/70 text-sm">Crypto.com Arena</p>
+             </div>
+             <div class="absolute top-3 right-3 glass-panel rounded-full px-3 py-1 bg-black/40 backdrop-blur-md">
+               <span class="text-primary font-bold">112 - 108</span>
+             </div>
+          </div>
+          <p class="text-sm text-balance text-muted px-2">"Incredible game, went to OT! Tatum was on fire."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logbook Screen -->
+    <div id="screen-logbook" class="screen flex flex-col gap-6">
+      <h2 class="text-4xl font-semibold tracking-tighter px-2">Logbook</h2>
+      
+      <div class="glass-panel rounded-[1.5rem] flex items-center px-4 py-3">
+        <span class="material-symbols-outlined text-muted mr-3">search</span>
+        <input type="text" placeholder="Search events..." class="bg-transparent outline-none w-full text-sm font-medium placeholder:text-muted">
+      </div>
+      
+      <!-- Filter Pills -->
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+        <button class="px-4 py-2 rounded-full glass-panel flex items-center gap-2 group hover:bg-white/10"><span class="material-symbols-outlined text-[16px] group-hover:text-primary transition-colors">sports_basketball</span> <span class="text-xs font-semibold">Sports</span></button>
+        <button class="px-4 py-2 rounded-full glass-panel flex items-center gap-2 group hover:bg-white/10"><span class="material-symbols-outlined text-[16px] group-hover:text-blue-400 transition-colors">movie</span> <span class="text-xs font-semibold">Movies</span></button>
+        <button class="px-4 py-2 rounded-full glass-panel flex items-center gap-2 group hover:bg-white/10"><span class="material-symbols-outlined text-[16px] group-hover:text-purple-400 transition-colors">music_note</span> <span class="text-xs font-semibold">Concerts</span></button>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div class="glass-panel rounded-[2rem] p-4 flex justify-between items-center group cursor-pointer hover:bg-white/5 transition" onclick="switchTab('detail')">
+          <div class="flex gap-4 items-center">
+             <div class="w-14 h-14 rounded-[1rem] bg-black/20 flex items-center justify-center border border-white/10 shadow-inner group-hover:scale-105 transition-transform">
+               <span class="material-symbols-outlined text-primary text-2xl">sports_basketball</span>
+             </div>
+             <div>
+               <h4 class="font-semibold text-lg">Lakers @ Celtics</h4>
+               <p class="text-sm text-muted mt-0.5">TD Garden • Feb 1</p>
+             </div>
+          </div>
+          <div class="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary font-bold shadow-[0_0_10px_rgba(0,255,194,0.2)]">W</div>
+        </div>
+        
+        <div class="glass-panel rounded-[2rem] p-4 flex justify-between items-center group cursor-pointer hover:bg-white/5 transition">
+          <div class="flex gap-4 items-center">
+             <div class="w-14 h-14 rounded-[1rem] bg-black/20 flex items-center justify-center border border-white/10 shadow-inner group-hover:scale-105 transition-transform">
+               <span class="material-symbols-outlined text-blue-400 text-2xl">movie</span>
+             </div>
+             <div>
+               <h4 class="font-semibold text-lg">Dune: Part Two</h4>
+               <p class="text-sm text-muted mt-0.5">AMC Lincoln Square • Mar 2</p>
+             </div>
+          </div>
+          <div class="flex -space-x-1 text-yellow-400 drop-shadow-md">
+            <span class="material-symbols-outlined text-[18px] fill">star</span>
+            <span class="material-symbols-outlined text-[18px] fill">star</span>
+            <span class="material-symbols-outlined text-[18px] fill">star</span>
+            <span class="material-symbols-outlined text-[18px] fill">star</span>
+            <span class="material-symbols-outlined text-[18px]">star</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Detail Screen -->
+    <div id="screen-detail" class="screen flex flex-col gap-6">
+      <button class="text-muted flex items-center gap-1 hover:text-text w-fit text-sm bg-black/10 px-3 py-1.5 rounded-full" onclick="switchTab('feed')">
+        <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back
+      </button>
+
+      <div class="glass-panel rounded-[2.5rem] p-8 text-center relative overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-40 h-40 bg-primary/20 blur-3xl rounded-full"></div>
+        <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500/20 blur-3xl rounded-full"></div>
+        
+        <div class="relative z-10">
+          <div class="flex justify-between items-center mb-8 px-4">
+             <img src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/1200px-Boston_Celtics.svg.png" class="w-20 h-20 object-contain drop-shadow-2xl">
+             <div class="glass-panel px-4 py-1.5 rounded-full backdrop-blur-2xl bg-black/30">
+                <span class="text-xs font-bold tracking-wider text-muted">FINAL • OT</span>
+             </div>
+             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/1200px-Los_Angeles_Lakers_logo.svg.png" class="w-20 h-20 object-contain drop-shadow-2xl">
+          </div>
+          
+          <div class="flex justify-center items-center gap-6 mb-8 drop-shadow-lg">
+             <span class="font-bold text-6xl tracking-tighter">112</span>
+             <span class="text-muted font-light text-4xl">-</span>
+             <span class="font-bold text-6xl tracking-tighter text-muted">108</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="glass-panel bg-black/10 rounded-[1.5rem] p-4 text-left">
+              <span class="material-symbols-outlined text-muted text-lg mb-1">calendar_today</span>
+              <p class="text-[10px] uppercase text-muted tracking-wider font-semibold">Date</p>
+              <p class="text-sm font-semibold mt-0.5">Mar 15, 2026</p>
+            </div>
+            <div class="glass-panel bg-black/10 rounded-[1.5rem] p-4 text-left">
+               <span class="material-symbols-outlined text-muted text-lg mb-1">stadium</span>
+               <p class="text-[10px] uppercase text-muted tracking-wider font-semibold">Venue</p>
+               <p class="text-sm font-semibold mt-0.5 truncate">Crypto.com Arena</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-panel rounded-[2rem] p-6 text-left">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="material-symbols-outlined text-primary">notes</span>
+          <h4 class="font-semibold">Personal Notes</h4>
+        </div>
+        <p class="text-sm text-balance leading-relaxed text-muted">Incredible game, went to OT! Tatum was on fire in the 4th. Sat in section 301, great view of the court. The energy was electric.</p>
+        
+        <div class="mt-6 pt-5 border-t border-white/10 flex items-center justify-between">
+          <div class="flex -space-x-1 text-yellow-500 drop-shadow-md">
+            <span class="material-symbols-outlined fill text-[20px]">star</span>
+            <span class="material-symbols-outlined fill text-[20px]">star</span>
+            <span class="material-symbols-outlined fill text-[20px]">star</span>
+            <span class="material-symbols-outlined fill text-[20px]">star</span>
+            <span class="material-symbols-outlined fill text-[20px]">star</span>
+          </div>
+          <div class="flex items-center gap-3 glass-panel px-3 py-1.5 rounded-full bg-black/20">
+            <span class="text-[10px] uppercase font-bold text-muted">With</span>
+            <div class="flex -space-x-3">
+              <img src="https://i.pravatar.cc/100?img=1" class="w-7 h-7 rounded-full border-2 border-[#121620]">
+              <img src="https://i.pravatar.cc/100?img=2" class="w-7 h-7 rounded-full border-2 border-[#121620]">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Log Screen -->
+    <div id="screen-add" class="screen flex flex-col gap-6">
+      <h2 class="text-4xl font-semibold tracking-tighter px-2">New Log</h2>
+      
+      <div class="glass-panel rounded-[2rem] p-1.5 shadow-xl flex items-center pr-4">
+        <span class="material-symbols-outlined text-muted ml-4">search</span>
+        <input type="text" placeholder="Search team, game, or event..." class="w-full bg-transparent py-4 px-3 outline-none text-base placeholder:text-muted">
+      </div>
+
+      <div class="flex flex-col gap-3 px-2 mt-4">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="material-symbols-outlined text-muted text-sm">history</span>
+          <h3 class="text-xs font-bold text-muted uppercase tracking-wider">Recent</h3>
+        </div>
+        
+        <div class="glass-panel rounded-[1.5rem] p-4 hover:bg-white/5 transition flex justify-between items-center group cursor-pointer">
+           <div class="flex items-center gap-4">
+             <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+               <span class="material-symbols-outlined text-primary text-sm">sports_basketball</span>
+             </div>
+             <div>
+               <h4 class="font-semibold text-sm">Knicks vs Celtics</h4>
+               <p class="text-xs text-muted mt-0.5">Oct 25, 2025 • MSG</p>
+             </div>
+           </div>
+           <span class="material-symbols-outlined text-muted group-hover:text-primary transition">arrow_forward</span>
+        </div>
+      </div>
+
+      <div class="mt-8 glass-panel rounded-[2rem] p-8 text-center relative overflow-hidden group">
+         <div class="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition duration-500"></div>
+         <span class="material-symbols-outlined text-5xl text-primary mb-4 block drop-shadow-[0_0_15px_rgba(0,255,194,0.4)]">auto_awesome</span>
+         <h3 class="font-semibold text-xl mb-2 relative z-10">Custom Event</h3>
+         <p class="text-sm text-balance text-muted mb-6 relative z-10">Log something entirely unique manually.</p>
+         <button class="relative z-10 bg-white text-black font-semibold py-3.5 px-8 rounded-full shadow-xl hover:scale-105 transition-transform flex items-center gap-2 mx-auto">
+           Create Log <span class="material-symbols-outlined text-sm">add</span>
+         </button>
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div id="screen-profile" class="screen flex flex-col gap-6">
+      <div class="flex flex-col items-center mt-6">
+        <div class="relative mb-5">
+           <div class="w-28 h-28 rounded-full p-1 glass-panel">
+             <img src="https://i.pravatar.cc/200?img=33" class="w-full h-full rounded-full object-cover">
+           </div>
+           <button class="absolute bottom-0 right-0 w-8 h-8 glass-panel rounded-full flex items-center justify-center hover:scale-110 transition shadow-lg">
+             <span class="material-symbols-outlined text-[14px]">edit</span>
+           </button>
+        </div>
+        <h2 class="text-2xl font-bold tracking-tight">Jonah Rothman</h2>
+        <p class="text-muted font-medium bg-black/10 glass-panel px-3 py-1 rounded-full text-xs mt-2">@jonah</p>
+      </div>
+
+      <!-- Spatial Grid -->
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <div class="col-span-2 glass-panel rounded-[2rem] p-6 flex items-center justify-between overflow-hidden relative group">
+          <div class="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50 group-hover:opacity-100 transition duration-500"></div>
+          <div class="relative z-10">
+            <p class="text-[10px] text-muted tracking-widest uppercase mb-1 font-semibold">Total Logs</p>
+            <p class="font-bold text-5xl tracking-tighter">124</p>
+          </div>
+          <span class="material-symbols-outlined text-6xl text-primary/30 relative z-10 group-hover:scale-110 transition duration-500">style</span>
+        </div>
+        <div class="glass-panel rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2">
+          <p class="font-bold text-3xl">42</p>
+          <span class="text-[10px] tracking-wider text-muted font-semibold uppercase bg-black/10 px-2 py-0.5 rounded flex items-center gap-1">
+            <span class="material-symbols-outlined text-[10px]">stadium</span> Venues
+          </span>
+        </div>
+        <div class="glass-panel rounded-[2rem] p-5 flex flex-col items-center justify-center gap-2">
+          <p class="font-bold text-3xl">18</p>
+          <span class="text-[10px] tracking-wider text-muted font-semibold uppercase bg-black/10 px-2 py-0.5 rounded flex items-center gap-1">
+            <span class="material-symbols-outlined text-[10px]">flag</span> Teams
+          </span>
+        </div>
+      </div>
+      
+      <div class="glass-panel rounded-[2rem] flex flex-col mt-2">
+         <button class="flex items-center justify-between p-5 hover:bg-white/5 transition rounded-t-[2rem]">
+           <div class="flex items-center gap-3">
+             <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+               <span class="material-symbols-outlined text-[16px]">settings</span>
+             </div>
+             <span class="font-semibold text-sm">Settings</span>
+           </div>
+           <span class="material-symbols-outlined text-muted">chevron_right</span>
+         </button>
+         <div class="h-[1px] bg-white/10 mx-5"></div>
+         <button class="flex items-center justify-between p-5 hover:bg-white/5 transition rounded-b-[2rem]">
+           <div class="flex items-center gap-3">
+             <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+               <span class="material-symbols-outlined text-[16px]">group</span>
+             </div>
+             <span class="font-semibold text-sm">Friends Data</span>
+           </div>
+           <span class="material-symbols-outlined text-muted">chevron_right</span>
+         </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Spatial Floating Nav -->
+  <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 w-fit min-w-[300px] glass-panel rounded-full px-2 py-2 flex justify-center gap-2 items-center z-50 shadow-[0_20px_40px_rgba(0,0,0,0.3)] backdrop-blur-[60px]">
+    <button onclick="switchTab('feed')" id="nav-feed" class="nav-item w-12 h-12 flex items-center justify-center rounded-full transition active">
+      <span class="material-symbols-outlined text-2xl icon text-text fill drop-shadow-md">home</span>
+    </button>
+    <button onclick="switchTab('logbook')" id="nav-logbook" class="nav-item w-12 h-12 flex items-center justify-center rounded-full transition">
+      <span class="material-symbols-outlined text-2xl icon text-muted">book</span>
+    </button>
+    
+    <div class="w-px h-6 bg-white/20 mx-1"></div>
+    
+    <button onclick="switchTab('add')" id="nav-add" class="w-14 h-14 bg-white rounded-full flex items-center justify-center text-black shadow-lg hover:scale-105 transition hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] relative">
+      <span class="material-symbols-outlined text-3xl">add</span>
+    </button>
+    
+    <div class="w-px h-6 bg-white/20 mx-1"></div>
+
+    <button onclick="switchTab('detail')" id="nav-detail" class="nav-item w-12 h-12 flex items-center justify-center rounded-full transition hidden">
+      <!-- Hidden systematically, used for routing preview -->
+    </button>
+    <button onclick="switchTab('profile')" id="nav-profile" class="nav-item w-12 h-12 flex items-center justify-center rounded-full transition">
+      <span class="material-symbols-outlined text-2xl icon text-muted">person</span>
+    </button>
+  </nav>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + tabId).classList.add('active');
+      window.scrollTo({top: 0, behavior: 'smooth'});
+
+      // Nav handling
+      document.querySelectorAll('.nav-item').forEach(item => {
+        const icon = item.querySelector('.icon');
+        if(icon) {
+          icon.classList.remove('text-text', 'fill', 'drop-shadow-md');
+          icon.classList.add('text-muted');
+        }
+        item.classList.remove('bg-white/10');
+      });
+
+      const activeNav = document.getElementById('nav-' + tabId);
+      if(activeNav) {
+        const icon = activeNav.querySelector('.icon');
+        if(icon) {
+          icon.classList.remove('text-muted');
+          icon.classList.add('text-text', 'fill', 'drop-shadow-md');
+        }
+        activeNav.classList.add('bg-white/10');
+      }
+    }
+
+    const html = document.documentElement;
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      html.classList.toggle('dark');
+      document.getElementById('theme-icon').textContent = html.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+    });
+  </script>
+</body>
+</html>

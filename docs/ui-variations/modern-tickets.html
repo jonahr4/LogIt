@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Var 5: Modern Tickets</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { 
+            bg: 'var(--bg)', 
+            surface: 'var(--surface)', 
+            'surface-hover': 'var(--surface-hover)',
+            primary: '#00FFC2', 
+            text: 'var(--text)', 
+            muted: 'var(--muted)' 
+          },
+          fontFamily: { 
+            sans: ['Inter', 'sans-serif'], 
+            mono: ['Space Grotesk', 'monospace'] 
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #e2e8f0;
+      --surface: #ffffff;
+      --surface-hover: #f1f5f9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --ticket-shadow: 0 10px 40px rgba(0,0,0,0.06);
+      --dash-color: rgba(0,0,0,0.1);
+    }
+    .dark {
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface-hover: #27272a;
+      --text: #fafafa;
+      --muted: #a1a1aa;
+      --ticket-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      --dash-color: rgba(255,255,255,0.1);
+    }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
+    .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; position: relative; }
+    
+    .screen { display: none; padding-bottom: 120px; }
+    .screen.active { display: block; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Modern Ticket Shape */
+    .ticket {
+      background-color: var(--surface);
+      border-radius: 24px;
+      box-shadow: var(--ticket-shadow);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .ticket:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 15px 50px rgba(0, 255, 194, 0.1);
+    }
+
+    /* Ambient Background */
+    .ambient-glow {
+      position: fixed; top: -20vh; right: -20vw; width: 70vw; height: 70vw;
+      border-radius: 50%; background: radial-gradient(circle, rgba(0,255,194,0.1) 0%, transparent 60%);
+      filter: blur(60px); z-index: -1; pointer-events: none;
+    }
+    
+    /* Nav Tab styling */
+    .nav-pill {
+      background: var(--surface);
+      border-radius: 99px;
+      padding: 4px;
+      box-shadow: var(--ticket-shadow);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .nav-pill-item {
+      color: var(--muted);
+      border-radius: 99px;
+      padding: 10px 20px;
+      transition: all 0.3s;
+    }
+    .nav-pill-item.active {
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .dark .nav-pill-item.active {
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body class="transition-colors duration-500 font-sans">
+  <div class="ambient-glow"></div>
+
+  <header class="fixed top-0 w-full z-40 px-6 py-5 flex justify-between items-center backdrop-blur-xl bg-bg/80">
+    <div class="font-mono font-bold text-xl tracking-tight flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(0,255,194,0.8)] animate-pulse"></div>
+      LOG.IT 
+    </div>
+    <button id="theme-toggle" class="p-2 rounded-full bg-surface shadow-sm transition hover:bg-surface-hover">
+      <span class="material-symbols-outlined text-muted" id="theme-icon">light_mode</span>
+    </button>
+  </header>
+
+  <main class="pt-24 px-4 max-w-lg mx-auto min-h-screen">
+    
+    <!-- Feed Screen -->
+    <div id="screen-feed" class="screen active flex flex-col gap-6">
+      
+      <div class="nav-pill mb-2">
+        <button class="nav-pill-item text-xs font-bold uppercase tracking-wider text-center flex-1">Global</button>
+        <button class="nav-pill-item active text-xs font-bold uppercase tracking-wider text-center flex-1">Following</button>
+        <button class="nav-pill-item text-xs font-bold uppercase tracking-wider text-center flex-1">You</button>
+      </div>
+
+      <!-- Modern Ticket Feed Card -->
+      <div class="ticket cursor-pointer" onclick="switchTab('detail')">
+        <!-- Top Section -->
+        <div class="p-5 flex flex-col gap-4">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-3">
+              <img src="https://i.pravatar.cc/100?img=33" class="w-8 h-8 rounded-full shadow-sm">
+              <div class="leading-tight">
+                <p class="font-bold text-sm">@jonah</p>
+                <p class="font-mono text-[10px] text-muted tracking-widest">2H AGO</p>
+              </div>
+            </div>
+            <div class="bg-primary/10 text-primary font-mono text-[10px] font-bold px-2 py-1 rounded-md border border-primary/20">NBA</div>
+          </div>
+          
+          <div class="flex justify-between items-center mt-2">
+             <div class="flex flex-col gap-1">
+               <h3 class="font-bold text-2xl tracking-tight">BOS vs LAL</h3>
+               <p class="font-mono text-[10px] text-muted tracking-widest uppercase">Crypto.com Arena</p>
+             </div>
+             <p class="font-mono font-bold text-[40px] text-primary tracking-tighter leading-none drop-shadow-[0_0_8px_rgba(0,255,194,0.3)]">112</p>
+          </div>
+        </div>
+        
+        <!-- Ticket Divider -->
+        <div class="relative flex items-center justify-between pointer-events-none">
+          <div class="w-6 h-6 bg-bg rounded-full -ml-3 z-10 box-border shadow-inner"></div>
+          <div class="flex-1 border-t-2 border-dashed mx-2" style="border-color: var(--dash-color);"></div>
+          <div class="w-6 h-6 bg-bg rounded-full -mr-3 z-10 box-border shadow-inner"></div>
+        </div>
+        
+        <!-- Bottom Section (Stub) -->
+        <div class="p-5 bg-[var(--surface-hover)]">
+           <div class="flex justify-between items-start mb-3">
+             <div class="flex gap-1 text-primary">
+               <span class="material-symbols-outlined text-[16px] fill">star</span>
+               <span class="material-symbols-outlined text-[16px] fill">star</span>
+               <span class="material-symbols-outlined text-[16px] fill">star</span>
+               <span class="material-symbols-outlined text-[16px] fill">star</span>
+               <span class="material-symbols-outlined text-[16px] fill">star</span>
+             </div>
+             <div class="flex -space-x-1">
+               <img src="https://i.pravatar.cc/100?img=1" class="w-5 h-5 rounded-full border border-[var(--surface-hover)]">
+               <img src="https://i.pravatar.cc/100?img=2" class="w-5 h-5 rounded-full border border-[var(--surface-hover)]">
+             </div>
+           </div>
+           <p class="text-sm font-medium leading-relaxed italic border-l-2 border-primary/50 pl-3">"Incredible game, went to OT! Tatum was on fire."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logbook Screen -->
+    <div id="screen-logbook" class="screen flex flex-col gap-6">
+      <div class="flex justify-between items-end px-2">
+        <h2 class="text-4xl font-black tracking-tight">Archive</h2>
+        <span class="font-mono text-[10px] text-muted font-bold tracking-widest">24 LOGS</span>
+      </div>
+      
+      <div class="bg-surface rounded-2xl flex items-center px-4 py-3 shadow-[var(--ticket-shadow)]">
+        <span class="material-symbols-outlined text-muted mr-3">search</span>
+        <input type="text" placeholder="Search experiences..." class="bg-transparent outline-none w-full text-sm font-bold placeholder:text-muted">
+      </div>
+      
+      <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+        <button class="px-5 py-2.5 rounded-xl bg-[var(--surface)] shadow-md text-xs font-bold tracking-wider text-primary border border-primary/20">SPORTS</button>
+        <button class="px-5 py-2.5 rounded-xl bg-[var(--surface)] text-xs font-bold tracking-wider text-muted hover:text-text transition">MOVIES</button>
+        <button class="px-5 py-2.5 rounded-xl bg-[var(--surface)] text-xs font-bold tracking-wider text-muted hover:text-text transition">MUSIC</button>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <!-- Logbook Ticket -->
+        <div class="ticket flex-row cursor-pointer" onclick="switchTab('detail')">
+          <div class="flex-1 p-4 flex gap-4 items-center">
+            <div class="w-12 h-12 bg-bg rounded-full flex items-center justify-center text-primary shadow-inner">
+              <span class="material-symbols-outlined">sports_basketball</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg">Lakers @ Celtics</h4>
+              <p class="font-mono text-[10px] text-muted font-bold tracking-widest mt-1">TD Garden • Feb 1</p>
+            </div>
+          </div>
+          
+          <!-- Vertical Divider -->
+          <div class="relative flex flex-col items-center justify-between pointer-events-none">
+            <div class="w-6 h-6 bg-bg rounded-full -mt-3 z-10 shadow-inner"></div>
+            <div class="h-full border-l-2 border-dashed my-2" style="border-color: var(--dash-color);"></div>
+            <div class="w-6 h-6 bg-bg rounded-full -mb-3 z-10 shadow-inner"></div>
+          </div>
+          
+          <div class="w-20 bg-[var(--surface-hover)] flex items-center justify-center p-4">
+             <span class="font-mono font-bold text-2xl text-primary drop-shadow-md">W</span>
+          </div>
+        </div>
+
+        <div class="ticket flex-row cursor-pointer">
+          <div class="flex-1 p-4 flex gap-4 items-center">
+            <div class="w-12 h-12 bg-bg rounded-full flex items-center justify-center text-blue-400 shadow-inner">
+              <span class="material-symbols-outlined text-[20px]">movie</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-lg">Dune: Part Two</h4>
+              <p class="font-mono text-[10px] text-muted font-bold tracking-widest mt-1">AMC Lincoln • Mar 2</p>
+            </div>
+          </div>
+          <div class="relative flex flex-col items-center justify-between pointer-events-none">
+            <div class="w-6 h-6 bg-bg rounded-full -mt-3 z-10 shadow-inner"></div>
+            <div class="h-full border-l-2 border-dashed my-2" style="border-color: var(--dash-color);"></div>
+            <div class="w-6 h-6 bg-bg rounded-full -mb-3 z-10 shadow-inner"></div>
+          </div>
+          <div class="w-20 bg-[var(--surface-hover)] flex flex-col items-center justify-center p-4 gap-1">
+             <span class="material-symbols-outlined text-[20px] text-yellow-400 fill">star</span>
+             <span class="font-mono text-xs font-bold">5/5</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Detail Screen -->
+    <div id="screen-detail" class="screen flex flex-col gap-6">
+      <button class="text-sm font-bold flex items-center gap-1 text-muted hover:text-text transition" onclick="switchTab('feed')">
+        <span class="material-symbols-outlined text-[18px]">west</span>
+      </button>
+
+      <div class="ticket">
+        <div class="p-8 pb-10 flex flex-col items-center relative overflow-hidden text-center">
+          <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+          <div class="bg-bg font-mono text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-sm text-primary mb-6 shadow-sm border border-primary/20">Final • OT</div>
+          
+          <div class="flex items-center gap-8 mb-8 z-10">
+            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/1200px-Boston_Celtics.svg.png" class="w-16 h-16 object-contain drop-shadow-xl">
+            <span class="font-mono font-bold text-xl text-muted">VS</span>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/1200px-Los_Angeles_Lakers_logo.svg.png" class="w-16 h-16 object-contain drop-shadow-xl">
+          </div>
+          
+          <div class="flex items-center gap-6 z-10">
+            <span class="font-mono font-bold text-6xl tracking-tighter">112</span>
+            <span class="text-muted text-4xl">:</span>
+            <span class="font-mono font-bold text-6xl tracking-tighter text-muted">108</span>
+          </div>
+        </div>
+
+        <div class="relative flex items-center justify-between pointer-events-none">
+          <div class="w-8 h-8 bg-bg rounded-full -ml-4 z-10 shadow-inner"></div>
+          <div class="flex-1 border-t-2 border-dashed mx-2" style="border-color: var(--dash-color);"></div>
+          <div class="w-8 h-8 bg-bg rounded-full -mr-4 z-10 shadow-inner"></div>
+        </div>
+
+        <div class="p-6 bg-[var(--surface-hover)]">
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-surface p-4 rounded-xl shadow-sm text-center">
+              <span class="material-symbols-outlined text-muted mb-1 text-[20px]">calendar_today</span>
+              <p class="font-bold text-sm">Mar 15, 2026</p>
+            </div>
+            <div class="bg-surface p-4 rounded-xl shadow-sm text-center">
+              <span class="material-symbols-outlined text-muted mb-1 text-[20px]">location_on</span>
+              <p class="font-bold text-sm truncate px-2">Crypto Arena</p>
+            </div>
+          </div>
+          
+          <div class="bg-surface p-5 rounded-xl shadow-sm">
+            <h4 class="font-mono text-xs font-bold tracking-widest uppercase text-muted mb-2">Notes</h4>
+            <p class="text-sm leading-relaxed font-medium">Incredible game, went to OT! Tatum was on fire in the 4th. Sat in section 301, great view of the court. The energy was electric.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Screen -->
+    <div id="screen-add" class="screen flex flex-col gap-6">
+      <h2 class="text-4xl font-black tracking-tight px-2">New Entry</h2>
+      <div class="bg-[var(--surface)] shadow-[var(--ticket-shadow)] rounded-[20px] p-2 flex items-center focus-within:ring-2 focus-within:ring-primary/50 transition pr-4">
+        <input type="text" placeholder="Search team, game, event..." class="w-full bg-transparent p-4 outline-none font-bold">
+        <span class="material-symbols-outlined text-muted">search</span>
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div id="screen-profile" class="screen flex flex-col gap-6">
+      <div class="ticket p-8 items-center text-center mt-4">
+        <img src="https://i.pravatar.cc/200?img=33" class="w-24 h-24 rounded-full border-4 border-bg shadow-lg mb-4">
+        <h2 class="font-bold text-2xl tracking-tight">Jonah Rothman</h2>
+        <p class="font-mono text-xs text-muted font-bold tracking-widest mt-1 uppercase">@jonah</p>
+      </div>
+    </div>
+  </main>
+
+  <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-surface rounded-[2rem] px-2 py-2 flex justify-between items-center z-50 shadow-[var(--ticket-shadow)] border border-white/5">
+    <button onclick="switchTab('feed')" id="nav-feed" class="nav-item flex-1 flex flex-col items-center p-2 rounded-[1.5rem] transition active">
+      <span class="material-symbols-outlined text-[24px] mb-1 icon text-primary fill">space_dashboard</span>
+    </button>
+    <button onclick="switchTab('logbook')" id="nav-logbook" class="nav-item flex-1 flex flex-col items-center p-2 rounded-[1.5rem] transition">
+      <span class="material-symbols-outlined text-[24px] mb-1 icon text-muted">view_agenda</span>
+    </button>
+    <button onclick="switchTab('add')" id="nav-add" class="relative -top-6 flex-shrink-0 w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-black shadow-[0_8px_20px_rgba(0,255,194,0.4)] hover:scale-105 transition border-[6px] border-bg">
+      <span class="material-symbols-outlined text-[28px] font-bold">add</span>
+    </button>
+    <button onclick="switchTab('detail')" id="nav-detail" class="nav-item hidden">
+    </button>
+    <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex-1 flex flex-col items-center p-2 rounded-[1.5rem] transition">
+      <span class="material-symbols-outlined text-[24px] mb-1 icon text-muted">account_circle</span>
+    </button>
+  </nav>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const tgt = document.getElementById('screen-' + tabId);
+      if (tgt) tgt.classList.add('active');
+      window.scrollTo({top: 0});
+
+      document.querySelectorAll('.nav-item .icon').forEach(icon => {
+        icon.classList.remove('text-primary', 'fill');
+        icon.classList.add('text-muted');
+      });
+
+      const activeNav = document.getElementById('nav-' + tabId);
+      if(activeNav) {
+        const icon = activeNav.querySelector('.icon');
+        icon.classList.remove('text-muted');
+        icon.classList.add('text-primary', 'fill');
+      }
+    }
+    const html = document.documentElement;
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      html.classList.toggle('dark');
+      document.getElementById('theme-icon').textContent = html.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+    });
+  </script>
+</body>
+</html>

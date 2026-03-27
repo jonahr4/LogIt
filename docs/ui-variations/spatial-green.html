@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Var 6: Spatial Green</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { 
+            bg: 'var(--bg)', 
+            primary: '#00FFC2', 
+            text: 'var(--text)', 
+            muted: 'var(--muted)' 
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Manrope', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      /* Darker, cooler light mode to make white glass pop */
+      --bg: #cbd5e1; 
+      --text: #0f172a;
+      --muted: #475569;
+      --glass: rgba(255, 255, 255, 0.5);
+      --glass-hover: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.8);
+      --orb-opacity: 0.3;
+    }
+    .dark {
+      --bg: #030712;
+      --text: #f1f3fc;
+      --muted: #9ca3af;
+      --glass: rgba(20, 25, 30, 0.4);
+      --glass-hover: rgba(30, 35, 40, 0.6);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --orb-opacity: 0.15;
+    }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; position: relative; }
+    
+    /* Spatial Orbs - Mint Green Heavy */
+    .orb-1 {
+      position: fixed; top: -10vw; left: -10vw; width: 60vw; height: 60vw; 
+      border-radius: 50%; background: radial-gradient(circle, rgba(0,255,194,var(--orb-opacity)) 0%, transparent 70%); 
+      filter: blur(80px); z-index: -1; pointer-events: none;
+    }
+    .orb-2 {
+      position: fixed; bottom: 5vw; right: -20vw; width: 80vw; height: 80vw; 
+      border-radius: 50%; background: radial-gradient(circle, rgba(0,255,194,var(--orb-opacity)) 0%, transparent 60%); 
+      filter: blur(100px); z-index: -1; pointer-events: none;
+    }
+    
+    .screen { display: none; padding-bottom: 120px; }
+    .screen.active { display: block; animation: fadeIn 0.3s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+    
+    .glass-panel {
+      background: var(--glass);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      transition: transform 0.3s, background 0.3s;
+    }
+    .dark .glass-panel { box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+
+    /* For floating components inside glass */
+    .glass-floating {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+    }
+  </style>
+</head>
+<body class="transition-colors duration-500">
+  <div class="orb-1"></div>
+  <div class="orb-2"></div>
+
+  <header class="fixed top-0 w-full z-40 px-6 py-4 flex justify-between items-center bg-bg/40 backdrop-blur-3xl border-b border-[var(--glass-border)]">
+    <div class="font-display font-bold text-xl tracking-widest uppercase text-primary drop-shadow-[0_0_8px_rgba(0,255,194,0.3)]">LOG IT</div>
+    <div class="flex items-center gap-4">
+      <button id="theme-toggle" class="p-2 rounded-full glass-panel flex justify-center items-center">
+        <span class="material-symbols-outlined text-muted" id="theme-icon">light_mode</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="pt-24 px-4 max-w-lg mx-auto min-h-screen">
+    
+    <!-- Feed Screen -->
+    <div id="screen-feed" class="screen active gap-6 flex flex-col">
+      <div class="flex justify-center mb-2">
+        <div class="glass-panel rounded-full p-1.5 flex gap-1 shadow-lg">
+          <button class="px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap text-muted hover:text-text transition">Global</button>
+          <button class="px-5 py-2 rounded-full bg-primary/20 text-primary border border-primary/30 text-sm font-medium whitespace-nowrap shadow-[0_0_15px_rgba(0,255,194,0.1)]">Following</button>
+          <button class="px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap text-muted hover:text-text transition">You</button>
+        </div>
+      </div>
+
+      <!-- Spatial Green Card -->
+      <div class="glass-panel rounded-[2rem] overflow-hidden cursor-pointer hover:scale-[1.02]" onclick="switchTab('detail')">
+        <!-- Disconnected Cover Photo -->
+        <div class="p-4 pb-0">
+          <div class="relative h-48 w-full rounded-2xl overflow-hidden shadow-lg border border-white/10">
+             <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover">
+             
+             <!-- Top Right Pill directly on photo -->
+             <div class="absolute top-3 right-3 glass-floating rounded-full px-3 py-1 flex items-center gap-1.5 shadow-xl text-white mix-blend-screen bg-black/20">
+               <span class="material-symbols-outlined text-[14px]">sports_basketball</span>
+               <span class="text-[10px] font-bold uppercase tracking-widest">NBA</span>
+             </div>
+          </div>
+        </div>
+
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <img src="https://i.pravatar.cc/100?img=33" class="w-10 h-10 rounded-full border border-[var(--glass-border)] shadow-md">
+              <div>
+                <p class="font-medium text-sm text-text leading-tight">@jonah <span class="text-muted">logged this</span></p>
+                <p class="text-[10px] font-bold uppercase tracking-widest text-muted mt-0.5">2 hours ago</p>
+              </div>
+            </div>
+            <div class="flex text-primary drop-shadow-[0_0_5px_rgba(0,255,194,0.3)] gap-0.5 -space-y-px">
+              <span class="material-symbols-outlined fill text-[16px]">star</span>
+              <span class="material-symbols-outlined fill text-[16px]">star</span>
+              <span class="material-symbols-outlined fill text-[16px]">star</span>
+              <span class="material-symbols-outlined fill text-[16px]">star</span>
+              <span class="material-symbols-outlined fill text-[16px]">star</span>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-end mb-4">
+             <div>
+                <h3 class="font-display font-bold text-2xl text-text">BOS vs LAL</h3>
+                <p class="text-[10px] text-primary font-bold uppercase tracking-widest mt-1">Crypto.com Arena</p>
+             </div>
+             <span class="font-display font-extrabold text-4xl text-primary drop-shadow-[0_0_15px_rgba(0,255,194,0.2)]">W</span>
+          </div>
+
+          <p class="text-sm font-medium text-muted leading-relaxed pb-3">"Incredible game, went to OT! Tatum was on fire in the 4th quarter."</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logbook Screen -->
+    <div id="screen-logbook" class="screen flex flex-col gap-5">
+      <h2 class="font-display text-4xl font-extrabold tracking-tight pl-2">Logbook</h2>
+      
+      <div class="glass-panel p-2 rounded-2xl flex items-center focus-within:ring-1 focus-within:ring-primary/50 transition shadow-lg">
+        <span class="material-symbols-outlined text-muted ml-3 mr-2">search</span>
+        <input type="text" placeholder="Search experiences..." class="bg-transparent w-full p-2 outline-none font-medium placeholder:text-muted">
+      </div>
+      
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+        <button class="px-6 py-2.5 rounded-2xl bg-primary/20 border border-primary/30 text-primary text-xs font-bold uppercase tracking-widest shadow-lg">Sports</button>
+        <button class="px-6 py-2.5 rounded-2xl glass-panel text-muted text-xs font-bold uppercase tracking-widest hover:text-text transition">Movies</button>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div class="glass-panel rounded-[1.5rem] p-3 flex gap-4 pr-6 items-center cursor-pointer hover:scale-[1.02] transition" onclick="switchTab('detail')">
+          <div class="w-16 h-16 rounded-xl overflow-hidden relative shadow-md shrink-0 border border-white/10">
+            <div class="absolute inset-0 bg-primary/20 mix-blend-overlay"></div>
+            <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=200&auto=format&fit=crop" class="w-full h-full object-cover">
+          </div>
+          <div class="flex-1">
+            <h4 class="font-display font-bold text-lg">Lakers @ Celtics</h4>
+            <p class="text-[10px] text-muted font-bold tracking-widest uppercase mt-0.5">TD Garden • Feb 1</p>
+          </div>
+          <span class="font-display font-black text-2xl text-primary drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]">W</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Detail Screen -->
+    <div id="screen-detail" class="screen flex flex-col gap-6">
+      <button class="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-muted hover:text-text transition w-fit p-2 glass-panel rounded-full px-5" onclick="switchTab('feed')">
+        <span class="material-symbols-outlined text-[16px]">west</span> Back
+      </button>
+
+      <div class="glass-panel rounded-[2.5rem] p-4 relative overflow-hidden shadow-2xl">
+        <!-- Separate Cover Area -->
+        <div class="rounded-3xl overflow-hidden shadow-lg border border-white/10 relative">
+          <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop" class="w-full h-48 object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
+            <div class="glass-floating self-start px-3 py-1 rounded-full text-white text-[10px] font-bold uppercase tracking-widest mb-4">Final • OT</div>
+          </div>
+        </div>
+        
+        <div class="flex items-center justify-between px-6 py-6 border-b border-[var(--glass-border)]">
+          <img src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/1200px-Boston_Celtics.svg.png" class="w-16 h-16 object-contain drop-shadow-xl saturate-150">
+          <div class="flex gap-4 items-center">
+            <span class="font-display font-extrabold text-5xl">112</span>
+            <span class="text-muted text-2xl font-bold">:</span>
+            <span class="font-display font-extrabold text-5xl text-muted">108</span>
+          </div>
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/1200px-Los_Angeles_Lakers_logo.svg.png" class="w-16 h-16 object-contain drop-shadow-xl saturate-150">
+        </div>
+        
+        <div class="p-6">
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="glass-floating p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+              <span class="material-symbols-outlined text-primary mb-2">calendar_today</span>
+              <p class="text-[10px] uppercase font-bold tracking-widest text-muted">Date</p>
+              <p class="font-bold text-sm mt-1">Mar 15, 2026</p>
+            </div>
+            <div class="glass-floating p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+              <span class="material-symbols-outlined text-primary mb-2">location_on</span>
+              <p class="text-[10px] uppercase font-bold tracking-widest text-muted">Venue</p>
+              <p class="font-bold text-sm mt-1 truncate w-full px-2">Crypto Arena</p>
+            </div>
+          </div>
+          
+          <h4 class="font-display font-bold text-lg mb-2">My Notes</h4>
+          <p class="text-sm text-balance text-muted leading-relaxed font-medium">Incredible game, went to OT! Tatum was on fire in the 4th. Sat in section 301, great view of the court. Unbelievable energy in the stadium today.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Screen -->
+    <div id="screen-add" class="screen flex flex-col gap-6">
+      <h2 class="font-display text-4xl font-extrabold tracking-tight pl-2">Log New</h2>
+      <div class="glass-panel rounded-2xl p-2 relative shadow-xl flex items-center pr-4">
+        <input type="text" placeholder="Search team, game, or event..." class="w-full bg-transparent p-4 outline-none font-medium">
+        <span class="material-symbols-outlined text-muted">search</span>
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div id="screen-profile" class="screen flex flex-col gap-6">
+      <div class="glass-panel p-8 rounded-[2rem] flex flex-col items-center mt-4">
+        <img src="https://i.pravatar.cc/200?img=33" class="w-32 h-32 rounded-full border-4 border-primary/50 shadow-[0_0_20px_rgba(0,255,194,0.3)] mb-4 p-1 object-cover">
+        <h2 class="font-display text-3xl font-extrabold tracking-tight">Jonah Rothman</h2>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-muted mt-2 glass-floating px-4 py-1.5 rounded-full">@jonah</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="col-span-2 glass-panel p-6 rounded-3xl flex items-center justify-between">
+           <div>
+             <p class="text-[10px] font-bold uppercase tracking-widest text-muted mb-1">Lifetime Experiences</p>
+             <p class="font-display font-black text-6xl text-text">124</p>
+           </div>
+           <span class="material-symbols-outlined text-[80px] text-primary drop-shadow-[0_0_20px_rgba(0,255,194,0.2)]">history_edu</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm glass-panel rounded-full px-2 py-2 flex justify-between items-center z-50 shadow-2xl border border-white/20">
+    <button onclick="switchTab('feed')" id="nav-feed" class="nav-item flex-1 flex flex-col items-center p-3 rounded-full transition active">
+      <span class="material-symbols-outlined text-2xl icon text-primary fill drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]">space_dashboard</span>
+    </button>
+    <button onclick="switchTab('logbook')" id="nav-logbook" class="nav-item flex-1 flex flex-col items-center p-3 rounded-full transition">
+      <span class="material-symbols-outlined text-2xl icon text-muted hover:text-text transition">view_agenda</span>
+    </button>
+    
+    <button onclick="switchTab('add')" id="nav-add" class="relative -top-5 flex-shrink-0 w-16 h-16 bg-primary rounded-full flex items-center justify-center text-black shadow-[0_10px_30px_rgba(0,255,194,0.5)] hover:scale-105 hover:bg-white transition border-4 border-bg">
+      <span class="material-symbols-outlined text-3xl font-bold">add</span>
+    </button>
+
+    <button onclick="switchTab('detail')" id="nav-detail" class="nav-item flex-1 hidden">
+    </button>
+    
+    <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex-1 flex flex-col items-center p-3 rounded-full transition">
+      <span class="material-symbols-outlined text-2xl icon text-muted hover:text-text transition">account_circle</span>
+    </button>
+  </nav>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      const tgt = document.getElementById('screen-' + tabId);
+      if (tgt) tgt.classList.add('active');
+      window.scrollTo({top: 0});
+
+      document.querySelectorAll('.nav-item .icon').forEach(icon => {
+        icon.classList.remove('text-primary', 'fill', 'drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]');
+        icon.classList.add('text-muted');
+      });
+
+      const activeNav = document.getElementById('nav-' + tabId);
+      if(activeNav) {
+        const icon = activeNav.querySelector('.icon');
+        if(icon) {
+          icon.classList.remove('text-muted');
+          icon.classList.add('text-primary', 'fill', 'drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]');
+        }
+      }
+    }
+    const html = document.documentElement;
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      html.classList.toggle('dark');
+      document.getElementById('theme-icon').textContent = html.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+    });
+  </script>
+</body>
+</html>

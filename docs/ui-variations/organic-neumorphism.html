@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Var 5: Organic Neumorphism</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { 
+            bg: 'var(--bg)', 
+            primary: '#00FFC2', 
+            text: 'var(--text)', 
+            muted: 'var(--muted)' 
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #e0e5ec;
+      --text: #2d3748;
+      --muted: #a0aec0;
+      --shadow-light: #ffffff;
+      --shadow-dark: #a3b1c6;
+    }
+    .dark {
+      --bg: #1a1e23;
+      --text: #e2e8f0;
+      --muted: #718096;
+      --shadow-light: #24292e;
+      --shadow-dark: #101318;
+    }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    
+    body { background-color: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+    
+    /* Neumorphism Extrusions */
+    .neu-convex {
+      border-radius: 30px;
+      background: var(--bg);
+      box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
+      transition: all 0.3s ease;
+    }
+    .neu-concave {
+      border-radius: 30px;
+      background: var(--bg);
+      box-shadow: inset 8px 8px 16px var(--shadow-dark), inset -8px -8px 16px var(--shadow-light);
+      transition: all 0.3s ease;
+    }
+    
+    .neu-button {
+      border-radius: 99px;
+      background: var(--bg);
+      box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+      transition: all 0.2s ease;
+    }
+    .neu-button:active, .neu-button.active {
+      box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+      color: var(--primary);
+    }
+    
+    .neu-button-primary {
+      border-radius: 99px;
+      background: linear-gradient(145deg, #00e6af, #00ffc2);
+      box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light), 0 0 15px rgba(0,255,194,0.3);
+      color: #000;
+      transition: all 0.2s ease;
+    }
+    .neu-button-primary:active {
+      box-shadow: inset 4px 4px 8px rgba(0,0,0,0.2), inset -4px -4px 8px rgba(255,255,255,0.4);
+    }
+
+    .screen { display: none; padding-bottom: 120px; }
+    .screen.active { display: block; animation: softPop 0.4s ease forwards; }
+    @keyframes softPop { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body class="transition-colors duration-300 font-sans">
+  
+  <header class="fixed top-0 w-full z-40 px-6 py-6 flex justify-between items-center transition-colors">
+    <div class="font-bold text-xl tracking-widest text-primary px-4 py-2 neu-concave rounded-full text-sm">
+      LOG IT
+    </div>
+    <button id="theme-toggle" class="p-3 neu-button flex items-center justify-center w-12 h-12">
+      <span class="material-symbols-outlined text-muted" id="theme-icon">light_mode</span>
+    </button>
+  </header>
+
+  <main class="pt-28 px-6 max-w-lg mx-auto min-h-screen">
+    
+    <!-- Feed Screen -->
+    <div id="screen-feed" class="screen active flex flex-col gap-8">
+      <div class="flex gap-4 p-2 neu-concave rounded-full w-full justify-between">
+        <button class="flex-1 py-2 text-sm font-semibold text-muted text-center rounded-full hover:text-text transition">Global</button>
+        <button class="flex-1 py-2 text-sm font-semibold text-primary text-center neu-convex rounded-full">Me</button>
+        <button class="flex-1 py-2 text-sm font-semibold text-muted text-center rounded-full hover:text-text transition">Crew</button>
+      </div>
+
+      <!-- Neu Card -->
+      <div class="neu-convex p-6 cursor-pointer" onclick="switchTab('detail')">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-12 h-12 rounded-full neu-concave p-1">
+             <img src="https://i.pravatar.cc/100?img=33" class="w-full h-full rounded-full object-cover">
+          </div>
+          <div>
+            <p class="font-bold">Jonah</p>
+            <p class="text-[10px] text-muted uppercase font-bold tracking-widest mt-1">2h ago</p>
+          </div>
+        </div>
+        
+        <div class="neu-concave p-5 rounded-2xl flex flex-col items-center text-center">
+          <div class="w-12 h-12 neu-convex rounded-full flex items-center justify-center mb-4 text-primary">
+            <span class="material-symbols-outlined fill">sports_basketball</span>
+          </div>
+          <h3 class="font-bold text-xl tracking-tight mb-2">Celtics vs Lakers</h3>
+          <p class="font-bold text-4xl text-primary drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]">112 - 108</p>
+        </div>
+        
+        <div class="flex items-center gap-2 mt-6 justify-center">
+           <span class="material-symbols-outlined text-muted text-sm">location_on</span>
+           <span class="text-xs font-bold text-muted uppercase tracking-widest">Crypto.com Arena</span>
+        </div>
+        <p class="mt-4 text-sm text-center font-medium leading-relaxed px-4 text-text/80">
+          "Incredible game, went to OT! Tatum was on fire."
+        </p>
+      </div>
+    </div>
+
+    <!-- Logbook Screen -->
+    <div id="screen-logbook" class="screen flex flex-col gap-8">
+      <div class="text-center mb-2">
+        <h2 class="text-3xl font-black uppercase tracking-tight">Logbook</h2>
+        <div class="w-12 h-1 bg-primary mx-auto mt-2 rounded-full neu-convex shadow-[0_0_8px_rgba(0,255,194,0.5)]"></div>
+      </div>
+      
+      <div class="neu-concave p-2 rounded-full flex items-center pr-4">
+        <input type="text" placeholder="Search experiences..." class="bg-transparent outline-none w-full text-sm font-bold placeholder:text-muted py-3 px-4">
+        <span class="material-symbols-outlined text-muted">search</span>
+      </div>
+      
+      <div class="flex gap-4 overflow-x-auto no-scrollbar pb-4 pt-2 px-2">
+        <button class="px-6 py-3 neu-convex rounded-full text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-primary shadow-[0_0_5px_rgba(0,255,194,0.8)]"></span> Sports
+        </button>
+        <button class="px-6 py-3 neu-button rounded-full text-xs font-bold uppercase tracking-widest text-muted">Movies</button>
+        <button class="px-6 py-3 neu-button rounded-full text-xs font-bold uppercase tracking-widest text-muted">Music</button>
+      </div>
+
+      <div class="flex flex-col gap-6">
+        <div class="neu-convex p-4 flex items-center justify-between cursor-pointer group hover:scale-[1.02] transition" onclick="switchTab('detail')">
+          <div class="w-16 h-16 neu-concave rounded-2xl flex items-center justify-center text-primary">
+             <span class="material-symbols-outlined fill text-2xl">sports_basketball</span>
+          </div>
+          <div class="flex-1 px-4">
+            <h4 class="font-bold text-lg">Lakers @ Celtics</h4>
+            <p class="text-[10px] text-muted uppercase font-bold tracking-widest mt-1">TD Garden</p>
+          </div>
+          <div class="w-12 h-12 neu-convex rounded-full flex items-center justify-center font-black text-primary text-xl">
+             W
+          </div>
+        </div>
+        
+        <div class="neu-convex p-4 flex items-center justify-between cursor-pointer group hover:scale-[1.02] transition">
+          <div class="w-16 h-16 neu-concave rounded-2xl flex items-center justify-center text-blue-400">
+             <span class="material-symbols-outlined fill text-2xl">movie</span>
+          </div>
+          <div class="flex-1 px-4">
+            <h4 class="font-bold text-lg">Dune: Part Two</h4>
+            <p class="text-[10px] text-muted uppercase font-bold tracking-widest mt-1">AMC Lincoln</p>
+          </div>
+          <div class="flex flex-col items-end gap-1 px-2">
+            <span class="material-symbols-outlined text-yellow-400 fill text-lg">star</span>
+            <span class="font-bold text-xs">5/5</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Detail Screen -->
+    <div id="screen-detail" class="screen flex flex-col gap-8">
+      <button class="neu-button p-3 w-12 h-12 rounded-full flex items-center justify-center text-muted" onclick="switchTab('feed')">
+        <span class="material-symbols-outlined text-sm">arrow_back_ios_new</span>
+      </button>
+
+      <div class="neu-convex p-8 text-center mt-2">
+        <div class="inline-block px-4 py-2 neu-concave rounded-full text-[10px] font-bold uppercase tracking-widest text-primary mb-8 shadow-[inset_0_0_10px_rgba(0,255,194,0.1)]">
+          FinalOT
+        </div>
+        
+        <div class="flex justify-center items-center gap-6 mb-8">
+           <div class="w-20 h-20 neu-concave rounded-full p-3 flex items-center justify-center">
+             <img src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/1200px-Boston_Celtics.svg.png" class="w-full h-full object-contain">
+           </div>
+           <span class="text-xl font-black text-muted">VS</span>
+           <div class="w-20 h-20 neu-concave rounded-full p-3 flex items-center justify-center">
+             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/1200px-Los_Angeles_Lakers_logo.svg.png" class="w-full h-full object-contain">
+           </div>
+        </div>
+        
+        <div class="flex justify-center items-center gap-4">
+           <div class="neu-convex w-24 h-24 rounded-3xl flex items-center justify-center text-4xl font-black">112</div>
+           <div class="neu-concave w-24 h-24 rounded-3xl flex items-center justify-center text-4xl font-black text-muted">108</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6">
+        <div class="neu-concave p-5 rounded-2xl flex flex-col items-center justify-center text-center">
+          <span class="material-symbols-outlined text-muted mb-2 text-xl">calendar_month</span>
+          <p class="font-bold text-sm">15 Mar 2026</p>
+        </div>
+        <div class="neu-concave p-5 rounded-2xl flex flex-col items-center justify-center text-center">
+          <span class="material-symbols-outlined text-muted mb-2 text-xl">stadium</span>
+          <p class="font-bold text-sm">Crypto Arena</p>
+        </div>
+      </div>
+
+      <div class="neu-convex p-6">
+        <h4 class="font-black uppercase tracking-tight mb-4 text-center">Note Log</h4>
+        <div class="neu-concave p-4 text-sm font-medium leading-relaxed text-muted rounded-xl text-center">
+          "Incredible game, went to OT! Tatum was on fire in the 4th. Sat in section 301, great view. 10/10."
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Log Screen -->
+    <div id="screen-add" class="screen flex flex-col gap-8">
+      <div class="text-center mb-4">
+        <h2 class="text-3xl font-black uppercase tracking-tight">Create Log</h2>
+        <div class="w-12 h-1 bg-primary mx-auto mt-2 rounded-full neu-convex shadow-[0_0_8px_rgba(0,255,194,0.5)]"></div>
+      </div>
+      
+      <div class="neu-concave p-3 rounded-full flex items-center px-6">
+        <input type="text" placeholder="Search Database..." class="w-full bg-transparent outline-none py-3 text-center font-bold uppercase tracking-wider placeholder:text-muted/50 text-primary">
+      </div>
+
+      <div class="mt-4">
+        <h3 class="text-[10px] font-black uppercase tracking-widest text-muted mb-4 pl-4">History</h3>
+        <div class="neu-convex p-5 flex justify-between items-center group cursor-pointer hover:scale-[1.02] transition">
+           <div class="flex gap-4 items-center">
+             <div class="w-10 h-10 neu-concave rounded-full flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined text-sm">history</span>
+             </div>
+             <div>
+               <h4 class="font-bold">Knicks vs Celtics</h4>
+               <p class="text-[10px] text-muted uppercase font-bold tracking-widest mt-1">Oct 25, MSG</p>
+             </div>
+           </div>
+           <div class="w-10 h-10 neu-convex rounded-full flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-sm">add</span>
+           </div>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-center">
+         <button class="neu-button-primary w-40 h-40 flex flex-col items-center justify-center gap-2 group">
+           <span class="material-symbols-outlined text-4xl group-hover:scale-125 transition">edit</span>
+           <span class="font-black uppercase tracking-widest text-xs">Manual Entry</span>
+         </button>
+      </div>
+    </div>
+
+    <!-- Profile Screen -->
+    <div id="screen-profile" class="screen flex flex-col gap-10">
+      <div class="flex flex-col items-center mt-6 relative">
+        <div class="w-36 h-36 neu-convex rounded-full flex items-center justify-center p-2 mb-6">
+           <div class="w-full h-full neu-concave rounded-full p-2">
+             <img src="https://i.pravatar.cc/200?img=33" class="w-full h-full rounded-full object-cover">
+           </div>
+        </div>
+        <button class="neu-convex w-12 h-12 rounded-full absolute top-[100px] right-[calc(50%-75px)] flex items-center justify-center text-primary z-10">
+          <span class="material-symbols-outlined text-sm">edit</span>
+        </button>
+        <h2 class="font-black text-2xl uppercase tracking-tighter">Jonah Rothman</h2>
+        <p class="font-bold text-xs text-muted mt-1 uppercase tracking-widest">@jonah</p>
+      </div>
+
+      <div class="neu-concave p-4 flex justify-between rounded-[30px] px-8 py-6">
+         <div class="text-center">
+           <p class="font-black text-3xl text-primary drop-shadow-[0_0_8px_rgba(0,255,194,0.3)]">124</p>
+           <p class="text-[10px] font-bold text-muted uppercase tracking-widest mt-1">Logs</p>
+         </div>
+         <div class="w-px h-12 bg-muted/20 my-auto"></div>
+         <div class="text-center">
+           <p class="font-black text-3xl">42</p>
+           <p class="text-[10px] font-bold text-muted uppercase tracking-widest mt-1">Spots</p>
+         </div>
+         <div class="w-px h-12 bg-muted/20 my-auto"></div>
+         <div class="text-center">
+           <p class="font-black text-3xl">18</p>
+           <p class="text-[10px] font-bold text-muted uppercase tracking-widest mt-1">Teams</p>
+         </div>
+      </div>
+      
+      <div class="flex flex-col gap-6 px-2">
+         <button class="flex items-center justify-between group">
+           <span class="font-bold uppercase tracking-widest text-sm text-muted group-hover:text-text transition">Application Settings</span>
+           <div class="w-10 h-10 neu-convex rounded-full flex items-center justify-center text-muted group-hover:text-text transition">
+             <span class="material-symbols-outlined text-sm">settings</span>
+           </div>
+         </button>
+         <button class="flex items-center justify-between group">
+           <span class="font-bold uppercase tracking-widest text-sm text-muted group-hover:text-text transition">Friend Network (12)</span>
+           <div class="w-10 h-10 neu-convex rounded-full flex items-center justify-center text-muted group-hover:text-text transition">
+             <span class="material-symbols-outlined text-sm">group</span>
+           </div>
+         </button>
+      </div>
+    </div>
+  </main>
+
+  <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-6 px-8 py-4 neu-convex rounded-full z-50">
+    <button onclick="switchTab('feed')" id="nav-feed" class="nav-item w-12 h-12 rounded-full neu-button flex items-center justify-center active text-primary">
+      <span class="material-symbols-outlined text-xl icon fill">home</span>
+    </button>
+    <button onclick="switchTab('logbook')" id="nav-logbook" class="nav-item w-12 h-12 rounded-full neu-button flex items-center justify-center text-muted">
+      <span class="material-symbols-outlined text-xl icon">book</span>
+    </button>
+    
+    <button onclick="switchTab('add')" id="nav-add" class="w-16 h-16 rounded-full neu-button-primary flex items-center justify-center -translate-y-4 hover:scale-105 transition">
+      <span class="material-symbols-outlined text-3xl font-bold">add</span>
+    </button>
+
+    <button onclick="switchTab('detail')" id="nav-detail" class="nav-item hidden">
+    </button>
+    
+    <button onclick="switchTab('profile')" id="nav-profile" class="nav-item w-12 h-12 rounded-full neu-button flex items-center justify-center text-muted">
+      <span class="material-symbols-outlined text-xl icon">person</span>
+    </button>
+  </nav>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + tabId).classList.add('active');
+      window.scrollTo({top: 0});
+
+      document.querySelectorAll('.nav-item').forEach(item => {
+        if(item.id === 'nav-detail') return;
+        const icon = item.querySelector('.icon');
+        if(icon) {
+          icon.classList.remove('fill');
+        }
+        item.classList.remove('active', 'text-primary');
+        item.classList.add('text-muted');
+      });
+
+      const activeNav = document.getElementById('nav-' + tabId);
+      if(activeNav) {
+        const icon = activeNav.querySelector('.icon');
+        if(icon) {
+          icon.classList.add('fill');
+        }
+        activeNav.classList.remove('text-muted');
+        activeNav.classList.add('active', 'text-primary');
+      }
+    }
+
+    const html = document.documentElement;
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      html.classList.toggle('dark');
+      document.getElementById('theme-icon').textContent = html.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+    });
+  </script>
+</body>
+</html>

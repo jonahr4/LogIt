@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogIt UI Variations Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { background: '#0a0e14', surface: '#1b2028', primary: '#00FFC2' },
+          fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Manrope', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-background text-white h-screen flex flex-col overflow-hidden font-sans">
+  <header class="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-surface z-10">
+    <div class="flex items-center gap-4">
+      <h1 class="font-display font-bold text-xl tracking-widest uppercase text-primary drop-shadow-[0_0_8px_rgba(0,255,194,0.4)]">LOG IT</h1>
+      <div class="h-4 w-[1px] bg-white/20 hidden sm:block"></div>
+      <span class="text-sm text-gray-400 hidden sm:block">UI Design Explorations</span>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="loadVar('neon-depth.html')" id="btn-1" class="var-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-primary/20 text-primary">1. Neon Depth</button>
+      <button onclick="loadVar('spatial-glass.html')" id="btn-2" class="var-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 text-gray-400">2. Spatial Glass</button>
+      <button onclick="loadVar('brutal-glow.html')" id="btn-3" class="var-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 text-gray-400">3. Brutal Glow</button>
+      <button onclick="loadVar('glass-neon-hybrid.html')" id="btn-4" class="var-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 text-gray-400">4. Glass Neon Hybrid</button>
+      <button onclick="loadVar('modern-tickets.html')" id="btn-5" class="var-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 text-gray-400">5. Modern Tickets</button>
+      <button onclick="loadVar('spatial-green.html')" id="btn-6" class="var-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 text-gray-400">6. Spatial Green</button>
+      <button onclick="loadVar('spatial-green-v2.html')" id="btn-7" class="var-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 text-gray-400">7. Spatial Green v2</button>
+    </div>
+  </header>
+  <main class="flex-1 bg-black relative">
+    <iframe id="viewer" src="neon-depth.html" class="w-full h-full border-none"></iframe>
+  </main>
+  
+  <script>
+    function loadVar(url) {
+      document.getElementById('viewer').src = url;
+      document.querySelectorAll('.var-btn').forEach(btn => {
+        btn.classList.remove('bg-primary/20', 'text-primary');
+        btn.classList.add('text-gray-400', 'hover:bg-white/5');
+      });
+      event.currentTarget.classList.remove('text-gray-400', 'hover:bg-white/5');
+      event.currentTarget.classList.add('bg-primary/20', 'text-primary');
+    }
+  </script>
+</body>
+</html>
