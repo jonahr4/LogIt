@@ -1,134 +1,136 @@
 /**
- * Log It — Tabs Layout
- * Main tab bar: Feed, Logbook, Add Log (+), Profile
+ * LogIt — Tabs Layout
+ * Floating pill-shaped bottom nav bar matching spatial-green-v2
+ * Custom tab bar: Home, Logbook, + (add), Profile
  */
 
+import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import { Colors } from '@/constants/colors';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Shadows } from '@/constants/colors';
 
-function TabBarIcon({ icon, label, focused }: { icon: string; label: string; focused: boolean }) {
-  return (
-    <View style={styles.tabItem}>
-      <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{icon}</Text>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
-      {focused && <View style={styles.activeGlow} />}
-    </View>
-  );
-}
+type TabDef = {
+  name: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  iconFilled: keyof typeof Ionicons.glyphMap;
+  isAdd?: boolean;
+};
+
+const TABS: TabDef[] = [
+  { name: 'feed', icon: 'home-outline', iconFilled: 'home' },
+  { name: 'logbook', icon: 'book-outline', iconFilled: 'book' },
+  { name: 'add-log', icon: 'add', iconFilled: 'add', isAdd: true },
+  { name: 'profile', icon: 'person-outline', iconFilled: 'person' },
+];
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomOffset = Math.max(insets.bottom, 12);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
         tabBarShowLabel: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textMuted,
+        tabBarStyle: { display: 'none' },
       }}
+      tabBar={({ state, navigation }) => (
+        <View style={[styles.navOuter, { bottom: bottomOffset + 8 }]}>
+          <View style={styles.navBar}>
+            {TABS.map((tab, index) => {
+              const isFocused = state.index === index;
+
+              if (tab.isAdd) {
+                return (
+                  <React.Fragment key={tab.name}>
+                    <View style={styles.divider} />
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate(tab.name)}
+                      activeOpacity={0.85}
+                      style={[styles.addButton, Shadows.glowPrimary]}
+                    >
+                      <Ionicons name="add" size={28} color={Colors.onPrimary} />
+                    </TouchableOpacity>
+                    <View style={styles.divider} />
+                  </React.Fragment>
+                );
+              }
+
+              return (
+                <TouchableOpacity
+                  key={tab.name}
+                  onPress={() => navigation.navigate(tab.name)}
+                  activeOpacity={0.7}
+                  style={[
+                    styles.navItem,
+                    isFocused && styles.navItemActive,
+                  ]}
+                >
+                  <Ionicons
+                    name={isFocused ? tab.iconFilled : tab.icon}
+                    size={24}
+                    color={isFocused ? Colors.text : Colors.textMuted}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
     >
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: 'Feed',
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon icon="🏠" label="Feed" focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="logbook"
-        options={{
-          title: 'Logbook',
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon icon="📖" label="Logbook" focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="add-log"
-        options={{
-          title: 'Log',
-          tabBarIcon: ({ focused }) => (
-            <View style={styles.addButton}>
-              <Text style={styles.addButtonIcon}>＋</Text>
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon icon="👤" label="Profile" focused={focused} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="feed" options={{ title: 'Feed' }} />
+      <Tabs.Screen name="logbook" options={{ title: 'Logbook' }} />
+      <Tabs.Screen name="add-log" options={{ title: 'Log' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: Colors.surfaceContainerHigh,
-    borderTopWidth: 1,
-    borderTopColor: Colors.outline,
-    height: Platform.OS === 'ios' ? 88 : 64,
-    paddingTop: 8,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  navOuter: {
     position: 'absolute',
-    elevation: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 50,
   },
-  tabItem: {
+  navBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.glass,
+    borderRadius: 100,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    ...Shadows.card,
+    minWidth: 280,
+  },
+  navItem: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    paddingTop: 4,
   },
-  tabIcon: {
-    fontSize: 22,
-    marginBottom: 2,
+  navItemActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  tabIconActive: {
-    fontSize: 24,
-  },
-  tabLabel: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    fontWeight: '500',
-  },
-  tabLabelActive: {
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  activeGlow: {
-    position: 'absolute',
-    top: -8,
-    width: 40,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: Colors.brandGlow,
+  divider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    marginHorizontal: 2,
   },
   addButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: Colors.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    shadowColor: Colors.brandGlow,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  addButtonIcon: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: Colors.onPrimary,
   },
 });

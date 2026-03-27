@@ -1,7 +1,7 @@
-# Log It — UI Design & User Flows
+# LogIt — UI Design & User Flows
 
 > **Last updated:** 2026-03-27
-> Updated: Adopted spatial-green-v2 design language across auth/onboarding. Updated color palette (bg #030712, glass tokens), replaced emojis with Ionicons, added pulsing progress bars and circle-in-circle done screen motif.
+> Updated: Built out all tab screens (Feed, Logbook, Add Log, Profile) and floating pill nav bar to match spatial-green-v2. Added shared components (GlassPanel, OrbBackground, TabPill). Renamed branding to "LogIt".
 
 ## Navigation Structure
 
@@ -262,12 +262,14 @@ Interactive HTML mockups live in [`docs/ui-reference/`](./ui-reference/). Open i
 - Auth icons: `logo-google`, `logo-apple`
 
 ### Component Patterns
+- **GlassPanel** (`components/ui/GlassPanel.tsx`) — Reusable glass card with `Colors.glass` bg + border
+- **OrbBackground** (`components/ui/OrbBackground.tsx`) — Fixed atmospheric green orbs behind content
+- **TabPill** (`components/ui/TabPill.tsx`) — Segmented pill selector (used in Feed for Global/Following/You)
 - **Cards** — Primary UI pattern for logs and events
 - **Glass Cards** — Semi-transparent with backdrop blur for selected/featured items
 - **Chips** — Rounded-full filter buttons with icons
+- **Floating Pill Nav Bar** — Glass pill bottom nav, Ionicons, raised + button with glow, divider lines, no labels
 - **Bottom Sheet** — For filter panels, quick actions
-- **Bottom Nav** — Rounded top corners, backdrop blur, glow on active item
-- **Floating Action Button** — Gradient primary, visible on mobile only
 - **Skeleton Loading** — For feed and logbook
 - **Avatar stacks** — Overlapping `-space-x-4` with border rings
 

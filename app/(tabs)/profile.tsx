@@ -1,62 +1,146 @@
 /**
- * Log It — Profile Screen (placeholder for Phase 1)
+ * LogIt — Profile Screen
+ * Spatial Green v2: avatar with glow, stats bento, settings menu
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
-import { Button } from '@/components/ui/Button';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Shadows } from '@/constants/colors';
+import { Typography, FontFamily } from '@/constants/typography';
 import { useAuthStore } from '@/store/authStore';
+import { OrbBackground } from '@/components/ui/OrbBackground';
+import { GlassPanel } from '@/components/ui/GlassPanel';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
 
+  const displayName = user?.display_name || user?.first_name || 'User';
+  const username = user?.username || 'username';
+  const initials = displayName.charAt(0).toUpperCase();
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Profile</Text>
-      </View>
+    <View style={styles.container}>
+      <OrbBackground />
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Profile card */}
+          <GlassPanel borderRadius={32} style={styles.profileCard}>
+            {/* Avatar */}
+            <View style={styles.avatarWrap}>
+              {user?.avatar_url ? (
+                <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarInitials}>{initials}</Text>
+                </View>
+              )}
+              <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
+                <Ionicons name="pencil" size={16} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
 
-      <View style={styles.profileCard}>
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>
-            {user?.display_name?.charAt(0).toUpperCase() || '?'}
-          </Text>
-        </View>
-        <Text style={styles.displayName}>{user?.display_name || 'User'}</Text>
-        <Text style={styles.username}>@{user?.username || 'username'}</Text>
-        {user?.bio ? <Text style={styles.bio}>{user.bio}</Text> : null}
-      </View>
+            <Text style={styles.displayName}>{displayName}</Text>
 
-      {/* Quick stats */}
-      <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>0</Text>
-          <Text style={styles.statLabel}>Events</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>0</Text>
-          <Text style={styles.statLabel}>Venues</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>0</Text>
-          <Text style={styles.statLabel}>Friends</Text>
-        </View>
-      </View>
+            {/* Username pill */}
+            <View style={styles.usernamePill}>
+              <Text style={styles.usernameText}>@{username}</Text>
+            </View>
+          </GlassPanel>
 
-      <View style={styles.footer}>
-        <Button
-          title="Sign Out"
-          onPress={signOut}
-          variant="danger"
-          size="sm"
-        />
-      </View>
-    </SafeAreaView>
+          {/* Stats bento */}
+          <View style={styles.statsGrid}>
+            {/* Total logs — full width */}
+            <GlassPanel borderRadius={32} style={styles.totalLogCard}>
+              <View style={styles.totalLogOverlay} />
+              <Text style={styles.statLabel}>Total Logs</Text>
+              <View style={styles.totalLogRow}>
+                <Text style={styles.totalLogValue}>0</Text>
+                <Ionicons
+                  name="pricetag"
+                  size={56}
+                  color={Colors.primaryContainer}
+                  style={styles.totalLogIcon}
+                />
+              </View>
+            </GlassPanel>
+
+            {/* Two column stats */}
+            <View style={styles.statsRow}>
+              <GlassPanel borderRadius={28} style={styles.statCard}>
+                <Text style={styles.statValue}>0</Text>
+                <View style={styles.statBadge}>
+                  <Ionicons name="business-outline" size={11} color={Colors.primaryContainer} />
+                  <Text style={styles.statBadgeText}>Venues</Text>
+                </View>
+              </GlassPanel>
+
+              <GlassPanel borderRadius={28} style={styles.statCard}>
+                <Text style={styles.statValue}>0</Text>
+                <View style={styles.statBadge}>
+                  <Ionicons name="flag-outline" size={11} color={Colors.primaryContainer} />
+                  <Text style={styles.statBadgeText}>Teams</Text>
+                </View>
+              </GlassPanel>
+            </View>
+          </View>
+
+          {/* Settings menu */}
+          <GlassPanel borderRadius={28} style={styles.settingsMenu}>
+            {/* App Settings */}
+            <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
+              <View style={styles.menuRowLeft}>
+                <View style={styles.menuIconWrap}>
+                  <Ionicons name="settings-outline" size={20} color={Colors.textMuted} />
+                </View>
+                <Text style={styles.menuRowText}>App Settings</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
+            {/* Friends */}
+            <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
+              <View style={styles.menuRowLeft}>
+                <View style={styles.menuIconWrap}>
+                  <Ionicons name="people-outline" size={20} color={Colors.textMuted} />
+                </View>
+                <Text style={styles.menuRowText}>Friends (0)</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
+            {/* Log Out */}
+            <TouchableOpacity
+              style={styles.menuRow}
+              activeOpacity={0.7}
+              onPress={signOut}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={[styles.menuIconWrap, styles.menuIconDanger]}>
+                  <Ionicons name="log-out-outline" size={20} color={Colors.error} />
+                </View>
+                <Text style={[styles.menuRowText, styles.menuRowDanger]}>Log Out</Text>
+              </View>
+            </TouchableOpacity>
+          </GlassPanel>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -65,83 +149,201 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    paddingHorizontal: 28,
-    paddingTop: 16,
-    paddingBottom: 12,
+  safeArea: {
+    flex: 1,
   },
-  title: {
-    ...Typography.h2,
-    color: Colors.text,
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 140,
+    gap: 16,
+    paddingTop: 24,
   },
+
+  // Profile card
   profileCard: {
+    padding: 32,
     alignItems: 'center',
-    paddingVertical: 32,
   },
-  avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.primaryContainer,
+  avatarWrap: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  avatarImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: 'rgba(0, 255, 194, 0.5)',
+    ...Shadows.glowPrimary,
+  },
+  avatarFallback: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: 'rgba(0, 255, 194, 0.5)',
+    backgroundColor: Colors.surfaceContainerHigh,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
-    borderWidth: 3,
-    borderColor: Colors.primary,
+    ...Shadows.glowPrimary,
   },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.onPrimary,
+  avatarInitials: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 44,
+    color: Colors.primary,
+  },
+  editButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: -8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.card,
   },
   displayName: {
-    ...Typography.h3,
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 28,
+    letterSpacing: -0.5,
     color: Colors.text,
-    marginBottom: 4,
-  },
-  username: {
-    ...Typography.body,
-    color: Colors.textSecondary,
     marginBottom: 8,
   },
-  bio: {
-    ...Typography.body,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: 40,
+  usernamePill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  usernameText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: Colors.textMuted,
+  },
+
+  // Stats bento
+  statsGrid: {
+    gap: 12,
+  },
+  totalLogCard: {
+    padding: 24,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  totalLogOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
+  statLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: Colors.textMuted,
+    marginBottom: 4,
+  },
+  totalLogRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  totalLogValue: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 72,
+    color: Colors.text,
+    lineHeight: 80,
+  },
+  totalLogIcon: {
+    marginTop: -8,
+    textShadowColor: 'rgba(0, 255, 194, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
   },
   statsRow: {
     flexDirection: 'row',
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surfaceContainerHigh,
-    marginHorizontal: 28,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: Colors.outline,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
+    gap: 12,
   },
   statValue: {
-    ...Typography.h3,
-    color: Colors.primary,
-    marginBottom: 4,
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 40,
+    color: Colors.text,
   },
-  statLabel: {
-    ...Typography.caption,
-    color: Colors.textMuted,
+  statBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
   },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: Colors.outline,
+  statBadgeText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: Colors.text,
   },
-  footer: {
-    paddingHorizontal: 28,
-    marginTop: 'auto',
-    paddingBottom: 120,
+
+  // Settings menu
+  settingsMenu: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+  },
+  menuRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  menuIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuIconDanger: {
+    backgroundColor: 'rgba(255, 113, 108, 0.1)',
+    borderColor: 'rgba(255, 113, 108, 0.2)',
+  },
+  menuRowText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.text,
+    letterSpacing: 0.3,
+  },
+  menuRowDanger: {
+    color: Colors.error,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: Colors.glassBorder,
+    marginHorizontal: 0,
   },
 });
