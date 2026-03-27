@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,21 +13,24 @@ import { Typography, FontFamily } from '@/constants/typography';
 import { Button } from '@/components/ui/Button';
 
 export default function WelcomeScreen() {
+  const { width } = useWindowDimensions();
+  const isWide = width > 600;
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Spatial orbs — matching spatial-green-v2 */}
       <View style={styles.orb1} />
       <View style={styles.orb2} />
 
-      <View style={styles.content}>
+      <View style={[styles.content, isWide && styles.contentWide]}>
         {/* Logo area */}
         <View style={styles.logoArea}>
-          <Text style={styles.logoText}>LOG IT</Text>
-          <Text style={styles.tagline}>Log the events you live.</Text>
+          <Text style={[styles.logoText, isWide && { fontSize: 52 }]}>LOG IT</Text>
+          <Text style={[styles.tagline, isWide && { fontSize: 18 }]}>Log the events you live.</Text>
         </View>
 
         {/* Feature highlights — glass cards */}
-        <View style={styles.features}>
+        <View style={[styles.features, isWide && styles.featuresWide]}>
           <FeatureItem
             iconName="ticket-outline"
             text="Track every event you attend"
@@ -43,7 +46,7 @@ export default function WelcomeScreen() {
         </View>
 
         {/* CTAs */}
-        <View style={styles.ctas}>
+        <View style={[styles.ctas, isWide && styles.ctasWide]}>
           <Button
             title="Get Started"
             onPress={() => router.push('/(auth)/sign-up')}
@@ -82,6 +85,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     justifyContent: 'space-between',
     paddingBottom: 24,
+  },
+  contentWide: {
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%' as any,
+    paddingHorizontal: 48,
   },
 
   // Spatial orbs — large blurred green glows
@@ -130,6 +139,10 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 40,
   },
+  featuresWide: {
+    gap: 16,
+    paddingVertical: 48,
+  },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -161,5 +174,8 @@ const styles = StyleSheet.create({
   // CTAs
   ctas: {
     gap: 8,
+  },
+  ctasWide: {
+    gap: 12,
   },
 });

@@ -1,5 +1,5 @@
 /**
- * Log It — Root Layout
+ * LogIt — Root Layout
  * Auth gate: routes users to auth, onboarding, or main tabs based on state
  */
 
@@ -7,18 +7,31 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import { Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
 
 export default function RootLayout() {
   const { isAuthenticated, isOnboarded, isLoading, initialize } = useAuthStore();
 
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
+  });
+
   useEffect(() => {
     const unsubscribe = initialize();
     return unsubscribe;
   }, []);
 
-  if (isLoading) {
+  if (isLoading || !fontsLoaded) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={Colors.primary} />

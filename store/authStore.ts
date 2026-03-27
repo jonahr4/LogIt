@@ -6,6 +6,7 @@
 
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import {
   createUserWithEmailAndPassword,
@@ -15,6 +16,7 @@ import {
   type User as FirebaseUser,
   GoogleAuthProvider,
   signInWithCredential,
+  signInWithPopup,
   OAuthProvider,
 } from 'firebase/auth';
 import { firebaseAuth } from '@/lib/firebase';
@@ -25,11 +27,15 @@ import { Config } from '@/constants/config';
 const STORAGE_KEY_USER = '@logit_user_profile';
 const STORAGE_KEY_ONBOARDED = '@logit_is_onboarded';
 
-// Google Sign-In only works in native builds, not Expo Go
+// Google Sign-In only works in native builds, not Expo Go or web
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const isWeb = Platform.OS === 'web';
 
 let _GoogleSignin: any = null;
 function getGoogleSignin(): typeof import('@react-native-google-signin/google-signin').GoogleSignin {
+  if (isWeb) {
+    throw new Error('Google Sign-In is not available on web. Please use email sign-in or the mobile app.');
+  }
   if (isExpoGo) {
     throw new Error('Google Sign-In requires a development build. Use email or Apple Sign-In in Expo Go.');
   }
@@ -83,7 +89,7 @@ interface AuthState {
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signInWithApple: (identityToken: string, nonce: string) => Promise<void>;
+  signInWithApple: (identityToken?: string, nonce?: string) => Promise<void>;
   completeOnboarding: (data: Omit<SignupData, 'email'>) => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
@@ -229,20 +235,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signInWithGoogle: async () => {
     set({ isLoading: true, error: null });
     try {
-      const GS = getGoogleSignin();
-      if (!_googleConfigured) {
-        GS.configure({
-          iosClientId: Config.auth.googleIosClientId,
-          webClientId: Config.auth.googleWebClientId,
-        });
-        _googleConfigured = true;
+      if (isWeb) {
+        // Web: use Firebase signInWithPopup
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(firebaseAuth, provider);
+      } else {
+        // Native: use @react-native-google-signin SDK
+        const GS = getGoogleSignin();
+        if (!_googleConfigured) {
+          GS.configure({
+            iosClientId: Config.auth.googleIosClientId,
+            webClientId: Config.auth.googleWebClientId,
+          });
+          _googleConfigured = true;
+        }
+        await GS.hasPlayServices();
+        const signInResult = await GS.signIn();
+        const idToken = signInResult?.data?.idToken;
+        if (!idToken) throw new Error('No ID token from Google Sign-In');
+        const credential = GoogleAuthProvider.credential(idToken);
+        await signInWithCredential(firebaseAuth, credential);
       }
-      await GS.hasPlayServices();
-      const signInResult = await GS.signIn();
-      const idToken = signInResult?.data?.idToken;
-      if (!idToken) throw new Error('No ID token from Google Sign-In');
-      const credential = GoogleAuthProvider.credential(idToken);
-      await signInWithCredential(firebaseAuth, credential);
     } catch (error: any) {
       set({
         isLoading: false,
@@ -252,12 +265,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signInWithApple: async (identityToken: string, nonce: string) => {
+  signInWithApple: async (identityToken?: string, nonce?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const provider = new OAuthProvider('apple.com');
-      const credential = provider.credential({ idToken: identityToken, rawNonce: nonce });
-      await signInWithCredential(firebaseAuth, credential);
+      if (isWeb) {
+        // Web: use Firebase signInWithPopup with Apple provider
+        const provider = new OAuthProvider('apple.com');
+        provider.addScope('email');
+        provider.addScope('name');
+        await signInWithPopup(firebaseAuth, provider);
+      } else {
+        // Native: use expo-apple-authentication token
+        if (!identityToken || !nonce) throw new Error('Missing Apple credentials');
+        const provider = new OAuthProvider('apple.com');
+        const credential = provider.credential({ idToken: identityToken, rawNonce: nonce });
+        await signInWithCredential(firebaseAuth, credential);
+      }
     } catch (error: any) {
       set({
         isLoading: false,

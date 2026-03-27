@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +24,8 @@ export default function SignInScreen() {
     useAuthStore();
 
   const [localError, setLocalError] = useState('');
+  const { width } = useWindowDimensions();
+  const isWide = width > 600;
 
   const handleEmailSignIn = async () => {
     clearError();
@@ -58,25 +60,30 @@ export default function SignInScreen() {
   };
 
   const handleAppleSignIn = async () => {
-    if (Platform.OS !== 'ios') return;
     clearError();
     try {
-      const nonce = Math.random().toString(36).substring(2, 10);
-      const hashedNonce = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        nonce
-      );
+      if (Platform.OS === 'web') {
+        // Web: Firebase popup handles everything
+        await signInWithApple();
+      } else {
+        // Native iOS: use expo-apple-authentication
+        const nonce = Math.random().toString(36).substring(2, 10);
+        const hashedNonce = await Crypto.digestStringAsync(
+          Crypto.CryptoDigestAlgorithm.SHA256,
+          nonce
+        );
 
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-        nonce: hashedNonce,
-      });
+        const credential = await AppleAuthentication.signInAsync({
+          requestedScopes: [
+            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+          ],
+          nonce: hashedNonce,
+        });
 
-      if (credential.identityToken) {
-        await signInWithApple(credential.identityToken, nonce);
+        if (credential.identityToken) {
+          await signInWithApple(credential.identityToken, nonce);
+        }
       }
     } catch {
       // Error handled by store
@@ -92,9 +99,10 @@ export default function SignInScreen() {
       <View style={styles.orb2} />
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, isWide && styles.contentWide]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        scrollEnabled={Platform.OS !== 'web'}
       >
         {/* Back to welcome */}
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -151,7 +159,7 @@ export default function SignInScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Social Sign-In — glass cards */}
+        {/* Social Sign-In */}
         <View style={styles.socialButtons}>
           <TouchableOpacity
             style={styles.socialButton}
@@ -193,6 +201,12 @@ const styles = StyleSheet.create({
   content: {
     padding: 28,
     paddingTop: 16,
+  },
+  contentWide: {
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%' as any,
+    paddingHorizontal: 48,
   },
 
   // Spatial orbs
