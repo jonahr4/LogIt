@@ -1,14 +1,15 @@
 /**
  * Log It — Profile Setup Screen (Onboarding Step 1)
- * First name, last name, username with real-time availability check
+ * Spatial Green v2: glass form, pulsing progress bar, orbs
  */
 
-import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Animated, Easing } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Shadows } from '@/constants/colors';
+import { Typography, FontFamily } from '@/constants/typography';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/lib/api';
@@ -22,6 +23,29 @@ export default function ProfileSetupScreen() {
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { signOut } = useAuthStore();
+
+  // Pulse animation for active progress bar
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.4,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -70,7 +94,6 @@ export default function ProfileSetupScreen() {
       return;
     }
 
-    // Store data in router params for the next screen
     router.push({
       pathname: '/(onboarding)/preferences',
       params: {
@@ -87,31 +110,36 @@ export default function ProfileSetupScreen() {
       return <ActivityIndicator size="small" color={Colors.textMuted} />;
     }
     if (usernameStatus === 'available') {
-      return <Text style={{ color: Colors.success, fontSize: 16 }}>✓</Text>;
+      return <Ionicons name="checkmark-circle" size={18} color={Colors.success} />;
     }
     if (usernameStatus === 'taken') {
-      return <Text style={{ color: Colors.error, fontSize: 16 }}>✗</Text>;
+      return <Ionicons name="close-circle" size={18} color={Colors.error} />;
     }
     return null;
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Spatial orbs */}
+      <View style={styles.orb1} />
+      <View style={styles.orb2} />
+
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Back button — signs out and returns to auth */}
+        {/* Back button */}
         <TouchableOpacity onPress={() => signOut()} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+          <Ionicons name="chevron-back" size={20} color={Colors.textSecondary} />
+          <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
 
-        {/* Progress indicator */}
+        {/* Progress indicator — green horizontal bars, active one pulses */}
         <View style={styles.progress}>
-          <View style={[styles.progressDot, styles.progressActive]} />
-          <View style={styles.progressDot} />
-          <View style={styles.progressDot} />
+          <Animated.View style={[styles.progressBar, styles.progressActive, { opacity: pulseAnim }]} />
+          <View style={styles.progressBar} />
+          <View style={styles.progressBar} />
         </View>
 
         <View style={styles.header}>
@@ -119,57 +147,61 @@ export default function ProfileSetupScreen() {
           <Text style={styles.subtitle}>Tell us a bit about yourself</Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.nameRow}>
-            <Input
-              label="First Name"
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder="Jonah"
-              autoCapitalize="words"
-              textContentType="givenName"
-              error={errors.firstName}
-              containerStyle={styles.halfInput}
-            />
-            <Input
-              label="Last Name"
-              value={lastName}
-              onChangeText={setLastName}
-              placeholder="Rothman"
-              autoCapitalize="words"
-              textContentType="familyName"
-              error={errors.lastName}
-              containerStyle={styles.halfInput}
-            />
-          </View>
+        {/* Glass form panel */}
+        <View style={styles.glassPanel}>
+          <View style={styles.form}>
+            <View style={styles.nameRow}>
+              <Input
+                label="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="Jonah"
+                autoCapitalize="words"
+                textContentType="givenName"
+                error={errors.firstName}
+                containerStyle={styles.halfInput}
+              />
+              <Input
+                label="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder="Rothman"
+                autoCapitalize="words"
+                textContentType="familyName"
+                error={errors.lastName}
+                containerStyle={styles.halfInput}
+              />
+            </View>
 
-          <Input
-            label="Username"
-            value={username}
-            onChangeText={handleUsernameChange}
-            placeholder="jonah"
-            autoCapitalize="none"
-            autoCorrect={false}
-            textContentType="username"
-            error={errors.username}
-            hint={
-              usernameStatus === 'available'
-                ? 'Username is available!'
-                : usernameStatus === 'taken'
-                ? 'Username is already taken'
-                : 'Letters, numbers, and underscores only'
-            }
-            rightElement={usernameRightElement()}
-          />
+            <Input
+              label="Username"
+              value={username}
+              onChangeText={handleUsernameChange}
+              placeholder="jonah"
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="username"
+              error={errors.username}
+              hint={
+                usernameStatus === 'available'
+                  ? 'Username is available!'
+                  : usernameStatus === 'taken'
+                  ? 'Username is already taken'
+                  : 'Letters, numbers, and underscores only'
+              }
+              rightElement={usernameRightElement()}
+            />
 
-          <View style={styles.displayNamePreview}>
-            <Text style={styles.displayNameLabel}>Display Name</Text>
-            <Text style={styles.displayNameValue}>
-              {firstName.trim() || 'Your Name'}
-            </Text>
-            <Text style={styles.displayNameHint}>
-              You can change this later
-            </Text>
+            {/* Display name preview — glass card */}
+            <View style={styles.displayNamePreview}>
+              <Text style={styles.displayNameLabel}>DISPLAY NAME</Text>
+              <Text style={styles.displayNameValue}>
+                {firstName.trim() || 'Your Name'}
+              </Text>
+              <Text style={styles.displayNameHint}>
+                You can change this later
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -194,19 +226,45 @@ const styles = StyleSheet.create({
     padding: 28,
     paddingTop: 16,
   },
+
+  // Spatial orbs
+  orb1: {
+    position: 'absolute',
+    top: -100,
+    right: -60,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+  },
+  orb2: {
+    position: 'absolute',
+    bottom: 20,
+    left: -120,
+    width: 380,
+    height: 380,
+    borderRadius: 190,
+    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+  },
+
   backButton: {
-    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 20,
   },
   backText: {
     ...Typography.bodyMedium,
     color: Colors.textSecondary,
   },
+
+  // Progress bars — green horizontal
   progress: {
     flexDirection: 'row',
     gap: 8,
     marginBottom: 32,
   },
-  progressDot: {
+  progressBar: {
     width: 40,
     height: 4,
     borderRadius: 2,
@@ -215,11 +273,17 @@ const styles = StyleSheet.create({
   progressActive: {
     backgroundColor: Colors.primaryContainer,
   },
+  progressComplete: {
+    backgroundColor: Colors.primary,
+  },
+
   header: {
-    marginBottom: 32,
+    marginBottom: 28,
   },
   title: {
-    ...Typography.h2,
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 32,
+    letterSpacing: -1,
     color: Colors.text,
     marginBottom: 8,
   },
@@ -227,9 +291,19 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.textSecondary,
   },
+
+  // Glass form panel
+  glassPanel: {
+    backgroundColor: Colors.glass,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    padding: 24,
+    marginBottom: 24,
+    ...Shadows.card,
+  },
   form: {
     gap: 8,
-    marginBottom: 40,
   },
   nameRow: {
     flexDirection: 'row',
@@ -238,17 +312,22 @@ const styles = StyleSheet.create({
   halfInput: {
     flex: 1,
   },
+
+  // Display name preview — nested glass
   displayNamePreview: {
-    backgroundColor: Colors.surfaceContainerHigh,
-    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.outline,
+    borderColor: Colors.glassBorder,
   },
   displayNameLabel: {
-    ...Typography.labelUppercase,
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
     color: Colors.textMuted,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   displayNameValue: {
     ...Typography.h4,
@@ -259,6 +338,7 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.textMuted,
   },
+
   footer: {
     marginTop: 'auto',
   },

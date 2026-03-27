@@ -1,30 +1,31 @@
 /**
  * Log It — Event Preferences Screen (Onboarding Step 2)
- * Choose event types + default privacy
+ * Spatial Green v2: glass cards, pulsing progress, orbs
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Easing } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Shadows } from '@/constants/colors';
+import { Typography, FontFamily } from '@/constants/typography';
 import { EventTypes, PrivacyLevels, type EventType, type PrivacyLevel } from '@/constants/config';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
 
-const EVENT_TYPE_CONFIG: Record<EventType, { icon: string; label: string; description: string }> = {
-  sports: { icon: '🏟️', label: 'Sports', description: 'Games, matches, races' },
-  movie: { icon: '🎬', label: 'Movies', description: 'Theater screenings' },
-  concert: { icon: '🎵', label: 'Concerts', description: 'Shows, festivals, tours' },
-  restaurant: { icon: '🍽️', label: 'Restaurants', description: 'Dining experiences' },
-  manual: { icon: '✏️', label: 'Custom', description: 'Anything else' },
+const EVENT_TYPE_CONFIG: Record<EventType, { icon: keyof typeof Ionicons.glyphMap; label: string; description: string }> = {
+  sports: { icon: 'american-football-outline', label: 'Sports', description: 'Games, matches, races' },
+  movie: { icon: 'film-outline', label: 'Movies', description: 'Theater screenings' },
+  concert: { icon: 'musical-notes-outline', label: 'Concerts', description: 'Shows, festivals, tours' },
+  restaurant: { icon: 'restaurant-outline', label: 'Restaurants', description: 'Dining experiences' },
+  manual: { icon: 'create-outline', label: 'Custom', description: 'Anything else' },
 };
 
-const PRIVACY_CONFIG: Record<PrivacyLevel, { icon: string; label: string; description: string }> = {
-  public: { icon: '🌍', label: 'Public', description: 'Everyone can see your logs' },
-  friends: { icon: '👥', label: 'Friends Only', description: 'Only friends can see your logs' },
-  private: { icon: '🔒', label: 'Private', description: 'Only you can see your logs' },
+const PRIVACY_CONFIG: Record<PrivacyLevel, { icon: keyof typeof Ionicons.glyphMap; label: string; description: string }> = {
+  public: { icon: 'globe-outline', label: 'Public', description: 'Everyone can see your logs' },
+  friends: { icon: 'people-outline', label: 'Friends Only', description: 'Only friends can see your logs' },
+  private: { icon: 'lock-closed-outline', label: 'Private', description: 'Only you can see your logs' },
 };
 
 export default function PreferencesScreen() {
@@ -38,6 +39,29 @@ export default function PreferencesScreen() {
   const [selectedTypes, setSelectedTypes] = useState<EventType[]>(['sports']);
   const [defaultPrivacy, setDefaultPrivacy] = useState<PrivacyLevel>('public');
   const { completeOnboarding, isLoading } = useAuthStore();
+
+  // Pulse animation for active progress bar
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 0.4,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
 
   const toggleEventType = (type: EventType) => {
     setSelectedTypes((prev) =>
@@ -63,20 +87,25 @@ export default function PreferencesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Spatial orbs */}
+      <View style={styles.orb1} />
+      <View style={styles.orb2} />
+
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
         {/* Back button */}
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>← Back</Text>
+          <Ionicons name="chevron-back" size={20} color={Colors.textSecondary} />
+          <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
 
-        {/* Progress indicator */}
+        {/* Progress indicator — green bars, active pulses */}
         <View style={styles.progress}>
-          <View style={[styles.progressDot, styles.progressComplete]} />
-          <View style={[styles.progressDot, styles.progressActive]} />
-          <View style={styles.progressDot} />
+          <View style={[styles.progressBar, styles.progressComplete]} />
+          <Animated.View style={[styles.progressBar, styles.progressActive, { opacity: pulseAnim }]} />
+          <View style={styles.progressBar} />
         </View>
 
         <View style={styles.header}>
@@ -100,14 +129,20 @@ export default function PreferencesScreen() {
                   onPress={() => toggleEventType(type)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.typeIcon}>{config.icon}</Text>
+                  <View style={[styles.typeIconContainer, selected && styles.typeIconContainerSelected]}>
+                    <Ionicons
+                      name={config.icon}
+                      size={24}
+                      color={selected ? Colors.primaryContainer : Colors.textSecondary}
+                    />
+                  </View>
                   <Text style={[styles.typeLabel, selected && styles.typeLabelSelected]}>
                     {config.label}
                   </Text>
                   <Text style={styles.typeDescription}>{config.description}</Text>
                   {selected && (
                     <View style={styles.checkmark}>
-                      <Text style={styles.checkmarkText}>✓</Text>
+                      <Ionicons name="checkmark" size={14} color={Colors.onPrimary} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -133,19 +168,26 @@ export default function PreferencesScreen() {
                   onPress={() => setDefaultPrivacy(level)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.privacyIcon}>{config.icon}</Text>
+                  <View style={[styles.privacyIconContainer, selected && styles.privacyIconContainerSelected]}>
+                    <Ionicons
+                      name={config.icon}
+                      size={18}
+                      color={selected ? Colors.primaryContainer : Colors.textMuted}
+                    />
+                  </View>
                   <View style={styles.privacyText}>
                     <Text style={[styles.privacyLabel, selected && styles.privacyLabelSelected]}>
                       {config.label}
                     </Text>
                     <Text style={styles.privacyDescription}>{config.description}</Text>
                   </View>
-                  {selected && (
+                  {selected ? (
                     <View style={styles.radioSelected}>
                       <View style={styles.radioInner} />
                     </View>
+                  ) : (
+                    <View style={styles.radioUnselected} />
                   )}
-                  {!selected && <View style={styles.radioUnselected} />}
                 </TouchableOpacity>
               );
             })}
@@ -179,19 +221,45 @@ const styles = StyleSheet.create({
     padding: 28,
     paddingTop: 16,
   },
+
+  // Spatial orbs
+  orb1: {
+    position: 'absolute',
+    top: -60,
+    left: -100,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+  },
+  orb2: {
+    position: 'absolute',
+    bottom: -40,
+    right: -80,
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+  },
+
   backButton: {
-    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 20,
   },
   backText: {
     ...Typography.bodyMedium,
     color: Colors.textSecondary,
   },
+
+  // Progress bars
   progress: {
     flexDirection: 'row',
     gap: 8,
     marginBottom: 32,
   },
-  progressDot: {
+  progressBar: {
     width: 40,
     height: 4,
     borderRadius: 2,
@@ -203,11 +271,14 @@ const styles = StyleSheet.create({
   progressComplete: {
     backgroundColor: Colors.primary,
   },
+
   header: {
-    marginBottom: 32,
+    marginBottom: 28,
   },
   title: {
-    ...Typography.h2,
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 32,
+    letterSpacing: -1,
     color: Colors.text,
     marginBottom: 8,
   },
@@ -219,7 +290,10 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionLabel: {
-    ...Typography.labelUppercase,
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
     color: Colors.textMuted,
     marginBottom: 12,
   },
@@ -228,6 +302,8 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginBottom: 12,
   },
+
+  // Event type cards — glass
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -235,20 +311,32 @@ const styles = StyleSheet.create({
   },
   typeCard: {
     width: '47%',
-    backgroundColor: Colors.surfaceContainerHigh,
-    borderRadius: 16,
+    backgroundColor: Colors.glass,
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.outline,
+    borderColor: Colors.glassBorder,
     position: 'relative',
+    ...Shadows.card,
   },
   typeCardSelected: {
-    borderColor: Colors.primaryContainer,
-    backgroundColor: 'rgba(0, 253, 193, 0.08)',
+    borderColor: 'rgba(0, 255, 194, 0.3)',
+    backgroundColor: 'rgba(0, 255, 194, 0.08)',
   },
-  typeIcon: {
-    fontSize: 28,
-    marginBottom: 8,
+  typeIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+  },
+  typeIconContainerSelected: {
+    backgroundColor: 'rgba(0, 255, 194, 0.1)',
+    borderColor: 'rgba(0, 255, 194, 0.2)',
   },
   typeLabel: {
     ...Typography.bodySemiBold,
@@ -256,7 +344,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   typeLabelSelected: {
-    color: Colors.primary,
+    color: Colors.primaryContainer,
   },
   typeDescription: {
     ...Typography.caption,
@@ -273,11 +361,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkmarkText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: Colors.onPrimary,
-  },
+
+  // Privacy options — glass cards
   privacyOptions: {
     gap: 12,
   },
@@ -285,18 +370,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Colors.surfaceContainerHigh,
-    borderRadius: 12,
+    backgroundColor: Colors.glass,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.outline,
+    borderColor: Colors.glassBorder,
+    ...Shadows.card,
   },
   privacyOptionSelected: {
-    borderColor: Colors.primaryContainer,
-    backgroundColor: 'rgba(0, 253, 193, 0.08)',
+    borderColor: 'rgba(0, 255, 194, 0.3)',
+    backgroundColor: 'rgba(0, 255, 194, 0.08)',
   },
-  privacyIcon: {
-    fontSize: 20,
+  privacyIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+  },
+  privacyIconContainerSelected: {
+    backgroundColor: 'rgba(0, 255, 194, 0.1)',
+    borderColor: 'rgba(0, 255, 194, 0.2)',
   },
   privacyText: {
     flex: 1,
@@ -306,7 +403,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   privacyLabelSelected: {
-    color: Colors.primary,
+    color: Colors.primaryContainer,
   },
   privacyDescription: {
     ...Typography.caption,

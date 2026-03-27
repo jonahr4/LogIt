@@ -1,6 +1,6 @@
 /**
  * Log It — Input Component
- * Styled text input with label, error state, glassmorphism background
+ * Spatial Green v2: solid dark input fields with glass border
  */
 
 import React, { useState } from 'react';
@@ -82,14 +82,14 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceContainerLowest,
-    borderRadius: 12,
+    backgroundColor: '#0f1319',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.outline,
+    borderColor: Colors.glassBorder,
     overflow: 'hidden',
   },
   inputFocused: {
-    borderColor: Colors.primary,
+    borderColor: 'rgba(0, 255, 194, 0.5)',
   },
   inputError: {
     borderColor: Colors.error,
@@ -116,3 +116,4 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 });
+

@@ -26,6 +26,7 @@ export const Config = {
   },
   auth: {
     googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+    googleIosClientId: '329819496492-ddp4q2jfq9dq5lm2hl0p8an1svm3s4bg.apps.googleusercontent.com',
   },
   pagination: {
     defaultLimit: 20,

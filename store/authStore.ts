@@ -1,9 +1,12 @@
 /**
  * Log It — Auth Store (Zustand)
  * Manages authentication state, Firebase auth, and user profile
+ * Persists onboarding state locally via AsyncStorage
  */
 
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -17,6 +20,26 @@ import {
 import { firebaseAuth } from '@/lib/firebase';
 import { api } from '@/lib/api';
 import type { User, SignupData } from '@/types/user';
+import { Config } from '@/constants/config';
+
+const STORAGE_KEY_USER = '@logit_user_profile';
+const STORAGE_KEY_ONBOARDED = '@logit_is_onboarded';
+
+// Google Sign-In only works in native builds, not Expo Go
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+let _GoogleSignin: any = null;
+function getGoogleSignin(): typeof import('@react-native-google-signin/google-signin').GoogleSignin {
+  if (isExpoGo) {
+    throw new Error('Google Sign-In requires a development build. Use email or Apple Sign-In in Expo Go.');
+  }
+  if (!_GoogleSignin) {
+    _GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
+  }
+  return _GoogleSignin;
+}
+
+let _googleConfigured = false;
 
 /** Map Firebase error codes to user-friendly messages */
 function friendlyError(error: any, context: 'signin' | 'signup' | 'general' = 'general'): string {
@@ -59,7 +82,7 @@ interface AuthState {
   initialize: () => () => void;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: (idToken: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signInWithApple: (identityToken: string, nonce: string) => Promise<void>;
   completeOnboarding: (data: Omit<SignupData, 'email'>) => Promise<void>;
   signOut: () => Promise<void>;
@@ -79,8 +102,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          // Try to fetch existing user profile
+          // Try to fetch existing user profile from API
           const user = await api.get<User>('/auth/me');
+          // Persist locally for offline access
+          await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+          await AsyncStorage.setItem(STORAGE_KEY_ONBOARDED, 'true');
           set({
             firebaseUser,
             user,
@@ -89,14 +115,75 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             isLoading: false,
           });
         } catch {
-          // User exists in Firebase but not in our DB — needs onboarding
-          set({
-            firebaseUser,
-            user: null,
-            isAuthenticated: true,
-            isOnboarded: false,
-            isLoading: false,
-          });
+          // API unavailable — check local storage for previously onboarded user
+          try {
+            const wasOnboarded = await AsyncStorage.getItem(STORAGE_KEY_ONBOARDED);
+            const storedUser = await AsyncStorage.getItem(STORAGE_KEY_USER);
+
+            if (wasOnboarded === 'true' && storedUser) {
+              // Previously onboarded, use cached profile
+              set({
+                firebaseUser,
+                user: JSON.parse(storedUser),
+                isAuthenticated: true,
+                isOnboarded: true,
+                isLoading: false,
+              });
+            } else {
+              // No local data — check Firebase metadata to determine if returning user
+              // If account was created more than 2 minutes ago, they likely already onboarded
+              const creationTime = firebaseUser.metadata?.creationTime;
+              const isReturningUser = creationTime
+                ? (Date.now() - new Date(creationTime).getTime()) > 2 * 60 * 1000
+                : false;
+
+              if (isReturningUser) {
+                // Returning user whose local data was lost — create profile from Firebase
+                const localUser = {
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email || '',
+                  username: firebaseUser.email?.split('@')[0] || firebaseUser.uid.slice(0, 8),
+                  first_name: firebaseUser.displayName?.split(' ')[0] || '',
+                  last_name: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+                  display_name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+                  avatar_url: firebaseUser.photoURL || null,
+                  bio: null,
+                  event_preferences: ['sports'],
+                  default_privacy: 'public',
+                  created_at: creationTime || new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                } as User;
+
+                await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(localUser));
+                await AsyncStorage.setItem(STORAGE_KEY_ONBOARDED, 'true');
+
+                set({
+                  firebaseUser,
+                  user: localUser,
+                  isAuthenticated: true,
+                  isOnboarded: true,
+                  isLoading: false,
+                });
+              } else {
+                // Genuinely new user — needs onboarding
+                set({
+                  firebaseUser,
+                  user: null,
+                  isAuthenticated: true,
+                  isOnboarded: false,
+                  isLoading: false,
+                });
+              }
+            }
+          } catch {
+            set({
+              firebaseUser,
+              user: null,
+              isAuthenticated: true,
+              isOnboarded: false,
+              isLoading: false,
+            });
+          }
         }
       } else {
         set({
@@ -139,9 +226,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signInWithGoogle: async (idToken: string) => {
+  signInWithGoogle: async () => {
     set({ isLoading: true, error: null });
     try {
+      const GS = getGoogleSignin();
+      if (!_googleConfigured) {
+        GS.configure({
+          iosClientId: Config.auth.googleIosClientId,
+          webClientId: Config.auth.googleWebClientId,
+        });
+        _googleConfigured = true;
+      }
+      await GS.hasPlayServices();
+      const signInResult = await GS.signIn();
+      const idToken = signInResult?.data?.idToken;
+      if (!idToken) throw new Error('No ID token from Google Sign-In');
       const credential = GoogleAuthProvider.credential(idToken);
       await signInWithCredential(firebaseAuth, credential);
     } catch (error: any) {
@@ -173,45 +272,48 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!firebaseUser?.email) throw new Error('No authenticated user');
 
     set({ isLoading: true, error: null });
+
+    let user: User;
     try {
-      const user = await api.post<User>('/auth/signup', {
+      user = await api.post<User>('/auth/signup', {
         ...data,
         email: firebaseUser.email,
       });
-      set({
-        user,
-        isOnboarded: true,
-        isLoading: false,
-      });
-    } catch (error: any) {
-      // API not deployed yet — mark as onboarded locally so user can proceed
-      // The profile will sync when the API is available
-      console.warn('API not available, completing onboarding locally:', error.message);
-      set({
-        user: {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          username: data.username,
-          first_name: data.first_name,
-          last_name: data.last_name,
-          display_name: data.display_name || data.first_name,
-          avatar_url: firebaseUser.photoURL || null,
-          bio: null,
-          event_preferences: data.event_preferences || [],
-          default_privacy: data.default_privacy || 'public',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as User,
-        isOnboarded: true,
-        isLoading: false,
-      });
+    } catch {
+      // API not deployed yet — create user profile locally
+      user = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email,
+        username: data.username,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        display_name: data.display_name || data.first_name,
+        avatar_url: firebaseUser.photoURL || null,
+        bio: null,
+        event_preferences: data.event_preferences || [],
+        default_privacy: data.default_privacy || 'public',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as User;
     }
+
+    // Persist to local storage
+    await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+    await AsyncStorage.setItem(STORAGE_KEY_ONBOARDED, 'true');
+
+    set({
+      user,
+      isOnboarded: true,
+      isLoading: false,
+    });
   },
 
   signOut: async () => {
     set({ isLoading: true, error: null });
     try {
       await firebaseSignOut(firebaseAuth);
+      // Clear persisted state
+      await AsyncStorage.multiRemove([STORAGE_KEY_USER, STORAGE_KEY_ONBOARDED]);
       set({
         user: null,
         firebaseUser: null,

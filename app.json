@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Log It",
+    "name": "LogIt",
     "slug": "log-it",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,7 +11,17 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.logitapp.app",
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.329819496492-ddp4q2jfq9dq5lm2hl0p8an1svm3s4bg",
+              "logit"
+            ]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -30,6 +40,7 @@
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
+      "@react-native-google-signin/google-signin",
       [
         "expo-splash-screen",
         {

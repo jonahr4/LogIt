@@ -1,7 +1,7 @@
 # Log It — UI Design & User Flows
 
-> **Last updated:** 2026-03-26
-> Updated: Polymorphic event types, companions, comments, event-type-agnostic filters
+> **Last updated:** 2026-03-27
+> Updated: Adopted spatial-green-v2 design language across auth/onboarding. Updated color palette (bg #030712, glass tokens), replaced emojis with Ionicons, added pulsing progress bars and circle-in-circle done screen motif.
 
 ## Navigation Structure
 
@@ -223,21 +223,23 @@ Interactive HTML mockups live in [`docs/ui-reference/`](./ui-reference/). Open i
 | [event-detail.html](./ui-reference/event-detail.html) | Event Detail | Scoreboard hero with atmospheric blur, metadata grid, action buttons, friends avatars |
 | [logbook.html](./ui-reference/logbook.html) | Logbook | Filter chips, sorted cards with win/loss/draw color-coded borders, FAB |
 
-### Color Palette (from mockups)
+### Color Palette (Spatial Green v2)
 
 | Token | Hex | Usage |
 |---|---|---|
-| `background` | `#0a0e14` | App background |
+| `background` | `#030712` | App background (dark mode) |
 | `surface-container-high` | `#1b2028` | Card backgrounds |
 | `surface-container-lowest` | `#000000` | Input fields, deep surfaces |
+| `glass` | `rgba(20, 25, 30, 0.4)` | Glass panel backgrounds |
+| `glass-border` | `rgba(255, 255, 255, 0.1)` | Glass panel borders |
 | `primary` | `#aaffdc` | Text accents, highlights |
-| `primary-container` / `primary-fixed` | `#00fdc1` | CTA buttons, badges |
+| `primary-container` / `primary-fixed` | `#00FFC2` | CTA buttons, badges, brand glow |
 | `secondary` | `#679cff` | Secondary accents, links |
 | `tertiary` | `#ac89ff` | Stats, win ratio, badges |
 | `error` | `#ff716c` | Loss indicators |
 | `on-surface` | `#f1f3fc` | Primary text |
-| `on-surface-variant` | `#a8abb3` | Secondary text |
-| Brand glow | `#00FFC2` | Logo, nav highlights, glows |
+| `on-surface-variant` | `#9ca3af` | Secondary text |
+| Brand glow | `#00FFC2` | Logo, nav highlights, neon glows |
 
 ### Typography
 - **Headlines**: Manrope (extrabold, tight tracking)
@@ -253,9 +255,11 @@ Interactive HTML mockups live in [`docs/ui-reference/`](./ui-reference/). Open i
 - **Neon glow**: `drop-shadow` and `box-shadow` with primary color on brand elements
 
 ### Icons
-- **Google Material Symbols Outlined** (variable weight/fill)
-- Filled variant (`FILL 1`) for active states and CTAs
-- Sport-specific icons: `sports_basketball`, `sports_soccer`, etc.
+- **Ionicons** (`@expo/vector-icons`) — clean, consistent icon set
+- Outline variants for default, filled for active/selected states
+- No emojis — all icons are stylized vector icons
+- Sport-specific: `american-football-outline`, `basketball-outline`, etc.
+- Auth icons: `logo-google`, `logo-apple`
 
 ### Component Patterns
 - **Cards** — Primary UI pattern for logs and events
@@ -270,7 +274,9 @@ Interactive HTML mockups live in [`docs/ui-reference/`](./ui-reference/). Open i
 ### Animations
 - Card press/expand (`active:scale-[0.98]`)
 - Hover scale (`hover:scale-[1.02]`) on stat cards
-- Log creation celebration (confetti or checkmark)
+- **Pulsing progress bars** — active onboarding step bar pulses opacity (1200ms loop)
+- **Circle-in-circle entrance** — staggered 3-layer animation on done screen (outer ring → middle ring → check circle)
+- Log creation celebration (checkmark with glow)
 - Tab transitions
 - Pull-to-refresh with custom animation
 - Opacity reveal on hover (chevron arrows on logbook cards)
