@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/colors';
 import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { OrbBackground } from '@/components/ui/OrbBackground';
 
 import { useAuthStore } from '@/store/authStore';
 

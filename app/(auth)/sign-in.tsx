@@ -130,8 +130,8 @@ export default function SignInScreen() {
               placeholder="you@example.com"
               autoCapitalize="none"
               keyboardType="email-address"
-              textContentType="emailAddress"
-              autoComplete="email"
+              textContentType="none"
+              autoComplete="off"
             />
             <Input
               label="Password"
@@ -139,8 +139,8 @@ export default function SignInScreen() {
               onChangeText={setPassword}
               placeholder="Your password"
               secureTextEntry
-              textContentType="password"
-              autoComplete="current-password"
+              textContentType="oneTimeCode"
+              autoComplete="off"
             />
             <Button
               title="Sign In"

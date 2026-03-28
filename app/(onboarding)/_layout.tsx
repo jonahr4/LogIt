@@ -19,7 +19,7 @@ export default function OnboardingLayout() {
           animation: 'slide_from_right',
         }}
       >
-        <Stack.Screen name="profile-setup" />
+        <Stack.Screen name="index" />
         <Stack.Screen name="preferences" />
         <Stack.Screen name="done" />
       </Stack>

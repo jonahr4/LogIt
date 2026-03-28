@@ -81,8 +81,10 @@ interface AuthState {
   firebaseUser: FirebaseUser | null;
   isAuthenticated: boolean;
   isOnboarded: boolean;
-  isLoading: boolean;
+  isInitializing: boolean; // true only during first auth check
+  isLoading: boolean;      // true during user-initiated actions (button spinners)
   error: string | null;
+  pendingCredentials: { email: string; password: string } | null; // stored until onboarding completes
 
   // Actions
   initialize: () => () => void;
@@ -101,11 +103,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   firebaseUser: null,
   isAuthenticated: false,
   isOnboarded: false,
-  isLoading: true,
+  isInitializing: true,
+  isLoading: false,
   error: null,
+  pendingCredentials: null,
 
   initialize: () => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+      // Skip if we have pending credentials (signup in progress, waiting for onboarding)
+      if (get().pendingCredentials) return;
+
       if (firebaseUser) {
         try {
           // Try to fetch existing user profile from API
@@ -118,6 +125,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             user,
             isAuthenticated: true,
             isOnboarded: true,
+            isInitializing: false,
             isLoading: false,
           });
         } catch {
@@ -133,6 +141,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 user: JSON.parse(storedUser),
                 isAuthenticated: true,
                 isOnboarded: true,
+                isInitializing: false,
                 isLoading: false,
               });
             } else {
@@ -168,6 +177,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                   user: localUser,
                   isAuthenticated: true,
                   isOnboarded: true,
+                  isInitializing: false,
                   isLoading: false,
                 });
               } else {
@@ -177,6 +187,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                   user: null,
                   isAuthenticated: true,
                   isOnboarded: false,
+                  isInitializing: false,
                   isLoading: false,
                 });
               }
@@ -187,6 +198,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               user: null,
               isAuthenticated: true,
               isOnboarded: false,
+              isInitializing: false,
               isLoading: false,
             });
           }
@@ -197,6 +209,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           user: null,
           isAuthenticated: false,
           isOnboarded: false,
+          isInitializing: false,
           isLoading: false,
         });
       }
@@ -207,8 +220,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUpWithEmail: async (email: string, password: string) => {
     set({ isLoading: true, error: null });
     try {
-      await createUserWithEmailAndPassword(firebaseAuth, email, password);
-      // onAuthStateChanged will handle the rest
+      // Don't create Firebase account yet — just store credentials
+      // Account will be created in completeOnboarding after all info is collected
+      set({
+        pendingCredentials: { email, password },
+        isAuthenticated: true,  // triggers nav to onboarding
+        isOnboarded: false,
+        isLoading: false,
+      });
     } catch (error: any) {
       set({
         isLoading: false,
@@ -291,27 +310,75 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   completeOnboarding: async (data: Omit<SignupData, 'email'>) => {
-    const { firebaseUser } = get();
-    if (!firebaseUser?.email) throw new Error('No authenticated user');
+    const { pendingCredentials, firebaseUser: existingFirebaseUser } = get();
 
     set({ isLoading: true, error: null });
+
+    let fbUser = existingFirebaseUser;
+    let email: string;
+
+    // If we have pending credentials, create the Firebase account NOW
+    if (pendingCredentials) {
+      try {
+        const result = await createUserWithEmailAndPassword(
+          firebaseAuth,
+          pendingCredentials.email,
+          pendingCredentials.password
+        );
+        fbUser = result.user;
+        email = pendingCredentials.email;
+      } catch (error: any) {
+        // If email already in use, try signing in instead
+        if (error?.code === 'auth/email-already-in-use') {
+          try {
+            const result = await signInWithEmailAndPassword(
+              firebaseAuth,
+              pendingCredentials.email,
+              pendingCredentials.password
+            );
+            fbUser = result.user;
+            email = pendingCredentials.email;
+          } catch (signInError: any) {
+            set({
+              isLoading: false,
+              error: friendlyError(error, 'signup'),
+              pendingCredentials: null,
+              isAuthenticated: false,
+            });
+            throw error;
+          }
+        } else {
+          set({
+            isLoading: false,
+            error: friendlyError(error, 'signup'),
+            pendingCredentials: null,
+            isAuthenticated: false,
+          });
+          throw error;
+        }
+      }
+    } else {
+      // OAuth or existing auth flow
+      if (!fbUser?.email) throw new Error('No authenticated user');
+      email = fbUser.email;
+    }
 
     let user: User;
     try {
       user = await api.post<User>('/auth/signup', {
         ...data,
-        email: firebaseUser.email,
+        email,
       });
     } catch {
       // API not deployed yet — create user profile locally
       user = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email,
+        id: fbUser?.uid || 'local',
+        email,
         username: data.username,
         first_name: data.first_name,
         last_name: data.last_name,
         display_name: data.display_name || data.first_name,
-        avatar_url: firebaseUser.photoURL || null,
+        avatar_url: fbUser?.photoURL || null,
         bio: null,
         event_preferences: data.event_preferences || [],
         default_privacy: data.default_privacy || 'public',
@@ -326,6 +393,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     set({
       user,
+      firebaseUser: fbUser,
+      pendingCredentials: null,
       isOnboarded: true,
       isLoading: false,
     });
@@ -334,7 +403,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     set({ isLoading: true, error: null });
     try {
-      await firebaseSignOut(firebaseAuth);
+      // Only sign out from Firebase if there's an actual Firebase session
+      if (firebaseAuth.currentUser) {
+        await firebaseSignOut(firebaseAuth);
+      }
       // Clear persisted state
       await AsyncStorage.multiRemove([STORAGE_KEY_USER, STORAGE_KEY_ONBOARDED]);
       set({
@@ -343,6 +415,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: false,
         isOnboarded: false,
         isLoading: false,
+        pendingCredentials: null,
       });
     } catch (error: any) {
       set({

@@ -134,8 +134,8 @@ export default function SignUpScreen() {
               placeholder="you@example.com"
               autoCapitalize="none"
               keyboardType="email-address"
-              textContentType="emailAddress"
-              autoComplete="email"
+              textContentType="none"
+              autoComplete="off"
             />
             <Input
               label="Password"
@@ -143,8 +143,8 @@ export default function SignUpScreen() {
               onChangeText={setPassword}
               placeholder="At least 6 characters"
               secureTextEntry
-              textContentType="newPassword"
-              autoComplete="new-password"
+              textContentType="oneTimeCode"
+              autoComplete="off"
             />
             <Input
               label="Confirm Password"
@@ -152,7 +152,8 @@ export default function SignUpScreen() {
               onChangeText={setConfirmPassword}
               placeholder="Confirm your password"
               secureTextEntry
-              textContentType="newPassword"
+              textContentType="oneTimeCode"
+              autoComplete="off"
             />
             <Button
               title="Create Account"

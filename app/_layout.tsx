@@ -4,7 +4,7 @@
  */
 
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
@@ -19,7 +19,9 @@ import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
 
 export default function RootLayout() {
-  const { isAuthenticated, isOnboarded, isLoading, initialize } = useAuthStore();
+  const { isAuthenticated, isOnboarded, isInitializing, initialize } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -33,11 +35,21 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    const unsubscribe = initialize();
-    return unsubscribe;
-  }, []);
+    if (isInitializing || !fontsLoaded) return;
 
-  if (isLoading || !fontsLoaded) {
+    const inAuthGroup = segments[0] === '(auth)';
+    const inOnboardingGroup = segments[0] === '(onboarding)';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace('/(auth)/welcome');
+    } else if (isAuthenticated && !isOnboarded && !inOnboardingGroup) {
+      router.replace('/(onboarding)');
+    } else if (isAuthenticated && isOnboarded && (inAuthGroup || inOnboardingGroup)) {
+      router.replace('/(tabs)/feed');
+    }
+  }, [isAuthenticated, isOnboarded, isInitializing, fontsLoaded, segments]);
+
+  if (isInitializing || !fontsLoaded) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -56,13 +68,9 @@ export default function RootLayout() {
           animation: 'fade',
         }}
       >
-        {!isAuthenticated ? (
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        ) : !isOnboarded ? (
-          <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-        ) : (
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        )}
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </>
   );
