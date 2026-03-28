@@ -38,6 +38,7 @@ export type EventDetail = {
   venue: string;
   date: string;
   eventType: string;
+  // Sports-specific
   homeTeamName?: string;
   awayTeamName?: string;
   homeTeamLogo?: string;
@@ -45,9 +46,34 @@ export type EventDetail = {
   homeScore?: number;
   awayScore?: number;
   status?: string;
+  league?: string;
+  season?: string;
+  sport?: string;
+  // Movie-specific
+  director?: string;
+  genre?: string;
+  runtime?: number;
+  cast?: string[];
+  // Concert-specific
+  artist?: string;
+  tourName?: string;
+  opener?: string;
+  // Restaurant-specific
+  cuisine?: string;
+  priceLevel?: string;
+  // Nightlife-specific
+  venueType?: string;
+  vibe?: string;
+  dressCode?: string;
+  musicGenre?: string;
+  // Universal
   rating: number;
   note: string;
   companions?: Array<{ name: string; avatar?: string }>;
+  photos?: string[];
+  privacy?: 'public' | 'friends' | 'private';
+  venueCity?: string;
+  venueState?: string;
 };
 
 interface Props {
@@ -223,6 +249,11 @@ function SportsTop({ event }: { event: EventDetail }) {
 
   return (
     <View style={styles.topContent}>
+      {/* Time ago pill */}
+      <View style={styles.timeAgoPill}>
+        <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
+        <Text style={styles.timeAgoPillText}>{event.timeAgo}</Text>
+      </View>
       {event.status && (
         <View style={styles.statusPill}>
           <Text style={styles.statusText}>{event.status}</Text>
@@ -233,7 +264,7 @@ function SportsTop({ event }: { event: EventDetail }) {
         <View style={styles.teamBlock}>
           {event.homeTeamLogo ? (
             <Image source={{ uri: event.homeTeamLogo }} style={styles.teamLogo} resizeMode="contain" />
-          ) : <LogoFallback />}
+          ) : <LogoFallback eventType={event.eventType} />}
         </View>
 
         <View style={styles.scoreBlock}>
@@ -249,7 +280,7 @@ function SportsTop({ event }: { event: EventDetail }) {
         <View style={styles.teamBlock}>
           {event.awayTeamLogo ? (
             <Image source={{ uri: event.awayTeamLogo }} style={styles.teamLogo} resizeMode="contain" />
-          ) : <LogoFallback />}
+          ) : <LogoFallback eventType={event.eventType} />}
         </View>
       </View>
 
@@ -264,7 +295,13 @@ function SportsTop({ event }: { event: EventDetail }) {
 
       <View style={styles.metaGrid}>
         <MetaCell icon="calendar-outline" label="DATE" value={event.date} />
-        <MetaCell icon="location-outline" label="VENUE" value={event.venue} truncate />
+        <MetaCell
+          icon="location-outline"
+          label="VENUE"
+          value={event.venue}
+          subtitle={event.venueCity && event.venueState ? `${event.venueCity}, ${event.venueState}` : undefined}
+          truncate
+        />
       </View>
     </View>
   );
@@ -273,29 +310,41 @@ function SportsTop({ event }: { event: EventDetail }) {
 function GenericTop({ event }: { event: EventDetail }) {
   return (
     <View style={styles.topContent}>
+      {/* Time ago pill */}
+      <View style={styles.timeAgoPill}>
+        <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
+        <Text style={styles.timeAgoPillText}>{event.timeAgo}</Text>
+      </View>
       <Text style={styles.genericTitle}>{event.title}</Text>
       <View style={styles.metaGrid}>
         <MetaCell icon="calendar-outline" label="DATE" value={event.date} />
-        <MetaCell icon="location-outline" label="VENUE" value={event.venue} truncate />
+        <MetaCell
+          icon="location-outline"
+          label="VENUE"
+          value={event.venue}
+          subtitle={event.venueCity && event.venueState ? `${event.venueCity}, ${event.venueState}` : undefined}
+          truncate
+        />
       </View>
     </View>
   );
 }
 
-function LogoFallback() {
+function LogoFallback({ eventType }: { eventType?: string }) {
   return (
     <View style={styles.teamLogoFallback}>
-      <Ionicons name="basketball" size={28} color={Colors.textMuted} />
+      <Ionicons name={getEventIcon(eventType)} size={28} color={Colors.textMuted} />
     </View>
   );
 }
 
 function MetaCell({
-  icon, label, value, truncate,
+  icon, label, value, subtitle, truncate,
 }: {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   value: string;
+  subtitle?: string;
   truncate?: boolean;
 }) {
   return (
@@ -303,6 +352,7 @@ function MetaCell({
       <Ionicons name={icon} size={14} color={Colors.textMuted} />
       <Text style={styles.metaLabel}>{label}</Text>
       <Text style={styles.metaValue} numberOfLines={truncate ? 1 : undefined}>{value}</Text>
+      {subtitle && <Text style={styles.metaSub}>{subtitle}</Text>}
     </View>
   );
 }
@@ -312,17 +362,18 @@ function MetaCell({
 function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => void }) {
   return (
     <View style={styles.bottomContent}>
-
-      {/* Notes */}
-      <View style={styles.sectionHeader}>
-        <Ionicons name="document-text-outline" size={16} color={Colors.primaryContainer} />
-        <Text style={styles.sectionTitle}>Personal Notes</Text>
-      </View>
-      <View style={styles.notesBox}>
-        <Text style={styles.notesText}>{event.note}</Text>
-      </View>
-
-      <View style={styles.divider} />
+      {/* Photos */}
+      {event.photos && event.photos.length > 0 && (
+        <>
+          <Text style={styles.miniLabel}>PHOTOS</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -22 }} contentContainerStyle={{ paddingHorizontal: 22, gap: 10 }}>
+            {event.photos.map((uri, i) => (
+              <Image key={i} source={{ uri }} style={styles.photo} />
+            ))}
+          </ScrollView>
+          <View style={styles.divider} />
+        </>
+      )}
 
       {/* Rating */}
       <Text style={styles.miniLabel}>YOUR RATING</Text>
@@ -339,11 +390,35 @@ function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => 
 
       <View style={styles.divider} />
 
+      {/* Notes */}
+      <View style={styles.sectionHeader}>
+        <Ionicons name="document-text-outline" size={16} color={Colors.primaryContainer} />
+        <Text style={styles.sectionTitle}>Personal Notes</Text>
+      </View>
+      <View style={styles.notesBox}>
+        <Text style={styles.notesText}>{event.note}</Text>
+      </View>
+
+      <View style={styles.divider} />
+
       {/* Info chips */}
       <View style={styles.chipsRow}>
-        <InfoChip icon="basketball-outline" label={event.eventType} />
+        <InfoChip icon={getEventIcon(event.eventType)} label={event.eventType} />
         {event.status && <InfoChip icon="checkmark-circle-outline" label={event.status} />}
-        <InfoChip icon="time-outline" label={event.timeAgo} />
+        {event.league && (
+          <InfoChip
+            icon="trophy-outline"
+            label={event.season ? `${event.league} • ${event.season}` : event.league}
+          />
+        )}
+        {event.genre && <InfoChip icon="film-outline" label={event.genre} />}
+        {event.cuisine && <InfoChip icon="restaurant-outline" label={event.cuisine} />}
+        {event.privacy && (
+          <InfoChip
+            icon={event.privacy === 'public' ? 'globe-outline' : event.privacy === 'friends' ? 'people-outline' : 'lock-closed-outline'}
+            label={event.privacy === 'public' ? 'Public' : event.privacy === 'friends' ? 'Friends Only' : 'Private'}
+          />
+        )}
       </View>
 
       {/* Companions */}
@@ -391,6 +466,21 @@ function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => 
   );
 }
 
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+function getEventIcon(eventType?: string): React.ComponentProps<typeof Ionicons>['name'] {
+  const lower = eventType?.toLowerCase() || '';
+  if (lower.includes('nba') || lower.includes('basketball') || lower.includes('sports')) return 'basketball-outline';
+  if (lower.includes('nfl') || lower.includes('football')) return 'american-football-outline';
+  if (lower.includes('mlb') || lower.includes('baseball')) return 'baseball-outline';
+  if (lower.includes('nhl') || lower.includes('hockey')) return 'snow-outline';
+  if (lower.includes('movie') || lower.includes('film')) return 'film-outline';
+  if (lower.includes('concert') || lower.includes('music')) return 'musical-notes-outline';
+  if (lower.includes('restaurant') || lower.includes('dining')) return 'restaurant-outline';
+  if (lower.includes('nightlife') || lower.includes('club') || lower.includes('bar')) return 'wine-outline';
+  return 'calendar-outline';
+}
+
 function InfoChip({ icon, label }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string }) {
   return (
     <View style={styles.chip}>
@@ -409,9 +499,10 @@ const styles = StyleSheet.create({
   },
   contentLayer: {
     flex: 1,
+    paddingHorizontal: 12,
   },
   tapClose: {
-    height: 64,
+    height: 100,
   },
   ticketDragStrip: {
     alignItems: 'center',
@@ -604,6 +695,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.text,
   },
+  metaSub: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 1,
+  },
   genericTitle: {
     fontFamily: FontFamily.headlineExtraBold,
     fontSize: FontSize['2xl'],
@@ -614,6 +711,25 @@ const styles = StyleSheet.create({
   },
 
   // ── Bottom content ───────────────────────
+  timeAgoPill: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    zIndex: 10,
+  },
+  timeAgoPillText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 10,
+    color: Colors.textMuted,
+    letterSpacing: 0.3,
+  },
   bottomContent: {
     padding: 22,
     paddingTop: 22 + SEPARATOR_HEIGHT / 2, // compensate for ticketBottom's negative marginTop
@@ -656,7 +772,13 @@ const styles = StyleSheet.create({
   },
   starsRow: {
     flexDirection: 'row',
-    gap: 3,
+    gap: 4,
+  },
+  photo: {
+    width: 140,
+    height: 100,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   chipsRow: {
     flexDirection: 'row',
