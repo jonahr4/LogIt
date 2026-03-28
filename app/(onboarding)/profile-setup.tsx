@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
 
-  // Spatial orbs
+  // Spatial orbs — softened with shadow blur
   orb1: {
     position: 'absolute',
     top: -100,
@@ -235,7 +235,11 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+    backgroundColor: 'rgba(0, 255, 194, 0.12)',
+    shadowColor: 'rgba(0, 255, 194, 0.4)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 60,
   },
   orb2: {
     position: 'absolute',
@@ -244,8 +248,13 @@ const styles = StyleSheet.create({
     width: 380,
     height: 380,
     borderRadius: 190,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+    backgroundColor: 'rgba(0, 255, 194, 0.12)',
+    shadowColor: 'rgba(0, 255, 194, 0.4)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 60,
   },
+
 
   backButton: {
     flexDirection: 'row',
