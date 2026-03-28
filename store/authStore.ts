@@ -115,84 +115,108 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (firebaseUser) {
         try {
-          // Try to fetch existing user profile from API
-          const user = await api.get<User>('/auth/me');
-          // Persist locally for offline access
-          await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
-          await AsyncStorage.setItem(STORAGE_KEY_ONBOARDED, 'true');
-          set({
-            firebaseUser,
-            user,
-            isAuthenticated: true,
-            isOnboarded: true,
-            isInitializing: false,
-            isLoading: false,
-          });
-        } catch {
-          // API unavailable — check local storage for previously onboarded user
-          try {
-            const wasOnboarded = await AsyncStorage.getItem(STORAGE_KEY_ONBOARDED);
-            const storedUser = await AsyncStorage.getItem(STORAGE_KEY_USER);
+          // OFFLINE-FIRST: check local storage for previously onboarded user
+          const wasOnboarded = await AsyncStorage.getItem(STORAGE_KEY_ONBOARDED);
+          const storedUser = await AsyncStorage.getItem(STORAGE_KEY_USER);
 
-            if (wasOnboarded === 'true' && storedUser) {
-              // Previously onboarded, use cached profile
+          if (wasOnboarded === 'true' && storedUser) {
+            // Previously onboarded, use cached profile instantly
+            set({
+              firebaseUser,
+              user: JSON.parse(storedUser),
+              isAuthenticated: true,
+              isOnboarded: true,
+              isInitializing: false,
+              isLoading: false,
+            });
+
+            // Background refresh from API
+            api.get<User>('/auth/me')
+              .then(async (user) => {
+                await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+                set({ user });
+              })
+              .catch(() => {
+                // Ignore background errors
+              });
+            return;
+          }
+
+          // Not in cache, try to fetch from API
+          const checkUser = await api.get<User>('/auth/me');
+          if (checkUser) {
+            await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(checkUser));
+            await AsyncStorage.setItem(STORAGE_KEY_ONBOARDED, 'true');
+            set({
+              firebaseUser,
+              user: checkUser,
+              isAuthenticated: true,
+              isOnboarded: true,
+              isInitializing: false,
+              isLoading: false,
+            });
+            return;
+          } else {
+            set({
+              firebaseUser,
+              user: null,
+              isAuthenticated: true,
+              isOnboarded: false,
+              isInitializing: false,
+              isLoading: false,
+            });
+            return;
+          }
+        } catch {
+          // API unavailable or no local data
+          try {
+            // Check Firebase metadata to determine if returning user
+            const creationTime = firebaseUser.metadata?.creationTime;
+            const isReturningUser = creationTime
+              ? (Date.now() - new Date(creationTime).getTime()) > 2 * 60 * 1000
+              : false;
+
+            if (isReturningUser) {
+              // Returning user whose local data was lost — create profile from Firebase
+              const localUser = {
+                id: firebaseUser.uid,
+                email: firebaseUser.email || '',
+                username: firebaseUser.email?.split('@')[0] || firebaseUser.uid.slice(0, 8),
+                first_name: firebaseUser.displayName?.split(' ')[0] || '',
+                last_name: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+                display_name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
+                avatar_url: firebaseUser.photoURL || null,
+                bio: null,
+                event_preferences: ['sports'],
+                default_privacy: 'public',
+                created_at: creationTime || new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              } as User;
+
+              await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(localUser));
+              await AsyncStorage.setItem(STORAGE_KEY_ONBOARDED, 'true');
+
               set({
                 firebaseUser,
-                user: JSON.parse(storedUser),
+                user: localUser,
                 isAuthenticated: true,
                 isOnboarded: true,
                 isInitializing: false,
                 isLoading: false,
               });
             } else {
-              // No local data — check Firebase metadata to determine if returning user
-              // If account was created more than 2 minutes ago, they likely already onboarded
-              const creationTime = firebaseUser.metadata?.creationTime;
-              const isReturningUser = creationTime
-                ? (Date.now() - new Date(creationTime).getTime()) > 2 * 60 * 1000
-                : false;
-
-              if (isReturningUser) {
-                // Returning user whose local data was lost — create profile from Firebase
-                const localUser = {
-                  id: firebaseUser.uid,
-                  email: firebaseUser.email || '',
-                  username: firebaseUser.email?.split('@')[0] || firebaseUser.uid.slice(0, 8),
-                  first_name: firebaseUser.displayName?.split(' ')[0] || '',
-                  last_name: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-                  display_name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
-                  avatar_url: firebaseUser.photoURL || null,
-                  bio: null,
-                  event_preferences: ['sports'],
-                  default_privacy: 'public',
-                  created_at: creationTime || new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                } as User;
-
-                await AsyncStorage.setItem(STORAGE_KEY_USER, JSON.stringify(localUser));
-                await AsyncStorage.setItem(STORAGE_KEY_ONBOARDED, 'true');
-
-                set({
-                  firebaseUser,
-                  user: localUser,
-                  isAuthenticated: true,
-                  isOnboarded: true,
-                  isInitializing: false,
-                  isLoading: false,
-                });
-              } else {
-                // Genuinely new user — needs onboarding
-                set({
-                  firebaseUser,
-                  user: null,
-                  isAuthenticated: true,
-                  isOnboarded: false,
-                  isInitializing: false,
-                  isLoading: false,
-                });
-              }
+              // Genuinely new user — needs onboarding
+              set({
+                firebaseUser,
+                user: null,
+                isAuthenticated: true,
+                isOnboarded: false,
+                isInitializing: false,
+                isLoading: false,
+              });
             }
           } catch {
+            // Absolute worst case fallback
             set({
               firebaseUser,
               user: null,

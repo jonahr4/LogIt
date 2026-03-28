@@ -35,6 +35,11 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    const unsubscribe = initialize();
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
     if (isInitializing || !fontsLoaded) return;
 
     const inAuthGroup = segments[0] === '(auth)';
