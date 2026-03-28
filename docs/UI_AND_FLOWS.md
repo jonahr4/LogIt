@@ -1,7 +1,7 @@
 # Log It — UI Design & User Flows
 
-> **Last updated:** 2026-03-27
-> Updated: Built all tab screens (Feed, Logbook, Add Log, Profile) with spatial-green-v2 design. Implemented floating pill nav bar with Ionicons. Added GlassCard and OrbBackground shared components. Rebranded "LOG IT" to "LogIt" across app.
+> **Last updated:** 2026-03-28
+> Updated: Added Edit/Create Log Modal with type-specific input sections for all 6 event types. Added event-type variant feed cards and modal tops. Updated navigation graph with edit log flow.
 
 ## Navigation Structure
 
@@ -14,10 +14,12 @@ graph TB
         Profile["👤 Profile"]
     end
 
-    Feed --> EventDetail["Event Detail"]
+    Feed --> EventDetail["Event Detail Modal"]
     Feed --> UserProfile["Other User Profile"]
+    EventDetail --> EditLogModal["Edit Log Modal"]
     Logbook --> EventDetail
-    Logbook --> EditLog["Edit Log"]
+    Logbook --> EditLogModal
+    AddLog --> EditLogModal
     AddLog --> SearchGame["Search Game"]
     SearchGame --> ConfirmLog["Confirm & Add Notes"]
     ConfirmLog --> LogSuccess["Success → Logbook"]
@@ -42,10 +44,10 @@ graph TB
 
 | Screen | Access From | Purpose |
 |---|---|---|
-| **Event Detail** | Feed, Logbook | Rich game info — score, teams, venue, attendees |
+| **Event Detail Modal** | Feed, Logbook | Rich event info — score, teams, venue, attendees |
+| **Edit/Create Log Modal** | Add Log, Event Detail | Create new or edit existing log with type-specific inputs |
 | **Search Game** | Add Log | Find a game from the database |
 | **Confirm Log** | Search Game | Add notes, set privacy, confirm |
-| **Edit Log** | Logbook, Event Detail | Modify notes/privacy on an existing log |
 | **Other User Profile** | Feed | View another user's public logs |
 | **Settings** | Profile | Account, privacy defaults, notifications |
 | **Friends List** | Profile | Manage friends |
@@ -141,6 +143,50 @@ graph LR
 **Step 4 — Success:**
 - Confirmation animation
 - "View in Logbook" or "Log Another" actions
+
+---
+
+### 3a. Edit / Create Log Modal (`EditLogModal`)
+
+Ticket-style modal (mirroring the Event Detail Modal design) used for both **creating** a new log and **editing** an existing one. Accessed from:
+- **Add Log tab** → tap any event type card → opens in create mode
+- **Event Detail Modal** → tap "Edit Log" → opens in edit mode, pre-filled with existing data
+
+**Structure:**
+```
+┌─────────────────────────────┐
+│  ≡ Drag handle              │
+│  ┌─────────────────────────┐│
+│  │  "New [Type]" badge     ││
+│  │  Title / Venue / Date   ││
+│  │  TYPE-SPECIFIC INPUTS   ││
+│  └─────────────────────────┘│
+│  ╌╌╌╌ dashed separator ╌╌╌╌│
+│  ┌─────────────────────────┐│
+│  │  ★ Rating (1-5 stars)   ││
+│  │  Notes (multiline)      ││
+│  │  Privacy selector       ││
+│  │  Companions (chip list) ││
+│  │  Photos (placeholder)   ││
+│  │  [Log It]  [Cancel]     ││
+│  └─────────────────────────┘│
+└─────────────────────────────┘
+```
+
+**Type-specific input sections:**
+
+| Type | Fields |
+|---|---|
+| **Sports** | Sport picker (Basketball/Football/Baseball/Hockey), league, season, home/away team names, home/away scores, status |
+| **Movie** | Director, genre, runtime, cast (comma-separated), watched-at picker (Theater/Home/Drive-In/Streaming), theater name |
+| **Concert** | Artist, tour name, opener, genre, setlist (dynamic add/remove list) |
+| **Restaurant** | Cuisine, price level segmented control ($–$$$$) |
+| **Nightlife** | Venue type picker (Club/Bar/Lounge/Rooftop/Pub), vibe, dress code, music genre, price level |
+| **Custom** | No extra fields — uses shared inputs only |
+
+**Shared bottom inputs (all types):** Rating stars, notes, privacy (Public/Friends/Private), companions (add names + chip list), photos placeholder.
+
+**Component:** [`EditLogModal.tsx`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/components/ui/EditLogModal.tsx)
 
 ---
 

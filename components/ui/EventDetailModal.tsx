@@ -82,9 +82,10 @@ export type EventDetail = {
 interface Props {
   event: EventDetail | null;
   onClose: () => void;
+  onEdit?: (event: EventDetail) => void;
 }
 
-export function EventDetailModal({ event, onClose }: Props) {
+export function EventDetailModal({ event, onClose, onEdit }: Props) {
   const translateY = useRef(new Animated.Value(800)).current;
   const [topHeight, setTopHeight] = useState(0);
   const onCloseRef = useRef(onClose);
@@ -201,7 +202,7 @@ export function EventDetailModal({ event, onClose }: Props) {
               showsVerticalScrollIndicator={false}
               bounces
             >
-              <BottomContent event={event} onClose={dismiss} />
+              <BottomContent event={event} onClose={dismiss} onEdit={onEdit} />
             </ScrollView>
             {/* Soft fade at the top to blend the clip edge into the separator */}
             <LinearGradient
@@ -537,7 +538,7 @@ function MetaCell({
 
 // ─── BOTTOM CONTENT ───────────────────────────────────────────────────────────
 
-function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => void }) {
+function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose: () => void; onEdit?: (event: EventDetail) => void }) {
   const eventTypeLower = event.eventType?.toLowerCase() || '';
   const isSportsType = ['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(eventTypeLower);
   const isMovie = ['movie', 'film'].includes(eventTypeLower);
@@ -723,7 +724,7 @@ function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => 
           <Ionicons name="share-outline" size={18} color={Colors.background} />
           <Text style={styles.shareButtonText}>Share</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={() => { if (onEdit) { onClose(); setTimeout(() => onEdit(event), 300); } }}>
           <Ionicons name="create-outline" size={18} color={Colors.text} />
           <Text style={styles.editButtonText}>Edit Log</Text>
         </TouchableOpacity>

@@ -18,6 +18,7 @@ import { Colors, Shadows } from '@/constants/colors';
 import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { OrbBackground } from '@/components/ui/OrbBackground';
+import { EditLogModal } from '@/components/ui/EditLogModal';
 import { EventDetailModal, type EventDetail } from '@/components/ui/EventDetailModal';
 
 import { useAuthStore } from '@/store/authStore';
@@ -292,6 +293,7 @@ export default function FeedScreen() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<FeedTab>('Following');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
+  const [editEvent, setEditEvent] = useState<EventDetail | null>(null);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -343,6 +345,17 @@ export default function FeedScreen() {
       <EventDetailModal
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
+        onEdit={(ev) => setEditEvent(ev)}
+      />
+
+      <EditLogModal
+        visible={!!editEvent}
+        event={editEvent}
+        onClose={() => setEditEvent(null)}
+        onSave={(data) => {
+          console.log('Saved log:', data);
+          setEditEvent(null);
+        }}
       />
     </SafeAreaView>
   );

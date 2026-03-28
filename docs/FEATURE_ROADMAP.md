@@ -1,7 +1,7 @@
 # Log It — Feature Roadmap
 
-> **Last updated:** 2026-03-27
-> Updated: Tab screen UI shells implemented (Feed, Logbook, Add Log, Profile) with spatial-green-v2 design and mock data. Floating pill nav bar built.
+> **Last updated:** 2026-03-28
+> Updated: Event Detail Page with type-specific variants implemented for all 6 types. Edit/Create Log Modal built with type-specific input sections. Multi-type feed cards with NFL + all event types. Add Log screen now has 6 event type options including Nightlife.
 
 ## Build Phases
 
@@ -80,17 +80,18 @@ gantt
 - [ ] Tap to view event detail
 
 ### 6. Event Detail Page
-- [ ] Event header (title, type-specific display — e.g., teams + score for sports)
-- [ ] Date, time, venue with map link
-- [ ] User's attendance badge + notes + rating + companions
-- [ ] Edit/delete log from this screen
-- [ ] Photos gallery
+- [x] Event header (title, type-specific display — e.g., teams + score for sports, director/cast for movies, artist/tour for concerts)
+- [x] Date, time, venue with city/state
+- [x] User's attendance badge + notes + rating + companions
+- [x] Edit log button → opens Edit Log Modal
+- [x] Photos gallery
+- [x] Type-specific bottom content (box score tab, watched-at, setlist, cuisine/price, venue details)
 
 ### 7. Simple Feed + Comments
-- [ ] "You" tab — own activity as a feed
-- [ ] "Everyone" tab — all public logs from the entire platform
-- [ ] Each post shows: user, event, date, notes, rating, companion count, comment count
-- [ ] Tap card → event detail
+- [x] "Following" / "For You" tabs
+- [x] Feed cards with type-specific secondary pills (score, runtime, genre, price, vibe)
+- [x] Each post shows: user, event, notes, rating
+- [x] Tap card → event detail modal
 - [ ] Comments on any public log (post, read, delete)
 - [ ] Pull-to-refresh
 - [ ] Empty states for first-time users

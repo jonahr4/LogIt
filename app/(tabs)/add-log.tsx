@@ -1,6 +1,6 @@
 /**
  * LogIt — Add Log Screen
- * Spatial Green v2: "Log New" header, glass search input
+ * Spatial Green v2: "Log New" header, glass search input, type-specific editors
  */
 
 import React, { useState } from 'react';
@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/colors';
 import { Typography, FontFamily } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { EditLogModal } from '@/components/ui/EditLogModal';
 
 
 const EVENT_TYPES = [
@@ -24,11 +25,13 @@ const EVENT_TYPES = [
   { key: 'movie', icon: 'film-outline' as const, label: 'Movies' },
   { key: 'concert', icon: 'musical-notes-outline' as const, label: 'Concerts' },
   { key: 'restaurant', icon: 'restaurant-outline' as const, label: 'Restaurants' },
-  { key: 'manual', icon: 'create-outline' as const, label: 'Custom' },
+  { key: 'nightlife', icon: 'wine-outline' as const, label: 'Nightlife' },
+  { key: 'custom', icon: 'create-outline' as const, label: 'Custom' },
 ] as const;
 
 export default function AddLogScreen() {
   const [searchText, setSearchText] = useState('');
+  const [selectedType, setSelectedType] = useState<string | null>(null);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -56,7 +59,7 @@ export default function AddLogScreen() {
         <Text style={styles.sectionLabel}>WHAT DID YOU DO?</Text>
         <View style={styles.eventTypesGrid}>
           {EVENT_TYPES.map((type) => (
-            <TouchableOpacity key={type.key} activeOpacity={0.7}>
+            <TouchableOpacity key={type.key} activeOpacity={0.7} onPress={() => setSelectedType(type.key)}>
               <GlassCard borderRadius={24} style={styles.eventTypeCard}>
                 <View style={styles.eventTypeIconCircle}>
                   <Ionicons
@@ -76,13 +79,24 @@ export default function AddLogScreen() {
         <GlassCard borderRadius={20} style={styles.emptyRecent}>
           <Ionicons name="time-outline" size={32} color={Colors.textMuted} />
           <Text style={styles.emptyRecentText}>
-            Recent events will appear here once the sports data pipeline is connected.
+            Recent events will appear here once the data pipeline is connected.
           </Text>
         </GlassCard>
 
         {/* Bottom spacer */}
         <View style={{ height: 140 }} />
       </ScrollView>
+
+      {/* Edit/Create modal */}
+      <EditLogModal
+        visible={!!selectedType}
+        eventType={selectedType || undefined}
+        onClose={() => setSelectedType(null)}
+        onSave={(data) => {
+          console.log('Created log:', data);
+          setSelectedType(null);
+        }}
+      />
     </SafeAreaView>
   );
 }

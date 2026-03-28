@@ -222,6 +222,8 @@ Each child table has a **1:1 relationship** with `events` via `event_id` foreign
 | `runtime_minutes` | int | Film length |
 | `tmdb_id` | string | TMDB API identifier |
 | `cast` | string[] | Major cast members |
+| `watched_at` | string | Where watched: `Theater`, `Home`, `Drive-In`, `Streaming` |
+| `theater_name` | string | Theater name (e.g., "AMC Lincoln Square") |
 
 #### `ConcertEvent`
 
@@ -233,6 +235,7 @@ Each child table has a **1:1 relationship** with `events` via `event_id` foreign
 | `genre` | string | Music genre |
 | `ticketmaster_id` | string | Ticketmaster event ID |
 | `opener` | string | Opening act |
+| `setlist` | string[] | Setlist highlights |
 
 #### `RestaurantEvent`
 
