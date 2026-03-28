@@ -49,13 +49,14 @@ interface EditLogModalProps {
   visible: boolean;
   onClose: () => void;
   onSave: (data: Partial<EventDetail>) => void;
-  event?: EventDetail | null; // Edit mode — pre-fills
+  event?: any | null; // Edit mode — pre-fills (any used for mock fallback)
   eventType?: string;         // Create mode — determines type section
+  mode?: 'create' | 'edit';
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function EditLogModal({ visible, onClose, onSave, event, eventType }: EditLogModalProps) {
+export function EditLogModal({ visible, onClose, onSave, event, eventType, mode }: EditLogModalProps) {
   const translateY = useRef(new Animated.Value(800)).current;
   const [topHeight, setTopHeight] = useState(0);
   const onCloseRef = useRef(onClose);
@@ -63,7 +64,8 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType }: Edi
 
   // Determine effective type
   const effectiveType = event?.eventType || eventType || 'custom';
-  const isEdit = !!event;
+  const isEdit = mode ? mode === 'edit' : !!event;
+  const canEditCanonical = event ? effectiveType === 'manual' : true;
 
   // ─── Form state ──────────────────────────────────────────────────────
   const [title, setTitle] = useState('');
@@ -368,7 +370,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType }: Edi
 
               {/* Title + Rating */}
               <View style={styles.topContent}>
-                <LabeledInput label="TITLE" value={title} onChangeText={setTitle} placeholder={`e.g. ${getPlaceholder(effectiveType, 'title')}`} />
+                <LabeledInput label="TITLE" value={title} onChangeText={setTitle} placeholder={`e.g. ${getPlaceholder(effectiveType, 'title')}`} editable={canEditCanonical} />
 
                 <Text style={styles.miniLabel}>YOUR RATING</Text>
                 <View style={styles.starsRow}>
@@ -403,22 +405,23 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType }: Edi
 
                   {/* Venue / Location / Date */}
                   <Text style={styles.miniLabel}>LOCATION & DATE</Text>
-                  <LabeledInput label="VENUE" value={venue} onChangeText={setVenue} placeholder="Venue name" />
+                  <LabeledInput label="VENUE" value={venue} onChangeText={setVenue} placeholder="Venue name" editable={canEditCanonical} />
                   <View style={styles.inputRow}>
                     <View style={{ flex: 1 }}>
-                      <LabeledInput label="CITY" value={venueCity} onChangeText={setVenueCity} placeholder="City" />
+                      <LabeledInput label="CITY" value={venueCity} onChangeText={setVenueCity} placeholder="City" editable={canEditCanonical} />
                     </View>
                     <View style={{ flex: 0.6 }}>
-                      <LabeledInput label="STATE" value={venueState} onChangeText={setVenueState} placeholder="ST" />
+                      <LabeledInput label="STATE" value={venueState} onChangeText={setVenueState} placeholder="ST" editable={canEditCanonical} />
                     </View>
                   </View>
-                  <LabeledInput label="DATE" value={date} onChangeText={setDate} placeholder="Mar 15, 2026" />
+                  <LabeledInput label="DATE" value={date} onChangeText={setDate} placeholder="Mar 15, 2026" editable={canEditCanonical} />
 
                   <View style={styles.divider} />
 
                   {/* Type-specific fields */}
                   <TypeSpecificInputs
                     type={effectiveType}
+                    canEditCanonical={canEditCanonical}
                     // Sports
                     sport={sport} setSport={setSport}
                     league={league} setLeague={setLeague}
@@ -604,8 +607,9 @@ function SportsEditSection(props: any) {
           <TouchableOpacity
             key={opt}
             onPress={() => { props.setSport(opt.toLowerCase()); props.setLeague(getLeagueForSport(opt)); }}
-            style={[styles.segmentButton, props.sport === opt.toLowerCase() && styles.segmentButtonActive]}
+            style={[styles.segmentButton, props.sport === opt.toLowerCase() && styles.segmentButtonActive, !props.canEditCanonical && { opacity: 0.5 }]}
             activeOpacity={0.7}
+            disabled={!props.canEditCanonical}
           >
             <Text style={[styles.segmentText, props.sport === opt.toLowerCase() && styles.segmentTextActive]}>{opt}</Text>
           </TouchableOpacity>
@@ -614,32 +618,32 @@ function SportsEditSection(props: any) {
 
       <View style={styles.inputRow}>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="LEAGUE" value={props.league} onChangeText={props.setLeague} placeholder="NBA" />
+          <LabeledInput label="LEAGUE" value={props.league} onChangeText={props.setLeague} placeholder="NBA" editable={props.canEditCanonical} />
         </View>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="SEASON" value={props.season} onChangeText={props.setSeason} placeholder="2025-26" />
+          <LabeledInput label="SEASON" value={props.season} onChangeText={props.setSeason} placeholder="2025-26" editable={props.canEditCanonical} />
         </View>
       </View>
 
       <View style={styles.inputRow}>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="HOME TEAM" value={props.homeTeamName} onChangeText={props.setHomeTeamName} placeholder="Team name" />
+          <LabeledInput label="HOME TEAM" value={props.homeTeamName} onChangeText={props.setHomeTeamName} placeholder="Team name" editable={props.canEditCanonical} />
         </View>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="AWAY TEAM" value={props.awayTeamName} onChangeText={props.setAwayTeamName} placeholder="Team name" />
+          <LabeledInput label="AWAY TEAM" value={props.awayTeamName} onChangeText={props.setAwayTeamName} placeholder="Team name" editable={props.canEditCanonical} />
         </View>
       </View>
 
       <View style={styles.inputRow}>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="HOME SCORE" value={props.homeScore} onChangeText={props.setHomeScore} placeholder="0" keyboardType="numeric" />
+          <LabeledInput label="HOME SCORE" value={props.homeScore} onChangeText={props.setHomeScore} placeholder="0" keyboardType="numeric" editable={props.canEditCanonical} />
         </View>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="AWAY SCORE" value={props.awayScore} onChangeText={props.setAwayScore} placeholder="0" keyboardType="numeric" />
+          <LabeledInput label="AWAY SCORE" value={props.awayScore} onChangeText={props.setAwayScore} placeholder="0" keyboardType="numeric" editable={props.canEditCanonical} />
         </View>
       </View>
 
-      <LabeledInput label="STATUS" value={props.status} onChangeText={props.setStatus} placeholder="FINAL • OT" />
+      <LabeledInput label="STATUS" value={props.status} onChangeText={props.setStatus} placeholder="FINAL • OT" editable={props.canEditCanonical} />
     </View>
   );
 }
@@ -651,15 +655,15 @@ function MovieEditSection(props: any) {
 
       <View style={styles.inputRow}>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="DIRECTOR" value={props.director} onChangeText={props.setDirector} placeholder="Director name" />
+          <LabeledInput label="DIRECTOR" value={props.director} onChangeText={props.setDirector} placeholder="Director name" editable={props.canEditCanonical} />
         </View>
         <View style={{ flex: 0.5 }}>
-          <LabeledInput label="RUNTIME" value={props.runtime} onChangeText={props.setRuntime} placeholder="min" keyboardType="numeric" />
+          <LabeledInput label="RUNTIME" value={props.runtime} onChangeText={props.setRuntime} placeholder="min" keyboardType="numeric" editable={props.canEditCanonical} />
         </View>
       </View>
 
-      <LabeledInput label="GENRE" value={props.genre} onChangeText={props.setGenre} placeholder="Sci-Fi, Drama, etc." />
-      <LabeledInput label="CAST" value={props.castInput} onChangeText={props.setCastInput} placeholder="Names separated by commas" />
+      <LabeledInput label="GENRE" value={props.genre} onChangeText={props.setGenre} placeholder="Sci-Fi, Drama, etc." editable={props.canEditCanonical} />
+      <LabeledInput label="CAST" value={props.castInput} onChangeText={props.setCastInput} placeholder="Names separated by commas" editable={props.canEditCanonical} />
 
       <Text style={styles.miniLabel}>WATCHED AT</Text>
       <View style={styles.segmentedRow}>
@@ -687,15 +691,15 @@ function ConcertEditSection(props: any) {
     <View style={styles.typeSection}>
       <Text style={styles.typeSectionLabel}>CONCERT DETAILS</Text>
 
-      <LabeledInput label="ARTIST / BAND" value={props.artist} onChangeText={props.setArtist} placeholder="Artist name" />
-      <LabeledInput label="TOUR NAME" value={props.tourName} onChangeText={props.setTourName} placeholder="e.g. SOS Tour (optional)" />
+      <LabeledInput label="ARTIST / BAND" value={props.artist} onChangeText={props.setArtist} placeholder="Artist name" editable={props.canEditCanonical} />
+      <LabeledInput label="TOUR NAME" value={props.tourName} onChangeText={props.setTourName} placeholder="e.g. SOS Tour (optional)" editable={props.canEditCanonical} />
 
       <View style={styles.inputRow}>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="OPENER" value={props.opener} onChangeText={props.setOpener} placeholder="Opening act" />
+          <LabeledInput label="OPENER" value={props.opener} onChangeText={props.setOpener} placeholder="Opening act" editable={props.canEditCanonical} />
         </View>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="GENRE" value={props.concertGenre} onChangeText={props.setConcertGenre} placeholder="R&B, Hip-Hop" />
+          <LabeledInput label="GENRE" value={props.concertGenre} onChangeText={props.setConcertGenre} placeholder="R&B, Hip-Hop" editable={props.canEditCanonical} />
         </View>
       </View>
 
@@ -735,7 +739,7 @@ function RestaurantEditSection(props: any) {
     <View style={styles.typeSection}>
       <Text style={styles.typeSectionLabel}>RESTAURANT DETAILS</Text>
 
-      <LabeledInput label="CUISINE" value={props.cuisine} onChangeText={props.setCuisine} placeholder="Italian, Japanese, etc." />
+      <LabeledInput label="CUISINE" value={props.cuisine} onChangeText={props.setCuisine} placeholder="Italian, Japanese, etc." editable={props.canEditCanonical} />
 
       <Text style={styles.miniLabel}>PRICE LEVEL</Text>
       <View style={styles.segmentedRow}>
@@ -743,8 +747,9 @@ function RestaurantEditSection(props: any) {
           <TouchableOpacity
             key={level}
             onPress={() => props.setPriceLevel(level)}
-            style={[styles.segmentButton, styles.priceSegment, props.priceLevel === level && styles.priceSegmentActive]}
+            style={[styles.segmentButton, styles.priceSegment, props.priceLevel === level && styles.priceSegmentActive, !props.canEditCanonical && { opacity: 0.5 }]}
             activeOpacity={0.7}
+            disabled={!props.canEditCanonical}
           >
             <Text style={[styles.priceSegmentText, props.priceLevel === level && styles.priceSegmentTextActive]}>{level}</Text>
           </TouchableOpacity>
@@ -765,8 +770,9 @@ function NightlifeEditSection(props: any) {
           <TouchableOpacity
             key={opt}
             onPress={() => props.setVenueType(opt)}
-            style={[styles.segmentButton, props.venueType === opt && styles.segmentButtonActive]}
+            style={[styles.segmentButton, props.venueType === opt && styles.segmentButtonActive, !props.canEditCanonical && { opacity: 0.5 }]}
             activeOpacity={0.7}
+            disabled={!props.canEditCanonical}
           >
             <Text style={[styles.segmentText, props.venueType === opt && styles.segmentTextActive]}>{opt}</Text>
           </TouchableOpacity>
@@ -775,14 +781,14 @@ function NightlifeEditSection(props: any) {
 
       <View style={styles.inputRow}>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="VIBE" value={props.vibe} onChangeText={props.setVibe} placeholder="High-energy, Chill..." />
+          <LabeledInput label="VIBE" value={props.vibe} onChangeText={props.setVibe} placeholder="High-energy, Chill..." editable={props.canEditCanonical} />
         </View>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="DRESS CODE" value={props.dressCode} onChangeText={props.setDressCode} placeholder="Smart Casual" />
+          <LabeledInput label="DRESS CODE" value={props.dressCode} onChangeText={props.setDressCode} placeholder="Smart Casual" editable={props.canEditCanonical} />
         </View>
       </View>
 
-      <LabeledInput label="MUSIC GENRE" value={props.musicGenre} onChangeText={props.setMusicGenre} placeholder="House, Hip-Hop, Live DJ..." />
+      <LabeledInput label="MUSIC GENRE" value={props.musicGenre} onChangeText={props.setMusicGenre} placeholder="House, Hip-Hop, Live DJ..." editable={props.canEditCanonical} />
 
       <Text style={styles.miniLabel}>PRICE LEVEL</Text>
       <View style={styles.segmentedRow}>
@@ -804,7 +810,7 @@ function NightlifeEditSection(props: any) {
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
 function LabeledInput({
-  label, value, onChangeText, placeholder, keyboardType, multiline,
+  label, value, onChangeText, placeholder, keyboardType, multiline, editable = true,
 }: {
   label: string;
   value: string;
@@ -812,12 +818,17 @@ function LabeledInput({
   placeholder?: string;
   keyboardType?: 'default' | 'numeric';
   multiline?: boolean;
+  editable?: boolean;
 }) {
   return (
     <View style={styles.labeledInput}>
       <Text style={styles.inputLabel}>{label}</Text>
       <TextInput
-        style={[styles.textInput, multiline && styles.textInputMultiline]}
+        style={[
+          styles.textInput,
+          multiline && styles.textInputMultiline,
+          !editable && { backgroundColor: 'transparent', borderColor: 'transparent', paddingHorizontal: 0, paddingVertical: 4, color: Colors.textMuted }
+        ]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -825,6 +836,7 @@ function LabeledInput({
         keyboardType={keyboardType || 'default'}
         multiline={multiline}
         textAlignVertical={multiline ? 'top' : 'center'}
+        editable={editable}
       />
     </View>
   );

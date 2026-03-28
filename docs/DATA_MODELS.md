@@ -1,7 +1,9 @@
 # Log It — Data Models
 
-> **Last updated:** 2026-03-27
-> Updated: Added `nightlife_events` child table for clubs/bars/nights out
+> **Last updated:** 2026-03-28
+> **Changes:**
+> - 2026-03-28: Clarified that Manual events are specifically a fallback when canonical API search fails.
+> - 2026-03-27: Added `nightlife_events` child table for clubs/bars/nights out
 
 ## Design Principles
 
@@ -246,9 +248,9 @@ Each child table has a **1:1 relationship** with `events` via `event_id` foreign
 | `price_level` | string | Price indicator (`$`, `$$`, `$$$`, `$$$$`) |
 | `foursquare_id` | string | Foursquare venue ID |
 
-#### `ManualEvent` (future)
+#### `ManualEvent` (Fallback)
 
-For user-created events not in any external database. Uses the base `events` fields only (title, date, venue, notes). No child table needed — `event_type = 'manual'` with no child row.
+For user-created events not found in any external database API search. Uses the base `events` fields only (title, date, venue, notes). No child table needed — `event_type = 'manual'` with no child row. This ensures users are never truly blocked from logging, but it lacks the canonical overlap of API events.
 
 #### `NightlifeEvent` (future)
 

@@ -113,25 +113,26 @@ The power-user screen — your complete history.
 
 ```mermaid
 graph LR
-    A["Tap ➕"] --> B["Search for Game"]
-    B --> C["Select Game"]
-    C --> D["Add Details"]
-    D --> E["Log Created ✅"]
+    A["Tap ➕"] --> B["Select Event Type"]
+    B --> C["Search Real-World Events (API)"]
+    C --> D["Select Real Event"]
+    D --> E["Add Details & Log It ✅"]
 
-    B -.-> F["Game Not Found?"]
-    F -.-> G["Manual Entry"]
-    G --> D
+    C -.-> F["Event Not Found?"]
+    F -.-> G["Manual Custom Entry"]
+    G --> E
 ```
 
-**Step 1 — Search for Game:**
-- Search bar with auto-suggest
-- Filter by sport, team, date
-- Results show: Teams vs Teams · Date · Venue
-- "Can't find your game?" → manual entry fallback
+**Step 1 — Choose Type & Search Real Events (API):**
+- Users first select the event type (Sports, Movies, Concerts, Nightlife, etc.)
+- **CRITICAL REQUIREMENT:** The search bar always queries a **real-world database** via our APIs (e.g., Ball Don't Lie for NBA, TMDB for Movies, Google Places for Restaurants/Nightlife).
+- Users DO NOT type custom text here by default; they search to select a canonical, shared object from the API.
+- Results display rich entity data (e.g., "Celtics vs Mavericks · TD Garden · Nov 1").
 
-**Step 2 — Select Game:**
-- Tapping a result shows a preview card with game details
-- "Log This Game" button
+**Step 2 — Select Event & Fallback:**
+- Tapping a result selects the canonical event.
+- If the search yields no results, a "Can't find it? Add Manually" fallback button appears.
+- Manual entry allows freeform text, but this is the exception, not the rule. Real API events ensure data cleanliness and social overlap matching.
 
 **Step 3 — Add Details:**
 - Notes field (optional, multiline)

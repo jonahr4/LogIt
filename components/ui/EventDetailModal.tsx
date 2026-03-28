@@ -706,10 +706,10 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
                   <Image source={{ uri: c.avatar }} style={styles.companionAvatar} />
                 ) : (
                   <View style={[styles.companionAvatar, styles.companionAvatarFallback]}>
-                    <Text style={styles.companionInitial}>{c.name[0].toUpperCase()}</Text>
+                    <Text style={styles.companionInitial}>{c.name ? c.name[0].toUpperCase() : '?'}</Text>
                   </View>
                 )}
-                <Text style={styles.companionName}>{c.name}</Text>
+                <Text style={styles.companionName}>{c.name || 'Friend'}</Text>
               </View>
             ))}
           </View>
@@ -742,7 +742,8 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
 function getEventIcon(eventType?: string): React.ComponentProps<typeof Ionicons>['name'] {
-  const lower = eventType?.toLowerCase() || '';
+  if (!eventType || typeof eventType !== 'string') return 'calendar-outline';
+  const lower = eventType.toLowerCase();
   if (lower.includes('nba') || lower.includes('basketball') || lower.includes('sports')) return 'basketball-outline';
   if (lower.includes('nfl') || lower.includes('football')) return 'american-football-outline';
   if (lower.includes('mlb') || lower.includes('baseball')) return 'baseball-outline';

@@ -1,7 +1,9 @@
 # Log It — Feature Roadmap
 
 > **Last updated:** 2026-03-28
-> Updated: Added Search/Explore tab for discovering events and other users' logs. Event Detail Page with type-specific variants. Edit/Create Log Modal. Multi-type feed cards. Add Log screen with 6 event types.
+> **Changes:**
+> - 2026-03-28: Clarified that Event Search queries real-world APIs (canonical objects), with manual entry as a fallback.
+> - 2026-03-28: Added Search/Explore tab for discovering events and other users' logs. Event Detail Page with type-specific variants. Edit/Create Log Modal. Multi-type feed cards. Add Log screen with 6 event types.
 
 ## Build Phases
 
@@ -61,7 +63,8 @@ gantt
 - [x] Recent searches (tappable re-search)
 - [x] Trending events with log count + average rating badges
 - [x] Browse by Category grid
-- [ ] Full-text search via Supabase (server-side)
+- [ ] **API Integrations:** Full-text search must query real-world APIs (Ball Don't Lie, TMDB, Ticketmaster, Google Places) to ensure canonical event matching across users.
+- [ ] Full-text search via Supabase (for cached/previously logged events)
 - [ ] Filter by event type, date range
 - [ ] Type-specific filters (team, league, season for sports)
 - [ ] Paginated results
