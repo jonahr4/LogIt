@@ -1,50 +1,41 @@
 /**
  * LogIt — OrbBackground Component
- * Spatial orbs: two large green glow circles for atmospheric depth
- * Matches spatial-green-v2 .orb-1 and .orb-2
+ * Flowing green-tinted gradient background matching spatial-green-v2.html
+ * Uses stacked LinearGradients for a smooth atmospheric wash
  */
 
 import React from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export function OrbBackground() {
-  const { width } = useWindowDimensions();
-  const orbSize = width * 0.8;
-
   return (
-    <>
-      <View
-        style={[
-          styles.orb,
-          {
-            top: -orbSize * 0.2,
-            left: -orbSize * 0.2,
-            width: orbSize,
-            height: orbSize,
-            borderRadius: orbSize / 2,
-          },
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {/* Top-left → center: green tinted wash */}
+      <LinearGradient
+        colors={[
+          'rgba(0, 255, 194, 0.12)',
+          'rgba(0, 255, 194, 0.04)',
+          'transparent',
         ]}
+        locations={[0, 0.4, 0.85]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0.6 }}
+        style={StyleSheet.absoluteFill}
       />
-      <View
-        style={[
-          styles.orb,
-          {
-            bottom: orbSize * 0.06,
-            right: -orbSize * 0.3,
-            width: orbSize * 1.1,
-            height: orbSize * 1.1,
-            borderRadius: (orbSize * 1.1) / 2,
-          },
+
+      {/* Bottom-right → center: second green wash */}
+      <LinearGradient
+        colors={[
+          'transparent',
+          'rgba(0, 255, 194, 0.03)',
+          'rgba(0, 255, 194, 0.10)',
         ]}
+        locations={[0.2, 0.6, 1]}
+        start={{ x: 0, y: 0.4 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
       />
-    </>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  orb: {
-    position: 'absolute',
-    backgroundColor: 'rgba(0, 255, 194, 0.12)',
-    zIndex: -1,
-  },
-});

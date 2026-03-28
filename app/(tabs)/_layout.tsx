@@ -10,6 +10,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/colors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { OrbBackground } from '@/components/ui/OrbBackground';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
@@ -83,17 +84,22 @@ function FloatingTabBar({ state, descriptors, navigation }: any) {
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <FloatingTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tabs.Screen name="feed" options={{ title: 'Feed' }} />
-      <Tabs.Screen name="logbook" options={{ title: 'Logbook' }} />
-      <Tabs.Screen name="add-log" options={{ title: 'Log' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
-    </Tabs>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <OrbBackground />
+      <Tabs
+        tabBar={(props) => <FloatingTabBar {...props} />}
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: 'transparent' },
+          sceneStyle: { backgroundColor: 'transparent' },
+        }}
+      >
+        <Tabs.Screen name="feed" options={{ title: 'Feed' }} />
+        <Tabs.Screen name="logbook" options={{ title: 'Logbook' }} />
+        <Tabs.Screen name="add-log" options={{ title: 'Log' }} />
+        <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      </Tabs>
+    </View>
   );
 }
 

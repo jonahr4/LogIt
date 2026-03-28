@@ -164,7 +164,7 @@ function FeedCard({ card }: { card: (typeof MOCK_CARDS)[0] }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   // Image
   imageContainer: {
     width: '100%',
-    height: 260,
+    height: 200,
     borderRadius: 24,
     overflow: 'hidden',
     position: 'relative',
@@ -328,12 +328,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.1)'
   },
   eventPillText: {
     fontFamily: FontFamily.bodySemiBold,
@@ -345,18 +345,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 14,
     right: 14,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255, 138, 61, 0.35)',
   },
   scoreText: {
     fontFamily: FontFamily.headlineExtraBold,
     fontSize: 13,
     letterSpacing: 2,
-    color: Colors.primaryContainer,
+    color: '#FF8A3D',
   },
 
   // Note
