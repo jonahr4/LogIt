@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/colors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrbBackground } from '@/components/ui/OrbBackground';
+import { BlurView } from 'expo-blur';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
@@ -27,7 +28,7 @@ function FloatingTabBar({ state, descriptors, navigation }: any) {
 
   return (
     <View style={[styles.navContainer, { bottom: bottomOffset }]}>
-      <View style={styles.navBar}>
+      <BlurView intensity={60} tint="dark" style={styles.navBar}>
         {tabs.map((tab, index) => {
           const routeIndex = state.routes.findIndex((r: any) => r.name === tab.key);
           const isFocused = state.index === routeIndex;
@@ -77,7 +78,7 @@ function FloatingTabBar({ state, descriptors, navigation }: any) {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </BlurView>
     </View>
   );
 }
@@ -114,7 +115,8 @@ const styles = StyleSheet.create({
   navBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.glass,
+    backgroundColor: 'rgba(10, 14, 20, 0.45)',
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.glassBorder,
     borderRadius: 999,
