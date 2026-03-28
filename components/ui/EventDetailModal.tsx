@@ -4,7 +4,7 @@
  * Drag handle dismisses. Bottom content scrolls internally.
  */
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   Modal,
   View,
@@ -18,11 +18,13 @@ import {
   PanResponder,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { FontFamily, FontSize } from '@/constants/typography';
 
 const NOTCH_SIZE = 30;
+const SEPARATOR_HEIGHT = 44;
 const TICKET_BORDER = 'rgba(255, 255, 255, 0.1)';
 const BLUR_INTENSITY = 50;
 const DISMISS_THRESHOLD = 120;
@@ -55,6 +57,7 @@ interface Props {
 
 export function EventDetailModal({ event, onClose }: Props) {
   const translateY = useRef(new Animated.Value(800)).current;
+  const [topHeight, setTopHeight] = useState(0);
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
@@ -139,30 +142,30 @@ export function EventDetailModal({ event, onClose }: Props) {
 
         {/* Ticket — single unified surface */}
         <View style={styles.ticket}>
-          {/* One BlurView covers the whole ticket — no seams */}
-          <BlurView
-            intensity={BLUR_INTENSITY}
-            tint="dark"
-            style={[StyleSheet.absoluteFill, styles.ticketBlur]}
-          />
-          <View style={[StyleSheet.absoluteFill, styles.ticketTint]} />
+          {/* Clipped background shell — overflow:hidden here clips blur to rounded corners
+              while the outer ticket stays overflow:visible so notches can extend outside */}
+          <View style={[StyleSheet.absoluteFill, styles.ticketBgClip]}>
+            <BlurView intensity={BLUR_INTENSITY} tint="dark" style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, styles.ticketTint]} />
+          </View>
 
-          {/* TOP — transparent, drag handle at top */}
-          <View style={styles.ticketTop}>
+          {/* TOP — measure height so we can place notches */}
+          <View
+            style={styles.ticketTop}
+            onLayout={(e) => setTopHeight(e.nativeEvent.layout.height)}
+          >
             <View style={styles.ticketDragStrip} {...panResponder.panHandlers}>
               <View style={styles.handleBar} />
             </View>
             {isSports ? <SportsTop event={event} /> : <GenericTop event={event} />}
           </View>
 
-          {/* SEPARATOR — transparent, notches punch through side borders */}
+          {/* Separator — sits above ticketBottom via zIndex */}
           <View style={styles.separator}>
-            <View style={[styles.notch, styles.notchLeft]} />
             <DashedLine />
-            <View style={[styles.notch, styles.notchRight]} />
           </View>
 
-          {/* BOTTOM — flex:1, scrollable, transparent */}
+          {/* Scrollable bottom — pulled up by half separator height so clip edge = dashed line */}
           <View style={styles.ticketBottom}>
             <ScrollView
               style={styles.bottomScroll}
@@ -172,7 +175,21 @@ export function EventDetailModal({ event, onClose }: Props) {
             >
               <BottomContent event={event} onClose={dismiss} />
             </ScrollView>
+            {/* Soft fade at the top to blend the clip edge into the separator */}
+            <LinearGradient
+              colors={['rgba(18, 22, 32, 0.30)', 'transparent']}
+              style={styles.topFade}
+              pointerEvents="none"
+            />
           </View>
+
+          {/* Notches absolutely positioned on ticket at separator level */}
+          {topHeight > 0 && (
+            <>
+              <View style={[styles.notch, styles.notchLeft, { top: topHeight + (44 - NOTCH_SIZE) / 2 }]} />
+              <View style={[styles.notch, styles.notchRight, { top: topHeight + (44 - NOTCH_SIZE) / 2 }]} />
+            </>
+          )}
 
         </View>
       </Animated.View>
@@ -425,26 +442,25 @@ const styles = StyleSheet.create({
     shadowRadius: 40,
     elevation: 20,
   },
-  // BlurView clipped to rounded top corners
-  ticketBlur: {
+  // overflow:hidden wrapper — clips blur+tint to rounded corners
+  ticketBgClip: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
+    overflow: 'hidden',
   },
   // Uniform tint over the whole ticket
   ticketTint: {
     backgroundColor: 'rgba(255,255,255,0.06)',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
   },
   ticketTop: {
     // transparent — background comes from parent
   },
   separator: {
-    height: 44,
+    height: SEPARATOR_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    overflow: 'visible',
+    zIndex: 2, // renders on top of ticketBottom's overlapping top edge
   },
   notch: {
     position: 'absolute',
@@ -452,8 +468,7 @@ const styles = StyleSheet.create({
     height: NOTCH_SIZE,
     borderRadius: NOTCH_SIZE / 2,
     backgroundColor: 'rgba(3, 7, 18, 0.93)',
-    top: (44 - NOTCH_SIZE) / 2,
-    zIndex: 10,
+    zIndex: 20,
   },
   notchLeft: { left: -(NOTCH_SIZE / 2) },
   notchRight: { right: -(NOTCH_SIZE / 2) },
@@ -472,7 +487,17 @@ const styles = StyleSheet.create({
   },
   ticketBottom: {
     flex: 1,
-    overflow: 'hidden', // clips scroll content
+    overflow: 'hidden', // clips scroll content at this view's top edge = separator midpoint
+    marginTop: -(SEPARATOR_HEIGHT / 2), // pull up so top edge aligns with dashed line
+    zIndex: 1,
+  },
+  topFade: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 28,
+    zIndex: 5,
   },
   bottomScroll: {
     flex: 1,
@@ -591,6 +616,7 @@ const styles = StyleSheet.create({
   // ── Bottom content ───────────────────────
   bottomContent: {
     padding: 22,
+    paddingTop: 22 + SEPARATOR_HEIGHT / 2, // compensate for ticketBottom's negative marginTop
   },
   sectionHeader: {
     flexDirection: 'row',
