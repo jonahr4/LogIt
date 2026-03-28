@@ -18,14 +18,21 @@ import { Colors, Shadows } from '@/constants/colors';
 import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { OrbBackground } from '@/components/ui/OrbBackground';
+import { EventDetailModal, type EventDetail } from '@/components/ui/EventDetailModal';
 
 import { useAuthStore } from '@/store/authStore';
 
 const FEED_TABS = ['Global', 'Following', 'You'] as const;
 type FeedTab = (typeof FEED_TABS)[number];
 
-// Mock data for feed cards
-const MOCK_CARDS = [
+type MockCard = EventDetail & {
+  image: string;
+  eventIcon: React.ComponentProps<typeof Ionicons>['name'];
+  score?: string;
+  timeAgo: string;
+};
+
+const MOCK_CARDS: MockCard[] = [
   {
     id: '1',
     user: { name: '@jonah', avatar: 'https://i.pravatar.cc/100?img=33' },
@@ -33,11 +40,33 @@ const MOCK_CARDS = [
     image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop',
     title: 'Celtics vs Lakers',
     venue: 'Crypto.com Arena',
+    venueCity: 'Los Angeles',
+    venueState: 'CA',
+    date: 'Mar 15, 2026',
     eventType: 'NBA',
-    eventIcon: 'basketball-outline' as const,
+    eventIcon: 'basketball-outline',
     score: '112 - 108',
+    status: 'FINAL • OT',
+    homeTeamName: 'Celtics',
+    awayTeamName: 'Lakers',
+    homeTeamLogo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/1200px-Boston_Celtics.svg.png',
+    awayTeamLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/1200px-Los_Angeles_Lakers_logo.svg.png',
+    homeScore: 112,
+    awayScore: 108,
+    league: 'NBA',
+    season: '2025-26',
+    sport: 'basketball',
+    privacy: 'public',
     rating: 5,
-    note: '"Incredible game, went to OT! Tatum was on fire in the 4th quarter."',
+    note: 'Incredible game, went to OT! Tatum was on fire in the 4th quarter. Sat in section 301, great view of the court. The energy was electric.',
+    photos: [
+      'https://images.unsplash.com/photo-1504450758481-7338bbe75c8e?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1518063319789-7217e6706b04?q=80&w=400&auto=format&fit=crop',
+    ],
+    companions: [
+      { name: 'Alex', avatar: 'https://i.pravatar.cc/100?img=1' },
+      { name: 'Sarah', avatar: 'https://i.pravatar.cc/100?img=2' },
+    ],
   },
   {
     id: '2',
@@ -46,22 +75,38 @@ const MOCK_CARDS = [
     image: 'https://images.unsplash.com/photo-1577223625816-7546f13df25d?q=80&w=800&auto=format&fit=crop',
     title: 'Knicks vs 76ers',
     venue: 'Madison Square Garden',
+    venueCity: 'New York',
+    venueState: 'NY',
+    date: 'Mar 14, 2026',
     eventType: 'NBA',
-    eventIcon: 'basketball-outline' as const,
+    eventIcon: 'basketball-outline',
     score: '98 - 104',
+    status: 'FINAL',
+    homeTeamName: 'Knicks',
+    awayTeamName: '76ers',
+    homeTeamLogo: 'https://upload.wikimedia.org/wikipedia/en/thumb/2/25/New_York_Knicks_logo.svg/1200px-New_York_Knicks_logo.svg.png',
+    awayTeamLogo: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/0e/Philadelphia_76ers_logo.svg/1200px-Philadelphia_76ers_logo.svg.png',
+    homeScore: 98,
+    awayScore: 104,
+    league: 'NBA',
+    season: '2025-26',
+    sport: 'basketball',
+    privacy: 'friends',
     rating: 4,
-    note: '"MSG was electric tonight. Brunson with 42 points!"',
+    note: 'MSG was electric tonight. Brunson with 42 points! Lost but still an amazing atmosphere.',
+    companions: [
+      { name: 'Mike', avatar: 'https://i.pravatar.cc/100?img=7' },
+    ],
   },
 ];
 
 export default function FeedScreen() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<FeedTab>('Following');
+  const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-
-
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.brandText}>LogIt</Text>
@@ -100,65 +145,80 @@ export default function FeedScreen() {
 
         {/* Feed cards */}
         {MOCK_CARDS.map((card) => (
-          <FeedCard key={card.id} card={card} />
+          <FeedCard key={card.id} card={card} onPress={() => setSelectedEvent(card)} />
         ))}
 
         {/* Bottom spacer for floating nav */}
         <View style={{ height: 140 }} />
       </ScrollView>
+
+      <EventDetailModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
     </SafeAreaView>
   );
 }
 
-function FeedCard({ card }: { card: (typeof MOCK_CARDS)[0] }) {
+function FeedCard({
+  card,
+  onPress,
+}: {
+  card: MockCard;
+  onPress: () => void;
+}) {
   return (
-    <GlassCard borderRadius={32} style={styles.card}>
-      <View style={styles.cardInner}>
-        {/* User info */}
-        <View style={styles.cardHeader}>
-          <Image source={{ uri: card.user.avatar }} style={styles.avatar} />
-          <View>
-            <Text style={styles.cardUserText}>
-              <Text style={styles.cardUsername}>{card.user.name} </Text>
-              <Text style={styles.cardAction}>logged this</Text>
-            </Text>
-            <Text style={styles.cardTime}>{card.timeAgo.toUpperCase()}</Text>
-          </View>
-        </View>
-
-        {/* Large image */}
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: card.image }} style={styles.cardImage} />
-
-          {/* Gradient overlay with info */}
-          <View style={styles.imageOverlay}>
-            <Text style={styles.cardTitle}>{card.title}</Text>
-            <View style={styles.imageBottom}>
-              <Text style={styles.cardVenue}>{card.venue.toUpperCase()}</Text>
-              <View style={styles.starsRow}>
-                {Array.from({ length: card.rating }).map((_, i) => (
-                  <Ionicons key={i} name="star" size={14} color="#facc15" />
-                ))}
-              </View>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
+      <GlassCard borderRadius={32} style={styles.card}>
+        <View style={styles.cardInner}>
+          {/* User info */}
+          <View style={styles.cardHeader}>
+            <Image source={{ uri: card.user.avatar }} style={styles.avatar} />
+            <View>
+              <Text style={styles.cardUserText}>
+                <Text style={styles.cardUsername}>{card.user.name} </Text>
+                <Text style={styles.cardAction}>logged this</Text>
+              </Text>
+              <Text style={styles.cardTime}>{card.timeAgo.toUpperCase()}</Text>
             </View>
           </View>
 
-          {/* Event type pill (top left) */}
-          <View style={styles.eventPill}>
-            <Ionicons name={card.eventIcon} size={13} color="#fff" />
-            <Text style={styles.eventPillText}>{card.eventType}</Text>
+          {/* Large image */}
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: card.image }} style={styles.cardImage} />
+
+            {/* Gradient overlay with info */}
+            <View style={styles.imageOverlay}>
+              <Text style={styles.cardTitle}>{card.title}</Text>
+              <View style={styles.imageBottom}>
+                <Text style={styles.cardVenue}>{card.venue.toUpperCase()}</Text>
+                <View style={styles.starsRow}>
+                  {Array.from({ length: card.rating }).map((_, i) => (
+                    <Ionicons key={i} name="star" size={14} color="#facc15" />
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            {/* Event type pill (top left) */}
+            <View style={styles.eventPill}>
+              <Ionicons name={card.eventIcon} size={13} color="#fff" />
+              <Text style={styles.eventPillText}>{card.eventType}</Text>
+            </View>
+
+            {/* Score pill (top right) */}
+            {card.score && (
+              <View style={styles.scorePill}>
+                <Text style={styles.scoreText}>{card.score}</Text>
+              </View>
+            )}
           </View>
 
-          {/* Score pill (top right) */}
-          <View style={styles.scorePill}>
-            <Text style={styles.scoreText}>{card.score}</Text>
-          </View>
+          {/* Note */}
+          <Text style={styles.noteText}>{card.note}</Text>
         </View>
-
-        {/* Note */}
-        <Text style={styles.noteText}>{card.note}</Text>
-      </View>
-    </GlassCard>
+      </GlassCard>
+    </TouchableOpacity>
   );
 }
 
@@ -297,7 +357,6 @@ const styles = StyleSheet.create({
     paddingBottom: 18,
     paddingTop: 60,
     backgroundColor: 'transparent',
-    // Simulated gradient with layered views
   },
   cardTitle: {
     fontFamily: FontFamily.headlineExtraBold,
@@ -334,7 +393,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   eventPillText: {
     fontFamily: FontFamily.bodySemiBold,
