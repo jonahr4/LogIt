@@ -1,7 +1,7 @@
 # Log It — UI Design & User Flows
 
 > **Last updated:** 2026-03-28
-> Updated: Added Edit/Create Log Modal with type-specific input sections for all 6 event types. Added event-type variant feed cards and modal tops. Updated navigation graph with edit log flow.
+> Updated: Added Search/Explore tab for discovering events logged by other users. Added Edit/Create Log Modal with type-specific input sections for all 6 event types. Updated navigation graph with search and edit log flows.
 
 ## Navigation Structure
 
@@ -11,6 +11,7 @@ graph TB
         Feed["🏠 Feed"]
         Logbook["📖 Logbook"]
         AddLog["➕ Log"]
+        Search["🔍 Search"]
         Profile["👤 Profile"]
     end
 
@@ -21,6 +22,8 @@ graph TB
     Logbook --> EditLogModal
     AddLog --> EditLogModal
     AddLog --> SearchGame["Search Game"]
+    Search --> EventDetail
+    Search --> UserProfile
     SearchGame --> ConfirmLog["Confirm & Add Notes"]
     ConfirmLog --> LogSuccess["Success → Logbook"]
     Profile --> Settings["Settings"]
@@ -38,6 +41,7 @@ graph TB
 | **Feed** | 🏠 | Default screen — scrollable feed of logged events |
 | **Logbook** | 📖 | Personal archive — all your logs with filters |
 | **Add Log** | ➕ | Entry point for logging a new event |
+| **Search** | 🔍 | Discover events, venues, and other users' logs |
 | **Profile** | 👤 | Your profile, stats summary, settings |
 
 ### Detail / Modal Screens
@@ -187,6 +191,32 @@ Ticket-style modal (mirroring the Event Detail Modal design) used for both **cre
 **Shared bottom inputs (all types):** Rating stars, notes, privacy (Public/Friends/Private), companions (add names + chip list), photos placeholder.
 
 **Component:** [`EditLogModal.tsx`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/components/ui/EditLogModal.tsx)
+
+---
+
+### 3b. Search / Explore (`search.tsx`)
+
+Discover events and browse logs from other users. Positioned to the right of the ➕ button in the tab bar.
+
+**Layout:**
+- **Header:** "Explore" title
+- **Search bar:** Full-text search across events, venues, and usernames (GlassCard styled)
+- **Type filter chips:** Horizontal scrollable row — All, Sports, Movies, Concerts, Dining, Nightlife
+- **Recent searches:** Displayed when search bar is empty, tappable to re-search
+- **Trending events:** Cards showing popular/recently logged events with:
+  - Type icon, title, venue, date
+  - Log count badge (👥 number of users who logged it)
+  - Average rating (⭐)
+- **Browse by Category:** Grid of type cards for quick category exploration
+- Tapping any result card → opens EventDetailModal
+
+**Future enhancements:**
+- Server-side full-text search via Supabase
+- Popularity ranking based on number of logs
+- User search + profile discovery
+- Location-based nearby events
+
+**Component:** [`search.tsx`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/app/(tabs)/search.tsx)
 
 ---
 

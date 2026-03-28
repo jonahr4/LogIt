@@ -1,7 +1,7 @@
 # Log It — Feature Roadmap
 
 > **Last updated:** 2026-03-28
-> Updated: Event Detail Page with type-specific variants implemented for all 6 types. Edit/Create Log Modal built with type-specific input sections. Multi-type feed cards with NFL + all event types. Add Log screen now has 6 event type options including Nightlife.
+> Updated: Added Search/Explore tab for discovering events and other users' logs. Event Detail Page with type-specific variants. Edit/Create Log Modal. Multi-type feed cards. Add Log screen with 6 event types.
 
 ## Build Phases
 
@@ -12,7 +12,7 @@ gantt
     section MVP (v1.0)
     Auth + Onboarding           :a1, 2026-04-01, 7d
     Event Data Ingestion (NBA)  :a2, after a1, 7d
-    Event Search                :a3, after a2, 5d
+    Search / Explore            :a3, after a2, 5d
     Log Creation + Companions   :a4, after a3, 5d
     Personal Logbook + Filters  :a5, after a4, 7d
     Event Detail Page           :a6, after a5, 5d
@@ -54,11 +54,18 @@ gantt
 - [ ] Post-game score/status updates
 - [ ] Store sports team logos locally in Supabase Storage
 
-### 3. Event Search
-- [ ] Full-text search (title, venue, team names)
+### 3. Search / Explore
+- [x] Search/Explore tab in nav bar (right of ➕)
+- [x] Search bar with clear button (GlassCard styled)
+- [x] Type filter chips (All, Sports, Movies, Concerts, Dining, Nightlife)
+- [x] Recent searches (tappable re-search)
+- [x] Trending events with log count + average rating badges
+- [x] Browse by Category grid
+- [ ] Full-text search via Supabase (server-side)
 - [ ] Filter by event type, date range
 - [ ] Type-specific filters (team, league, season for sports)
 - [ ] Paginated results
+- [ ] User search / profile discovery
 - [ ] "Event not found" → manual entry fallback
 
 ### 4. Log Creation
