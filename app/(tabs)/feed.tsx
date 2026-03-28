@@ -177,12 +177,9 @@ const styles = StyleSheet.create({
   },
   brandText: {
     fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 20,
-    letterSpacing: 4,
-    color: Colors.primaryContainer,
-    textShadowColor: 'rgba(0, 255, 194, 0.3)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
+    fontSize: 22,
+    letterSpacing: -0.5,
+    color: Colors.text,
   },
   themeButton: {
     width: 40,

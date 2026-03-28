@@ -8,7 +8,13 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
-import { Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
+import {
+  AtkinsonHyperlegibleNext_400Regular,
+  AtkinsonHyperlegibleNext_500Medium,
+  AtkinsonHyperlegibleNext_600SemiBold,
+  AtkinsonHyperlegibleNext_700Bold,
+  AtkinsonHyperlegibleNext_800ExtraBold,
+} from '@expo-google-fonts/atkinson-hyperlegible-next';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
 
@@ -19,11 +25,11 @@ export default function RootLayout() {
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
-    Manrope_400Regular,
-    Manrope_500Medium,
-    Manrope_600SemiBold,
-    Manrope_700Bold,
-    Manrope_800ExtraBold,
+    AtkinsonHyperlegibleNext_400Regular,
+    AtkinsonHyperlegibleNext_500Medium,
+    AtkinsonHyperlegibleNext_600SemiBold,
+    AtkinsonHyperlegibleNext_700Bold,
+    AtkinsonHyperlegibleNext_800ExtraBold,
   });
 
   useEffect(() => {

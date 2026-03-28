@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogIt — Font Comparison</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@700;800&family=Archivo:wght@700;800&family=Atkinson+Hyperlegible:wght@700&family=Barlow:wght@700;800&family=Be+Vietnam+Pro:wght@700;800&family=DM+Sans:wght@700&family=Fira+Sans:wght@700;800&family=Figtree:wght@700;800&family=General+Sans:wght@700&family=Geist:wght@700;800&family=Golos+Text:wght@700;800&family=IBM+Plex+Sans:wght@700&family=Instrument+Sans:wght@700&family=Inter:wght@700;800&family=Josefin+Sans:wght@700&family=Lexend:wght@700&family=Manrope:wght@700;800&family=Noto+Sans:wght@700;800&family=Nunito+Sans:wght@700;800&family=Onest:wght@700;800&family=Outfit:wght@700;800&family=Overpass:wght@700;800&family=Plus+Jakarta+Sans:wght@700;800&family=Poppins:wght@700&family=PT+Sans:wght@700&family=Raleway:wght@700;800&family=Red+Hat+Display:wght@700;800&family=Rubik:wght@700&family=Satoshi:wght@700&family=Source+Sans+3:wght@700;800&family=Space+Grotesk:wght@700&family=Sora:wght@700;800&family=Urbanist:wght@700;800&family=Work+Sans:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #030712;
+      color: #f1f3fc;
+      min-height: 100vh;
+      padding: 40px 24px 80px;
+    }
+    .page-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .page-header h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #00FFC2;
+      margin-bottom: 12px;
+    }
+    .page-header p {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.6;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: rgba(20, 25, 30, 0.5);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 28px 24px;
+      transition: border-color 0.2s, transform 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .card:hover {
+      border-color: rgba(0, 255, 194, 0.3);
+      transform: translateY(-2px);
+    }
+    .card .font-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+    .card .logo-preview {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #f1f3fc;
+      margin-bottom: 6px;
+      line-height: 1.1;
+    }
+    .card .logo-tracked {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: #00FFC2;
+      margin-bottom: 20px;
+      line-height: 1.2;
+    }
+    .card .body-preview {
+      font-size: 14px;
+      font-weight: 400;
+      color: #9ca3af;
+      line-height: 1.7;
+    }
+    .card .sizes-row {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .card .sizes-row span {
+      color: #f1f3fc;
+      font-weight: 700;
+    }
+    .card .tag {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #030712;
+      background: #00FFC2;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .section-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #4b5563;
+      margin: 48px auto 20px;
+      max-width: 1200px;
+      padding-left: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1>Font Comparison</h1>
+    <p>Each card shows the font as your logo "LogIt", as a tracked heading, and at different sizes. Hover to highlight. Pick what feels right for the brand.</p>
+  </div>
+
+  <div class="section-label" style="color:#00FFC2">★ Distinct "I" — Serifed Capital I (I ≠ l)</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="tag">RECOMMENDED</div>
+      <div class="font-name">IBM Plex Sans</div>
+      <div class="logo-preview" style="font-family:'IBM Plex Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'IBM Plex Sans'">LogIt</div>
+      <div class="body-preview" style="font-family:'IBM Plex Sans'">I vs l — distinct: I l I l</div>
+      <div class="sizes-row">
+        <span style="font-family:'IBM Plex Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'IBM Plex Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'IBM Plex Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'IBM Plex Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Fira Sans</div>
+      <div class="logo-preview" style="font-family:'Fira Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Fira Sans'">LogIt</div>
+      <div class="body-preview" style="font-family:'Fira Sans'">I vs l — distinct: I l I l</div>
+      <div class="sizes-row">
+        <span style="font-family:'Fira Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'Fira Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'Fira Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'Fira Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Source Sans 3</div>
+      <div class="logo-preview" style="font-family:'Source Sans 3'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Source Sans 3'">LogIt</div>
+      <div class="body-preview" style="font-family:'Source Sans 3'">I vs l — distinct: I l I l</div>
+      <div class="sizes-row">
+        <span style="font-family:'Source Sans 3'; font-size:36px">Aa</span>
+        <span style="font-family:'Source Sans 3'; font-size:24px">Aa</span>
+        <span style="font-family:'Source Sans 3'; font-size:16px">Aa</span>
+        <span style="font-family:'Source Sans 3'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Noto Sans</div>
+      <div class="logo-preview" style="font-family:'Noto Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Noto Sans'">LogIt</div>
+      <div class="body-preview" style="font-family:'Noto Sans'">I vs l — distinct: I l I l</div>
+      <div class="sizes-row">
+        <span style="font-family:'Noto Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'Noto Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'Noto Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'Noto Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">PT Sans</div>
+      <div class="logo-preview" style="font-family:'PT Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'PT Sans'">LogIt</div>
+      <div class="body-preview" style="font-family:'PT Sans'">I vs l — distinct: I l I l</div>
+      <div class="sizes-row">
+        <span style="font-family:'PT Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'PT Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'PT Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'PT Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Barlow</div>
+      <div class="logo-preview" style="font-family:'Barlow'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Barlow'">LogIt</div>
+      <div class="body-preview" style="font-family:'Barlow'">I vs l — distinct: I l I l</div>
+      <div class="sizes-row">
+        <span style="font-family:'Barlow'; font-size:36px">Aa</span>
+        <span style="font-family:'Barlow'; font-size:24px">Aa</span>
+        <span style="font-family:'Barlow'; font-size:16px">Aa</span>
+        <span style="font-family:'Barlow'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Overpass</div>
+      <div class="logo-preview" style="font-family:'Overpass'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Overpass'">LogIt</div>
+      <div class="body-preview" style="font-family:'Overpass'">I vs l — distinct: I l I l</div>
+      <div class="sizes-row">
+        <span style="font-family:'Overpass'; font-size:36px">Aa</span>
+        <span style="font-family:'Overpass'; font-size:24px">Aa</span>
+        <span style="font-family:'Overpass'; font-size:16px">Aa</span>
+        <span style="font-family:'Overpass'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Atkinson Hyperlegible</div>
+      <div class="logo-preview" style="font-family:'Atkinson Hyperlegible'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Atkinson Hyperlegible'">LogIt</div>
+      <div class="body-preview" style="font-family:'Atkinson Hyperlegible'">I vs l — distinct: I l I l</div>
+      <div class="sizes-row">
+        <span style="font-family:'Atkinson Hyperlegible'; font-size:36px">Aa</span>
+        <span style="font-family:'Atkinson Hyperlegible'; font-size:24px">Aa</span>
+        <span style="font-family:'Atkinson Hyperlegible'; font-size:16px">Aa</span>
+        <span style="font-family:'Atkinson Hyperlegible'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Josefin Sans</div>
+      <div class="logo-preview" style="font-family:'Josefin Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Josefin Sans'">LogIt</div>
+      <div class="body-preview" style="font-family:'Josefin Sans'">I vs l — distinct: I l I l</div>
+      <div class="sizes-row">
+        <span style="font-family:'Josefin Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'Josefin Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'Josefin Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'Josefin Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-label">Geometric Sans-Serifs</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="tag">CURRENT</div>
+      <div class="font-name">Manrope</div>
+      <div class="logo-preview" style="font-family:'Manrope'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Manrope'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Manrope'; font-size:36px">Aa</span>
+        <span style="font-family:'Manrope'; font-size:24px">Aa</span>
+        <span style="font-family:'Manrope'; font-size:16px">Aa</span>
+        <span style="font-family:'Manrope'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Inter</div>
+      <div class="logo-preview" style="font-family:'Inter'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Inter'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Inter'; font-size:36px">Aa</span>
+        <span style="font-family:'Inter'; font-size:24px">Aa</span>
+        <span style="font-family:'Inter'; font-size:16px">Aa</span>
+        <span style="font-family:'Inter'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Plus Jakarta Sans</div>
+      <div class="logo-preview" style="font-family:'Plus Jakarta Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Plus Jakarta Sans'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Plus Jakarta Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'Plus Jakarta Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'Plus Jakarta Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'Plus Jakarta Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">DM Sans</div>
+      <div class="logo-preview" style="font-family:'DM Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'DM Sans'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'DM Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'DM Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'DM Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'DM Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Outfit</div>
+      <div class="logo-preview" style="font-family:'Outfit'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Outfit'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Outfit'; font-size:36px">Aa</span>
+        <span style="font-family:'Outfit'; font-size:24px">Aa</span>
+        <span style="font-family:'Outfit'; font-size:16px">Aa</span>
+        <span style="font-family:'Outfit'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Figtree</div>
+      <div class="logo-preview" style="font-family:'Figtree'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Figtree'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Figtree'; font-size:36px">Aa</span>
+        <span style="font-family:'Figtree'; font-size:24px">Aa</span>
+        <span style="font-family:'Figtree'; font-size:16px">Aa</span>
+        <span style="font-family:'Figtree'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Albert Sans</div>
+      <div class="logo-preview" style="font-family:'Albert Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Albert Sans'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Albert Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'Albert Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'Albert Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'Albert Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-label">Modern / Trendy</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="font-name">Sora</div>
+      <div class="logo-preview" style="font-family:'Sora'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Sora'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Sora'; font-size:36px">Aa</span>
+        <span style="font-family:'Sora'; font-size:24px">Aa</span>
+        <span style="font-family:'Sora'; font-size:16px">Aa</span>
+        <span style="font-family:'Sora'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Space Grotesk</div>
+      <div class="logo-preview" style="font-family:'Space Grotesk'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Space Grotesk'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Space Grotesk'; font-size:36px">Aa</span>
+        <span style="font-family:'Space Grotesk'; font-size:24px">Aa</span>
+        <span style="font-family:'Space Grotesk'; font-size:16px">Aa</span>
+        <span style="font-family:'Space Grotesk'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Urbanist</div>
+      <div class="logo-preview" style="font-family:'Urbanist'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Urbanist'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Urbanist'; font-size:36px">Aa</span>
+        <span style="font-family:'Urbanist'; font-size:24px">Aa</span>
+        <span style="font-family:'Urbanist'; font-size:16px">Aa</span>
+        <span style="font-family:'Urbanist'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Onest</div>
+      <div class="logo-preview" style="font-family:'Onest'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Onest'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Onest'; font-size:36px">Aa</span>
+        <span style="font-family:'Onest'; font-size:24px">Aa</span>
+        <span style="font-family:'Onest'; font-size:16px">Aa</span>
+        <span style="font-family:'Onest'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Golos Text</div>
+      <div class="logo-preview" style="font-family:'Golos Text'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Golos Text'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Golos Text'; font-size:36px">Aa</span>
+        <span style="font-family:'Golos Text'; font-size:24px">Aa</span>
+        <span style="font-family:'Golos Text'; font-size:16px">Aa</span>
+        <span style="font-family:'Golos Text'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Be Vietnam Pro</div>
+      <div class="logo-preview" style="font-family:'Be Vietnam Pro'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Be Vietnam Pro'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Be Vietnam Pro'; font-size:36px">Aa</span>
+        <span style="font-family:'Be Vietnam Pro'; font-size:24px">Aa</span>
+        <span style="font-family:'Be Vietnam Pro'; font-size:16px">Aa</span>
+        <span style="font-family:'Be Vietnam Pro'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-label">Rounded / Friendly</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="font-name">Nunito Sans</div>
+      <div class="logo-preview" style="font-family:'Nunito Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Nunito Sans'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Nunito Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'Nunito Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'Nunito Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'Nunito Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Lexend</div>
+      <div class="logo-preview" style="font-family:'Lexend'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Lexend'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Lexend'; font-size:36px">Aa</span>
+        <span style="font-family:'Lexend'; font-size:24px">Aa</span>
+        <span style="font-family:'Lexend'; font-size:16px">Aa</span>
+        <span style="font-family:'Lexend'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Rubik</div>
+      <div class="logo-preview" style="font-family:'Rubik'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Rubik'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Rubik'; font-size:36px">Aa</span>
+        <span style="font-family:'Rubik'; font-size:24px">Aa</span>
+        <span style="font-family:'Rubik'; font-size:16px">Aa</span>
+        <span style="font-family:'Rubik'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Poppins</div>
+      <div class="logo-preview" style="font-family:'Poppins'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Poppins'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Poppins'; font-size:36px">Aa</span>
+        <span style="font-family:'Poppins'; font-size:24px">Aa</span>
+        <span style="font-family:'Poppins'; font-size:16px">Aa</span>
+        <span style="font-family:'Poppins'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-label">Sharp / Editorial</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="font-name">Archivo</div>
+      <div class="logo-preview" style="font-family:'Archivo'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Archivo'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Archivo'; font-size:36px">Aa</span>
+        <span style="font-family:'Archivo'; font-size:24px">Aa</span>
+        <span style="font-family:'Archivo'; font-size:16px">Aa</span>
+        <span style="font-family:'Archivo'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Red Hat Display</div>
+      <div class="logo-preview" style="font-family:'Red Hat Display'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Red Hat Display'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Red Hat Display'; font-size:36px">Aa</span>
+        <span style="font-family:'Red Hat Display'; font-size:24px">Aa</span>
+        <span style="font-family:'Red Hat Display'; font-size:16px">Aa</span>
+        <span style="font-family:'Red Hat Display'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Work Sans</div>
+      <div class="logo-preview" style="font-family:'Work Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Work Sans'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Work Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'Work Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'Work Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'Work Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Raleway</div>
+      <div class="logo-preview" style="font-family:'Raleway'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Raleway'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Raleway'; font-size:36px">Aa</span>
+        <span style="font-family:'Raleway'; font-size:24px">Aa</span>
+        <span style="font-family:'Raleway'; font-size:16px">Aa</span>
+        <span style="font-family:'Raleway'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="font-name">Instrument Sans</div>
+      <div class="logo-preview" style="font-family:'Instrument Sans'">LogIt</div>
+      <div class="logo-tracked" style="font-family:'Instrument Sans'">LogIt</div>
+      <div class="sizes-row">
+        <span style="font-family:'Instrument Sans'; font-size:36px">Aa</span>
+        <span style="font-family:'Instrument Sans'; font-size:24px">Aa</span>
+        <span style="font-family:'Instrument Sans'; font-size:16px">Aa</span>
+        <span style="font-family:'Instrument Sans'; font-size:12px">Aa</span>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

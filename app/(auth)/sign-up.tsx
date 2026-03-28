@@ -98,9 +98,7 @@ export default function SignUpScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Spatial orbs */}
-      <View style={styles.orb1} />
-      <View style={styles.orb2} />
+
 
       <ScrollView
         contentContainerStyle={[styles.content, isWide && styles.contentWide]}
@@ -221,25 +219,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 48,
   },
 
-  // Spatial orbs
-  orb1: {
-    position: 'absolute',
-    top: -80,
-    left: -60,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
-  },
-  orb2: {
-    position: 'absolute',
-    bottom: 100,
-    right: -120,
-    width: 380,
-    height: 380,
-    borderRadius: 190,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
-  },
+
 
   backButton: {
     flexDirection: 'row',
