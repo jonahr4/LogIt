@@ -54,10 +54,13 @@ export type EventDetail = {
   genre?: string;
   runtime?: number;
   cast?: string[];
+  watchedAt?: string;        // e.g. 'Theater', 'Home', 'Drive-In'
+  theaterName?: string;      // e.g. 'AMC Lincoln Square'
   // Concert-specific
   artist?: string;
   tourName?: string;
   opener?: string;
+  setlist?: string[];
   // Restaurant-specific
   cuisine?: string;
   priceLevel?: string;
@@ -142,7 +145,6 @@ export function EventDetailModal({ event, onClose }: Props) {
 
   if (!event) return null;
 
-  const isSports = !!(event.homeTeamName && event.awayTeamName);
 
   return (
     <Modal
@@ -183,7 +185,7 @@ export function EventDetailModal({ event, onClose }: Props) {
             <View style={styles.ticketDragStrip} {...panResponder.panHandlers}>
               <View style={styles.handleBar} />
             </View>
-            {isSports ? <SportsTop event={event} /> : <GenericTop event={event} />}
+            {getTopSection(event)}
           </View>
 
           {/* Separator — sits above ticketBottom via zIndex */}
@@ -235,7 +237,48 @@ function DashedLine() {
   );
 }
 
+// ─── TOP SECTION ROUTER ───────────────────────────────────────────────────────
+
+function getTopSection(event: EventDetail) {
+  const t = event.eventType?.toLowerCase() || '';
+  if (['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t))
+    return <SportsTop event={event} />;
+  if (['movie', 'film'].includes(t))
+    return <MovieTop event={event} />;
+  if (['concert', 'music', 'live music'].includes(t))
+    return <ConcertTop event={event} />;
+  if (['restaurant', 'dining'].includes(t))
+    return <RestaurantTop event={event} />;
+  if (['nightlife', 'bar', 'club', 'lounge'].includes(t))
+    return <NightlifeTop event={event} />;
+  return <CustomTop event={event} />;
+}
+
 // ─── TOP SECTIONS ─────────────────────────────────────────────────────────────
+
+function TimeAgoBadge({ timeAgo }: { timeAgo: string }) {
+  return (
+    <View style={styles.timeAgoPill}>
+      <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
+      <Text style={styles.timeAgoPillText}>{timeAgo}</Text>
+    </View>
+  );
+}
+
+function VenueDateGrid({ event }: { event: EventDetail }) {
+  return (
+    <View style={styles.metaGrid}>
+      <MetaCell icon="calendar-outline" label="DATE" value={event.date} />
+      <MetaCell
+        icon="location-outline"
+        label="VENUE"
+        value={event.venue}
+        subtitle={event.venueCity && event.venueState ? `${event.venueCity}, ${event.venueState}` : undefined}
+        truncate
+      />
+    </View>
+  );
+}
 
 function SportsTop({ event }: { event: EventDetail }) {
   const homeWon =
@@ -249,11 +292,7 @@ function SportsTop({ event }: { event: EventDetail }) {
 
   return (
     <View style={styles.topContent}>
-      {/* Time ago pill */}
-      <View style={styles.timeAgoPill}>
-        <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
-        <Text style={styles.timeAgoPillText}>{event.timeAgo}</Text>
-      </View>
+      <TimeAgoBadge timeAgo={event.timeAgo} />
       {event.status && (
         <View style={styles.statusPill}>
           <Text style={styles.statusText}>{event.status}</Text>
@@ -293,39 +332,178 @@ function SportsTop({ event }: { event: EventDetail }) {
         </Text>
       </View>
 
-      <View style={styles.metaGrid}>
-        <MetaCell icon="calendar-outline" label="DATE" value={event.date} />
-        <MetaCell
-          icon="location-outline"
-          label="VENUE"
-          value={event.venue}
-          subtitle={event.venueCity && event.venueState ? `${event.venueCity}, ${event.venueState}` : undefined}
-          truncate
-        />
-      </View>
+      <VenueDateGrid event={event} />
     </View>
   );
 }
 
-function GenericTop({ event }: { event: EventDetail }) {
+function MovieTop({ event }: { event: EventDetail }) {
   return (
     <View style={styles.topContent}>
-      {/* Time ago pill */}
-      <View style={styles.timeAgoPill}>
-        <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
-        <Text style={styles.timeAgoPillText}>{event.timeAgo}</Text>
-      </View>
+      <TimeAgoBadge timeAgo={event.timeAgo} />
+
+      {/* Poster-style title */}
       <Text style={styles.genericTitle}>{event.title}</Text>
-      <View style={styles.metaGrid}>
-        <MetaCell icon="calendar-outline" label="DATE" value={event.date} />
-        <MetaCell
-          icon="location-outline"
-          label="VENUE"
-          value={event.venue}
-          subtitle={event.venueCity && event.venueState ? `${event.venueCity}, ${event.venueState}` : undefined}
-          truncate
-        />
+
+      {/* Director + Runtime row */}
+      <View style={styles.movieMetaRow}>
+        {event.director && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="videocam-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.director}</Text>
+          </View>
+        )}
+        {event.runtime && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="time-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.runtime} min</Text>
+          </View>
+        )}
+        {event.genre && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="film-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.genre}</Text>
+          </View>
+        )}
       </View>
+
+      {/* Cast */}
+      {event.cast && event.cast.length > 0 && (
+        <View style={styles.castSection}>
+          <Text style={styles.castLabel}>CAST</Text>
+          <Text style={styles.castText} numberOfLines={2}>
+            {event.cast.join(' · ')}
+          </Text>
+        </View>
+      )}
+
+      <VenueDateGrid event={event} />
+    </View>
+  );
+}
+
+function ConcertTop({ event }: { event: EventDetail }) {
+  return (
+    <View style={styles.topContent}>
+      <TimeAgoBadge timeAgo={event.timeAgo} />
+
+      {/* Artist name — hero text */}
+      <Text style={styles.genericTitle}>{event.artist || event.title}</Text>
+
+      {/* Tour name banner */}
+      {event.tourName && (
+        <View style={styles.tourBanner}>
+          <Ionicons name="musical-notes-outline" size={13} color={Colors.primaryContainer} />
+          <Text style={styles.tourBannerText}>{event.tourName}</Text>
+        </View>
+      )}
+
+      {/* Opener + genre pills */}
+      <View style={styles.movieMetaRow}>
+        {event.opener && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="mic-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>Opener: {event.opener}</Text>
+          </View>
+        )}
+        {event.genre && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="musical-note-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.genre}</Text>
+          </View>
+        )}
+      </View>
+
+      <VenueDateGrid event={event} />
+    </View>
+  );
+}
+
+function RestaurantTop({ event }: { event: EventDetail }) {
+  return (
+    <View style={styles.topContent}>
+      <TimeAgoBadge timeAgo={event.timeAgo} />
+
+      <Text style={styles.genericTitle}>{event.title}</Text>
+
+      {/* Cuisine + price row */}
+      <View style={styles.movieMetaRow}>
+        {event.cuisine && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="restaurant-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.cuisine}</Text>
+          </View>
+        )}
+        {event.priceLevel && (
+          <View style={[styles.movieMetaPill, styles.pricePill]}>
+            <Text style={styles.priceText}>{event.priceLevel}</Text>
+          </View>
+        )}
+      </View>
+
+      <VenueDateGrid event={event} />
+    </View>
+  );
+}
+
+function NightlifeTop({ event }: { event: EventDetail }) {
+  return (
+    <View style={styles.topContent}>
+      <TimeAgoBadge timeAgo={event.timeAgo} />
+
+      <Text style={styles.genericTitle}>{event.title}</Text>
+
+      {/* Venue type + vibe pills */}
+      <View style={styles.movieMetaRow}>
+        {event.venueType && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="wine-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.venueType}</Text>
+          </View>
+        )}
+        {event.vibe && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="sparkles-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.vibe}</Text>
+          </View>
+        )}
+        {event.musicGenre && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="musical-notes-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.musicGenre}</Text>
+          </View>
+        )}
+        {event.dressCode && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="shirt-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.dressCode}</Text>
+          </View>
+        )}
+        {event.priceLevel && (
+          <View style={[styles.movieMetaPill, styles.pricePill]}>
+            <Text style={styles.priceText}>{event.priceLevel}</Text>
+          </View>
+        )}
+      </View>
+
+      <VenueDateGrid event={event} />
+    </View>
+  );
+}
+
+function CustomTop({ event }: { event: EventDetail }) {
+  return (
+    <View style={styles.topContent}>
+      <TimeAgoBadge timeAgo={event.timeAgo} />
+
+      {/* Large custom icon */}
+      <View style={styles.customIconCircle}>
+        <Ionicons name={getEventIcon(event.eventType)} size={32} color={Colors.primaryContainer} />
+      </View>
+
+      <Text style={styles.genericTitle}>{event.title}</Text>
+
+      <VenueDateGrid event={event} />
     </View>
   );
 }
@@ -360,22 +538,117 @@ function MetaCell({
 // ─── BOTTOM CONTENT ───────────────────────────────────────────────────────────
 
 function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => void }) {
+  const eventTypeLower = event.eventType?.toLowerCase() || '';
+  const isSportsType = ['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(eventTypeLower);
+  const isMovie = ['movie', 'film'].includes(eventTypeLower);
+  const isConcert = ['concert', 'music', 'live music'].includes(eventTypeLower);
+  const isRestaurant = ['restaurant', 'dining'].includes(eventTypeLower);
+  const isNightlife = ['nightlife', 'bar', 'club', 'lounge'].includes(eventTypeLower);
+
   return (
     <View style={styles.bottomContent}>
-      {/* Photos */}
+      {/* ── Sports: Box Score Tab (placeholder) ── */}
+      {isSportsType && (
+        <>
+          <TouchableOpacity style={styles.boxScoreTab} activeOpacity={0.7}>
+            <Ionicons name="stats-chart-outline" size={16} color={Colors.primaryContainer} />
+            <Text style={styles.boxScoreTabText}>Box Score</Text>
+            <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+          </TouchableOpacity>
+          <View style={styles.divider} />
+        </>
+      )}
+
+      {/* ── Movie: Watched At ── */}
+      {isMovie && event.watchedAt && (
+        <>
+          <Text style={styles.miniLabel}>WATCHED AT</Text>
+          <View style={styles.watchedAtRow}>
+            <Ionicons
+              name={event.watchedAt.toLowerCase().includes('home') ? 'home-outline' : 'business-outline'}
+              size={16}
+              color={Colors.primaryContainer}
+            />
+            <Text style={styles.watchedAtText}>
+              {event.theaterName ? `${event.theaterName} · ${event.watchedAt}` : event.watchedAt}
+            </Text>
+          </View>
+          <View style={styles.divider} />
+        </>
+      )}
+
+      {/* ── Concert: Opener ── */}
+      {isConcert && event.opener && (
+        <>
+          <Text style={styles.miniLabel}>OPENING ACT</Text>
+          <View style={styles.watchedAtRow}>
+            <Ionicons name="mic-outline" size={16} color={Colors.primaryContainer} />
+            <Text style={styles.watchedAtText}>{event.opener}</Text>
+          </View>
+          <View style={styles.divider} />
+        </>
+      )}
+
+      {/* ── Concert: Setlist ── */}
+      {isConcert && event.setlist && event.setlist.length > 0 && (
+        <>
+          <Text style={styles.miniLabel}>SETLIST HIGHLIGHTS</Text>
+          <View style={styles.setlistBox}>
+            {event.setlist.map((song, i) => (
+              <View key={i} style={styles.setlistItem}>
+                <Text style={styles.setlistNumber}>{i + 1}</Text>
+                <Text style={styles.setlistSong}>{song}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={styles.divider} />
+        </>
+      )}
+
+      {/* ── Restaurant: Detail chips ── */}
+      {isRestaurant && (event.cuisine || event.priceLevel) && (
+        <>
+          <Text style={styles.miniLabel}>RESTAURANT DETAILS</Text>
+          <View style={styles.chipsRow}>
+            {event.cuisine && <InfoChip icon="restaurant-outline" label={event.cuisine} />}
+            {event.priceLevel && <InfoChip icon="cash-outline" label={event.priceLevel} />}
+          </View>
+          <View style={styles.divider} />
+        </>
+      )}
+
+      {/* ── Nightlife: Vibe + details ── */}
+      {isNightlife && (event.venueType || event.vibe || event.musicGenre || event.dressCode) && (
+        <>
+          <Text style={styles.miniLabel}>VENUE DETAILS</Text>
+          <View style={styles.chipsRow}>
+            {event.venueType && <InfoChip icon="wine-outline" label={event.venueType} />}
+            {event.vibe && <InfoChip icon="sparkles-outline" label={event.vibe} />}
+            {event.musicGenre && <InfoChip icon="musical-notes-outline" label={event.musicGenre} />}
+            {event.dressCode && <InfoChip icon="shirt-outline" label={event.dressCode} />}
+          </View>
+          <View style={styles.divider} />
+        </>
+      )}
+
+      {/* ── Photos ── */}
       {event.photos && event.photos.length > 0 && (
         <>
           <Text style={styles.miniLabel}>PHOTOS</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -22 }} contentContainerStyle={{ paddingHorizontal: 22, gap: 10 }}>
             {event.photos.map((uri, i) => (
-              <Image key={i} source={{ uri }} style={styles.photo} />
+              <Image
+                key={i}
+                source={{ uri }}
+                style={isNightlife ? styles.photoLarge : styles.photo}
+              />
             ))}
           </ScrollView>
           <View style={styles.divider} />
         </>
       )}
 
-      {/* Rating */}
+      {/* ── Rating (all types) ── */}
       <Text style={styles.miniLabel}>YOUR RATING</Text>
       <View style={styles.starsRow}>
         {Array.from({ length: 5 }).map((_, i) => (
@@ -390,7 +663,7 @@ function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => 
 
       <View style={styles.divider} />
 
-      {/* Notes */}
+      {/* ── Notes (all types) ── */}
       <View style={styles.sectionHeader}>
         <Ionicons name="document-text-outline" size={16} color={Colors.primaryContainer} />
         <Text style={styles.sectionTitle}>Personal Notes</Text>
@@ -401,7 +674,7 @@ function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => 
 
       <View style={styles.divider} />
 
-      {/* Info chips */}
+      {/* ── Info chips ── */}
       <View style={styles.chipsRow}>
         <InfoChip icon={getEventIcon(event.eventType)} label={event.eventType} />
         {event.status && <InfoChip icon="checkmark-circle-outline" label={event.status} />}
@@ -412,7 +685,6 @@ function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => 
           />
         )}
         {event.genre && <InfoChip icon="film-outline" label={event.genre} />}
-        {event.cuisine && <InfoChip icon="restaurant-outline" label={event.cuisine} />}
         {event.privacy && (
           <InfoChip
             icon={event.privacy === 'public' ? 'globe-outline' : event.privacy === 'friends' ? 'people-outline' : 'lock-closed-outline'}
@@ -421,7 +693,7 @@ function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => 
         )}
       </View>
 
-      {/* Companions */}
+      {/* ── Companions ── */}
       {event.companions && event.companions.length > 0 && (
         <>
           <View style={styles.divider} />
@@ -445,7 +717,7 @@ function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => 
 
       <View style={styles.divider} />
 
-      {/* Action buttons */}
+      {/* ── Action buttons ── */}
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.shareButton} activeOpacity={0.8}>
           <Ionicons name="share-outline" size={18} color={Colors.background} />
@@ -457,7 +729,7 @@ function BottomContent({ event, onClose }: { event: EventDetail; onClose: () => 
         </TouchableOpacity>
       </View>
 
-      {/* Close */}
+      {/* ── Close ── */}
       <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
         <Text style={styles.closeButtonText}>CLOSE</Text>
       </TouchableOpacity>
@@ -780,6 +1052,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
+  photoLarge: {
+    width: 200,
+    height: 150,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
   chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -885,5 +1163,146 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 3,
     color: Colors.textMuted,
+  },
+
+  // ── Type-specific top styles ──────────────────────────────
+  movieMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  movieMetaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+  },
+  movieMetaPillText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    letterSpacing: 0.3,
+    color: Colors.textMuted,
+  },
+  castSection: {
+    marginBottom: 14,
+  },
+  castLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: FontSize.xs,
+    letterSpacing: 2.5,
+    color: Colors.textMuted,
+    marginBottom: 6,
+  },
+  castText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 18,
+  },
+  tourBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0, 255, 194, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 194, 0.2)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginBottom: 14,
+  },
+  tourBannerText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    letterSpacing: 1,
+    color: Colors.primaryContainer,
+  },
+  pricePill: {
+    backgroundColor: 'rgba(250, 204, 21, 0.12)',
+    borderColor: 'rgba(250, 204, 21, 0.25)',
+  },
+  priceText: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 12,
+    color: '#facc15',
+    letterSpacing: 1,
+  },
+  customIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(0, 255, 194, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 194, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 12,
+  },
+
+  // ── Type-specific bottom styles ──────────────────────────
+  boxScoreTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+  },
+  boxScoreTabText: {
+    flex: 1,
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  watchedAtRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  watchedAtText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
+  setlistBox: {
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    gap: 8,
+  },
+  setlistItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  setlistNumber: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    color: Colors.textMuted,
+    width: 18,
+    textAlign: 'right',
+  },
+  setlistSong: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.textSecondary,
   },
 });
