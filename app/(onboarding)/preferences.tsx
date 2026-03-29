@@ -19,6 +19,7 @@ const EVENT_TYPE_CONFIG: Record<EventType, { icon: keyof typeof Ionicons.glyphMa
   movie: { icon: 'film-outline', label: 'Movies', description: 'Theater screenings' },
   concert: { icon: 'musical-notes-outline', label: 'Concerts', description: 'Shows, festivals, tours' },
   restaurant: { icon: 'restaurant-outline', label: 'Restaurants', description: 'Dining experiences' },
+  nightlife: { icon: 'wine-outline', label: 'Nightlife', description: 'Bars, clubs, nights out' },
   manual: { icon: 'create-outline', label: 'Custom', description: 'Anything else' },
 };
 

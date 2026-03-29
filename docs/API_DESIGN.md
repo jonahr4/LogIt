@@ -1,6 +1,9 @@
 # Log It — API Design
 
-> **Last updated:** 2026-03-26
+> **Last updated:** 2026-03-28
+> **Changes:**
+> - 2026-03-28: Added implemented status markers to endpoints. Documented new cron endpoints (`sync-nba`, `backfill-nba`), event search (`/api/events/search`), and log creation (`/api/logs/create`). Added `EXTERNAL_SERVICES.md` cross-reference.
+> - 2026-03-26: Initial document creation
 
 ## Overview
 
@@ -69,11 +72,12 @@ The API is designed to be **event-type agnostic** — sports, movies, concerts, 
 
 Events follow a **polymorphic pattern** — all event types share a common base and have type-specific metadata handled via dedicated child tables.
 
-| Endpoint | Method | Auth | Description |
-|---|---|---|---|
-| `GET /events` | GET | Yes | Search/browse events across all types |
-| `GET /events/:id` | GET | Yes | Get single event with full details + type metadata |
-| `GET /events/:id/attendees` | GET | Yes | Get users who logged this event (respects privacy) |
+| Endpoint | Method | Auth | Description | Status |
+|---|---|---|---|---|
+| `GET /events` | GET | Optional | Search/browse events across all types | — |
+| `GET /events/search` | GET | No | Full-text search on pre-ingested events | ✅ Implemented |
+| `GET /events/:id` | GET | Yes | Get single event with full details + type metadata | — |
+| `GET /events/:id/attendees` | GET | Yes | Get users who logged this event (respects privacy) | — |
 
 ### `GET /events` — Query Parameters
 
@@ -232,13 +236,13 @@ All event responses share a **common base shape** with a `type_metadata` object 
 
 ## User Event Logs
 
-| Endpoint | Method | Auth | Description |
-|---|---|---|---|
-| `POST /logs` | POST | Yes | Create a new log |
-| `GET /logs` | GET | Yes | Get current user's logs (with filters) |
-| `GET /logs/:id` | GET | Yes | Get a specific log |
-| `PATCH /logs/:id` | PATCH | Yes (owner) | Update a log (notes, privacy, rating, companions) |
-| `DELETE /logs/:id` | DELETE | Yes (owner) | Delete a log |
+| Endpoint | Method | Auth | Description | Status |
+|---|---|---|---|---|
+| `POST /logs/create` | POST | Yes | Create a new log | ✅ Implemented |
+| `GET /logs` | GET | Yes | Get current user's logs (with filters) | — |
+| `GET /logs/:id` | GET | Yes | Get a specific log | — |
+| `PATCH /logs/:id` | PATCH | Yes (owner) | Update a log (notes, privacy, rating, companions) | — |
+| `DELETE /logs/:id` | DELETE | Yes (owner) | Delete a log | — |
 
 ### `POST /logs` — Request Body
 

@@ -1,7 +1,9 @@
 # Log It — Tech Stack & Architecture
 
-> **Last updated:** 2026-03-26
-> Updated: Updated project structure to match Phase 1 implementation (auth/onboarding groups, API layer, store, actual dependencies)
+> **Last updated:** 2026-03-28
+> **Changes:**
+> - 2026-03-28: Added cron job architecture (daily NBA sync), NBA venue static mapping, backfill endpoint. Cross-ref `EXTERNAL_SERVICES.md` for full ingestion strategy per event type.
+> - 2026-03-26: Updated project structure to match Phase 1 implementation (auth/onboarding groups, API layer, store, actual dependencies)
 
 ## Platform
 

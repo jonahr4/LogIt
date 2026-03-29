@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-28
 > **Changes:**
+> - 2026-03-28: `events`, `sports_events`, `user_event_logs`, `log_companions` tables now **implemented** (migrations 003-006). Full-text search index on events. Venue fields (name, state, lat, lng) populated via static NBA venue mapping.
 > - 2026-03-28: Clarified that Manual events are specifically a fallback when canonical API search fails.
 > - 2026-03-27: Added `nightlife_events` child table for clubs/bars/nights out
 

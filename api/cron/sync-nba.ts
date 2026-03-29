@@ -8,6 +8,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseAdmin } from '../lib/supabase-admin';
+import { getVenueForTeam } from '../lib/nba-venues';
 
 const BDL_BASE = 'https://api.balldontlie.io/v1';
 
@@ -129,6 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const title = `${game.home_team.full_name} vs ${game.visitor_team.full_name}`;
       const status = mapBDLStatus(game.status);
       const eventDate = game.datetime || `${game.date}T00:00:00Z`;
+      const venue = getVenueForTeam(game.home_team.id, game.home_team.city);
 
       try {
         // Check if event already exists by external_id
@@ -145,7 +147,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           // Update existing event (scores, status may have changed)
           const { error: updateError } = await supabase
             .from('events')
-            .update({ title, status, event_date: eventDate, venue_city: game.home_team.city })
+            .update({
+              title,
+              status,
+              event_date: eventDate,
+              venue_name: venue.arena,
+              venue_city: venue.city,
+              venue_state: venue.state,
+              venue_lat: venue.lat || null,
+              venue_lng: venue.lng || null,
+            })
             .eq('id', existing.id);
 
           if (updateError) {
@@ -162,7 +173,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               title,
               status,
               event_date: eventDate,
-              venue_city: game.home_team.city,
+              venue_name: venue.arena,
+              venue_city: venue.city,
+              venue_state: venue.state,
+              venue_lat: venue.lat || null,
+              venue_lng: venue.lng || null,
               external_id: externalId,
               external_source: 'balldontlie',
             })

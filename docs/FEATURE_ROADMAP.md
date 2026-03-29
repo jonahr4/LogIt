@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-28
 > **Changes:**
+> - 2026-03-28: Marked Phase 3 (Event Data & Search) complete — NBA cron sync, full-text search, venue enrichment, season backfill implemented. Added `EXTERNAL_SERVICES.md` reference. Added event countdown stretch goal to Notifications.
 > - 2026-03-28: Consolidated completed UI foundation under MVP, reprioritized full backend execution (NBA Search, Real Log Creation, Logbook Fetching), and pulled Friend System into MVP for global feed filtering.
 > - 2026-03-28: Clarified that Event Search queries real-world APIs (canonical objects), with manual entry as a fallback.
 > - 2026-03-28: Added Search/Explore tab for discovering events and other users' logs. Event Detail Page with type-specific variants. Edit/Create Log Modal. Multi-type feed cards. Add Log screen with 6 event types.
@@ -53,12 +54,14 @@ gantt
 - [x] **Event Detail Page:** Ticket-style modal, dynamic headers, user attendance badge, photo gallery, type-specific bottom content panels
 
 ### 3. Backend: Event Data & Search
-- [ ] Implement robust full-text search querying real-world API (Ball Don't Lie API for NBA games)
-- [ ] Vercel cron function for scheduled ingestion (daily sync)
-- [ ] Store canonical `Event` records and `sports_events` child records in Supabase Postgres on selection
-- [ ] Deduplication via `external_id`
-- [ ] Post-game score/status updates
-- [ ] "Event not found" → manual entry fallback
+- [x] Implement robust full-text search querying our Supabase `events` table (pre-ingested via cron)
+- [x] Vercel cron function for scheduled ingestion (`api/cron/sync-nba.ts` — daily at 6 AM UTC)
+- [x] Store canonical `Event` records and `sports_events` child records in Supabase Postgres
+- [x] Deduplication via `external_id` + `external_source` unique index
+- [x] Post-game score/status updates (cron updates existing rows)
+- [x] Venue enrichment — static NBA arena mapping with name, city, state, lat/lng
+- [x] Season backfill endpoint (`api/cron/backfill-nba.ts`) for historical data
+- [ ] "Event not found" → manual entry fallback (UI wired, backend pending)
 
 ### 4. Backend: Log Creation
 - [ ] Select real event from search results
@@ -82,13 +85,14 @@ gantt
 
 ### 7. Notifications (MVP)
 - [ ] Upcoming event reminders (configurable timing: 24h, 2h, 30min before)
+- [ ] **Event countdown** — users who log future events see countdown on their logbook/profile
 - [ ] Post-event prompt: add photos, rating, and notes after event concludes
 - [ ] Companion tagged notification
 - [ ] Comment notification
-
----ment notification
 - [ ] In-app notification center
 - [ ] Push notification infrastructure (Firebase Cloud Messaging)
+
+> **Stretch goal:** Countdown notifications for future events (data already supports this — `events.status = 'upcoming'` with `event_date` in the future).
 
 ---
 

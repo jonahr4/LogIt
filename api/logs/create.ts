@@ -59,20 +59,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Look up user by firebase_uid
-    const { data: user, error: userError } = await supabase
+    let { data: user, error: userError } = await supabase
       .from('users')
       .select('id, default_privacy')
       .eq('firebase_uid', authReq.firebaseUid!)
       .single();
 
     if (userError || !user) {
-      return res.status(404).json({
-        error: {
-          code: 'NOT_FOUND',
-          message: 'User profile not found. Complete signup first.',
-          status: 404,
-        },
-      });
+      // Auto-create user profile from Firebase auth data
+      // This handles the case where onboarding saved locally but the API call failed
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert({
+          firebase_uid: authReq.firebaseUid!,
+          email: authReq.firebaseEmail || '',
+          username: authReq.firebaseEmail?.split('@')[0] || authReq.firebaseUid!.slice(0, 8),
+          first_name: '',
+          last_name: '',
+          display_name: authReq.firebaseEmail?.split('@')[0] || 'User',
+          default_privacy: 'public',
+          event_preferences: ['sports'],
+        })
+        .select('id, default_privacy')
+        .single();
+
+      if (createError || !newUser) {
+        console.error('Auto-create user failed:', createError);
+        return res.status(404).json({
+          error: {
+            code: 'NOT_FOUND',
+            message: 'User profile not found and auto-creation failed.',
+            status: 404,
+          },
+        });
+      }
+      user = newUser;
     }
 
     // Verify event exists
