@@ -40,6 +40,7 @@ export type EventDetail = {
   date: string;
   rawDate?: string;
   dateLogged?: string;
+  timeAgo?: string;
   image?: string;
   note?: string;
   status?: string;
@@ -51,6 +52,9 @@ export type EventDetail = {
   awayTeamLogo?: string;
   homeScore?: number;
   awayScore?: number;
+  season?: string;
+  league?: string;
+  sport?: string;
   
   // Movie
   runtime?: number;
@@ -80,6 +84,26 @@ const SUB_FILTERS: Record<string, string[]> = {
   Restaurants: ['All', '$', '$$', '$$$', '$$$$'],
   Nightlife: ['All', 'Club', 'Bar', 'Lounge'],
 };
+
+/** Compute a human-readable "time ago" string from a timestamp */
+function getTimeAgo(dateStr: string): string {
+  const now = new Date();
+  const then = new Date(dateStr);
+  const diffMs = now.getTime() - then.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}w ago`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  const years = Math.floor(days / 365);
+  return `${years}y ago`;
+}
 
 const SORT_OPTIONS = ['Date Logged', 'Date Attended', 'Highest Rated'] as const;
 
@@ -113,6 +137,9 @@ function mapLogToEventDetail(log: any): EventDetail {
     eventType = eventType.charAt(0).toUpperCase() + eventType.slice(1);
   }
 
+  // Build human-readable time ago string
+  const timeAgo = getTimeAgo(log.logged_at);
+
   return {
     id: log.id,
     eventType,
@@ -123,7 +150,8 @@ function mapLogToEventDetail(log: any): EventDetail {
     date: new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     rawDate: event.event_date,
     dateLogged: log.logged_at,
-    image: event.image_url,
+    timeAgo,
+    image: event.image_url || null,
     note: log.notes,
     status: event.status === 'completed' ? 'FINAL' : event.status === 'in_progress' ? 'LIVE' : 'Upcoming',
     homeTeamName: event.home_team_name,
@@ -132,6 +160,9 @@ function mapLogToEventDetail(log: any): EventDetail {
     awayTeamLogo: event.away_team_logo,
     homeScore: event.home_score,
     awayScore: event.away_score,
+    season: event.season,
+    league: event.league,
+    sport: event.sport,
     privacy: log.privacy || 'public',
     rating: log.rating,
     companions: log.companions,

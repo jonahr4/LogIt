@@ -23,6 +23,18 @@ function mapESPNStatus(espnState: string): 'upcoming' | 'in_progress' | 'complet
   return 'upcoming';
 }
 
+/** Derive the NBA season string from a game date (e.g. '2021-22') */
+function deriveNBASeason(eventDate: string): string {
+  const d = new Date(eventDate);
+  const year = d.getFullYear();
+  const month = d.getMonth(); // 0-indexed: 0=Jan, 9=Oct
+  // NBA season starts in October. Games Oct+ belong to year/year+1, games Jan-Sep belong to (year-1)/year
+  if (month >= 9) {
+    return `${year}-${String(year + 1).slice(2)}`;
+  }
+  return `${year - 1}-${String(year).slice(2)}`;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Only allow GET
   if (req.method !== 'GET') {
@@ -164,7 +176,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             event_id: eventId,
             sport: 'basketball',
             league: 'NBA',
-            season: '2024-25',
+            season: deriveNBASeason(eventDate),
             home_team_id: homeTeam.team.id,
             away_team_id: awayTeam.team.id,
             home_team_name: homeTeam.team.displayName,

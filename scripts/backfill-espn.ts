@@ -29,6 +29,17 @@ function mapESPNStatus(espnState: string): 'upcoming' | 'in_progress' | 'complet
   return 'upcoming';
 }
 
+/** Derive the NBA season string from a game date (e.g. '2021-22') */
+function deriveNBASeason(eventDate: string): string {
+  const d = new Date(eventDate);
+  const year = d.getFullYear();
+  const month = d.getMonth(); // 0-indexed: 0=Jan, 9=Oct
+  if (month >= 9) {
+    return `${year}-${String(year + 1).slice(2)}`;
+  }
+  return `${year - 1}-${String(year).slice(2)}`;
+}
+
 async function fetchAndUpsertGamesForDate(dateStr: string) {
   const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`;
   try {
@@ -102,9 +113,12 @@ async function fetchAndUpsertGamesForDate(dateStr: string) {
             title,
             status,
             event_date: eventDate,
-            venue_name: venueData.fullName || null,
-            venue_city: venueData.address?.city || null,
-            venue_state: venueData.address?.state || null,
+            venue_name: mappedVenue.arena || venueData.fullName || null,
+            venue_city: mappedVenue.city || venueData.address?.city || null,
+            venue_state: mappedVenue.state || venueData.address?.state || null,
+            venue_lat: mappedVenue.lat || null,
+            venue_lng: mappedVenue.lng || null,
+            image_url: mappedVenue.image_url || null,
             external_id: externalId,
             external_source: 'espn',
           })
@@ -129,7 +143,7 @@ async function fetchAndUpsertGamesForDate(dateStr: string) {
             event_id: eventId,
             sport: 'basketball',
             league: 'NBA',
-            season: data.season ? String(data.season.year) : 'Unknown', // e.g. '2024'
+            season: deriveNBASeason(eventDate),
             home_team_id: homeTeam.team.id,
             away_team_id: awayTeam.team.id,
             home_team_name: homeTeam.team.displayName,

@@ -260,11 +260,23 @@ function getTopSection(event: EventDetail) {
 
 // ─── TOP SECTIONS ─────────────────────────────────────────────────────────────
 
-function TimeAgoBadge({ timeAgo }: { timeAgo: string }) {
+function TimeAgoBadge({ timeAgo }: { timeAgo?: string }) {
+  if (!timeAgo) return null;
   return (
     <View style={styles.timeAgoPill}>
       <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
       <Text style={styles.timeAgoPillText}>{timeAgo}</Text>
+    </View>
+  );
+}
+
+/** Orange season pill — polymorphic, works for any sport with a season field */
+function SeasonBadge({ season }: { season?: string }) {
+  if (!season || season === 'Unknown') return null;
+  return (
+    <View style={styles.seasonPill}>
+      <Ionicons name="calendar-outline" size={11} color="#FF8A3D" />
+      <Text style={styles.seasonPillText}>{season}</Text>
     </View>
   );
 }
@@ -296,6 +308,7 @@ function SportsTop({ event }: { event: EventDetail }) {
 
   return (
     <View style={styles.topContent}>
+      <SeasonBadge season={event.season} />
       <TimeAgoBadge timeAgo={event.timeAgo} />
       {event.status && (
         <View style={styles.statusPill}>
@@ -1093,6 +1106,27 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.textMuted,
     letterSpacing: 0.3,
+  },
+  seasonPill: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 138, 61, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 138, 61, 0.25)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    zIndex: 10,
+  },
+  seasonPillText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    color: '#FF8A3D',
+    letterSpacing: 0.5,
   },
   bottomContent: {
     padding: 22,

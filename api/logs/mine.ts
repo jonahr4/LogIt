@@ -31,9 +31,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (userError || !user) {
-      return res.status(404).json({
-        error: { code: 'NOT_FOUND', message: 'User profile not found', status: 404 },
-      });
+      // New user who hasn't been written to Supabase yet — return empty logbook
+      return res.status(200).json({ logs: [], total: 0 });
     }
 
     // Fetch user's logs with event data
