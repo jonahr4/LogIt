@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import path from 'path';
-import { getVenueForTeam } from '../server-lib/nba-venues';
+import { findOrCreateVenue } from '../server-lib/venue-lookup';
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -69,8 +69,20 @@ async function fetchAndUpsertGamesForDate(dateStr: string) {
       const status = mapESPNStatus(game.status.type.state);
       const eventDate = game.date;
 
-      // Get rich venue data from our mapping
-      const mappedVenue = getVenueForTeam(homeTeam.team.abbreviation, venueData.address?.city || 'Unknown');
+      // Find or create venue in DB
+      const venueName = venueData.fullName || '';
+      const venueCity = venueData.address?.city || '';
+      const venueState = venueData.address?.state || '';
+
+      let venueId: string | null = null;
+      if (venueName && venueCity) {
+        venueId = await findOrCreateVenue(supabase, {
+          name: venueName,
+          city: venueCity,
+          state: venueState,
+          venue_type: 'arena',
+        });
+      }
 
       // Upsert event manually (to avoid partial index ON CONFLICT errors)
       const { data: existing } = await supabase
@@ -90,12 +102,7 @@ async function fetchAndUpsertGamesForDate(dateStr: string) {
             title,
             status,
             event_date: eventDate,
-            venue_name: mappedVenue.arena || venueData.fullName || null,
-            venue_city: mappedVenue.city || venueData.address?.city || null,
-            venue_state: mappedVenue.state || venueData.address?.state || null,
-            venue_lat: mappedVenue.lat || null,
-            venue_lng: mappedVenue.lng || null,
-            image_url: mappedVenue.image_url || null,
+            venue_id: venueId,
           })
           .eq('id', existing.id);
 
@@ -113,12 +120,7 @@ async function fetchAndUpsertGamesForDate(dateStr: string) {
             title,
             status,
             event_date: eventDate,
-            venue_name: mappedVenue.arena || venueData.fullName || null,
-            venue_city: mappedVenue.city || venueData.address?.city || null,
-            venue_state: mappedVenue.state || venueData.address?.state || null,
-            venue_lat: mappedVenue.lat || null,
-            venue_lng: mappedVenue.lng || null,
-            image_url: mappedVenue.image_url || null,
+            venue_id: venueId,
             external_id: externalId,
             external_source: 'espn',
           })

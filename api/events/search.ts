@@ -61,6 +61,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         venue_state,
         image_url,
         external_id,
+        venues (
+          name,
+          city,
+          state,
+          lat,
+          lng,
+          image_url
+        ),
         sports_events (
           sport,
           league,
@@ -113,6 +121,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           venue_state,
           image_url,
           external_id,
+          venues (
+            name,
+            city,
+            state,
+            lat,
+            lng,
+            image_url
+          ),
           sports_events (
             sport,
             league,
@@ -164,10 +180,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
  * Flattens the child table join into a type_metadata object
  */
 function formatEvent(row: any) {
-  const { sports_events, ...base } = row;
+  const { sports_events, venues, ...base } = row;
 
   // sports_events comes as an array from the join — take first (1:1)
   const sportsData = Array.isArray(sports_events) ? sports_events[0] : sports_events;
+
+  // Merge venue data from venues table (prefer over flat columns)
+  if (venues) {
+    base.venue_name = venues.name || base.venue_name;
+    base.venue_city = venues.city || base.venue_city;
+    base.venue_state = venues.state || base.venue_state;
+    base.image_url = venues.image_url || base.image_url;
+  }
 
   let type_metadata = null;
   if (sportsData) {

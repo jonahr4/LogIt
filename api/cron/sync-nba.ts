@@ -4,11 +4,12 @@
  * Schedule: daily at 6:00 AM UTC (configured in vercel.json)
  *
  * Fetches games for today ± 7 days, upserts into events + sports_events
+ * Links events to the `venues` table via `venue_id` FK.
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
-import { getVenueForTeam } from '../../server-lib/nba-venues';
+import { findOrCreateVenue } from '../../server-lib/venue-lookup';
 
 function formatDate(date: Date): string {
   const year = date.getFullYear();
@@ -103,7 +104,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (!homeTeam || !awayTeam) continue;
 
-      const mappedVenue = getVenueForTeam(homeTeam.team.abbreviation, venueData.address?.city || 'Unknown');
+      // Find or create the venue in our venues table
+      const venueName = venueData.fullName || '';
+      const venueCity = venueData.address?.city || '';
+      const venueState = venueData.address?.state || '';
+
+      let venueId: string | null = null;
+      if (venueName && venueCity) {
+        venueId = await findOrCreateVenue(supabase, {
+          name: venueName,
+          city: venueCity,
+          state: venueState,
+          venue_type: 'arena',
+        });
+      }
 
       try {
         // Check if event already exists by external_id
@@ -124,12 +138,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               title,
               status,
               event_date: eventDate,
-              venue_name: mappedVenue.arena || venueData.fullName || null,
-              venue_city: mappedVenue.city || venueData.address?.city || null,
-              venue_state: mappedVenue.state || venueData.address?.state || null,
-              venue_lat: mappedVenue.lat || null,
-              venue_lng: mappedVenue.lng || null,
-              image_url: mappedVenue.image_url || null,
+              venue_id: venueId,
             })
             .eq('id', existing.id);
 
@@ -147,12 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               title,
               status,
               event_date: eventDate,
-              venue_name: mappedVenue.arena || venueData.fullName || null,
-              venue_city: mappedVenue.city || venueData.address?.city || null,
-              venue_state: mappedVenue.state || venueData.address?.state || null,
-              venue_lat: mappedVenue.lat || null,
-              venue_lng: mappedVenue.lng || null,
-              image_url: mappedVenue.image_url || null,
+              venue_id: venueId,
               external_id: externalId,
               external_source: 'espn',
             })

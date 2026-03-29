@@ -58,7 +58,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           venue_lng,
           image_url,
           external_id,
-          external_source
+          external_source,
+          venues (
+            id,
+            name,
+            city,
+            state,
+            lat,
+            lng,
+            image_url,
+            venue_type
+          )
         )
       `)
       .eq('user_id', user.id)
@@ -124,12 +134,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           title: event.title,
           status: event.status,
           event_date: event.event_date,
-          venue_name: event.venue_name,
-          venue_city: event.venue_city,
-          venue_state: event.venue_state,
-          venue_lat: event.venue_lat,
-          venue_lng: event.venue_lng,
-          image_url: event.image_url,
+          // Venue data: prefer venues table, fallback to flat columns
+          venue_name: event.venues?.name || event.venue_name,
+          venue_city: event.venues?.city || event.venue_city,
+          venue_state: event.venues?.state || event.venue_state,
+          venue_lat: event.venues?.lat || event.venue_lat,
+          venue_lng: event.venues?.lng || event.venue_lng,
+          image_url: event.venues?.image_url || event.image_url,
           external_id: event.external_id,
           external_source: event.external_source,
           // Sports-specific

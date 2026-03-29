@@ -105,7 +105,7 @@ function getTimeAgo(dateStr: string): string {
   return `${years}y ago`;
 }
 
-const SORT_OPTIONS = ['Date Logged', 'Date Attended', 'Highest Rated'] as const;
+const SORT_OPTIONS = ['Date Attended', 'Date Logged', 'Highest Rated'] as const;
 
 /** Map API log response to EventDetail for the UI */
 function mapLogToEventDetail(log: any): EventDetail {
@@ -137,8 +137,8 @@ function mapLogToEventDetail(log: any): EventDetail {
     eventType = eventType.charAt(0).toUpperCase() + eventType.slice(1);
   }
 
-  // Build human-readable time ago string
-  const timeAgo = getTimeAgo(log.logged_at);
+  // Build human-readable time ago string based on event date
+  const timeAgo = getTimeAgo(event.event_date);
 
   return {
     id: log.id,
@@ -176,7 +176,7 @@ export default function LogbookScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('All');
   const [activeSubFilter, setActiveSubFilter] = useState<string>('All');
-  const [activeSort, setActiveSort] = useState<string>('Date Logged');
+  const [activeSort, setActiveSort] = useState<string>('Date Attended');
   const [searchText, setSearchText] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [editingLog, setEditingLog] = useState<EventDetail | null>(null);
