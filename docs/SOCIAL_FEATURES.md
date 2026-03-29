@@ -1,7 +1,8 @@
 # Log It — Social Features
 
-> **Last updated:** 2026-03-28
+> **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Verified docs alignment with the current codebase. No structural changes to the social MVP scope.
 > - 2026-03-28: Moved the Friend System into the MVP scope to align with the backend integration plan and enable the global/friends feed filtering.
 
 ## Philosophy

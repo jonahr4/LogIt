@@ -1,7 +1,8 @@
 # Log It — Feature Roadmap
 
-> **Last updated:** 2026-03-28
+> **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Marked Phase 4 (Log Creation) and Phase 5 (Personal Logbook) complete — API endpoints and UI fully wired for reading/writing logs.
 > - 2026-03-28: Marked Phase 3 (Event Data & Search) complete — NBA cron sync, full-text search, venue enrichment, season backfill implemented. Added `EXTERNAL_SERVICES.md` reference. Added event countdown stretch goal to Notifications.
 > - 2026-03-28: Consolidated completed UI foundation under MVP, reprioritized full backend execution (NBA Search, Real Log Creation, Logbook Fetching), and pulled Friend System into MVP for global feed filtering.
 > - 2026-03-28: Clarified that Event Search queries real-world APIs (canonical objects), with manual entry as a fallback.
@@ -64,17 +65,17 @@ gantt
 - [ ] "Event not found" → manual entry fallback (UI wired, backend pending)
 
 ### 4. Backend: Log Creation
-- [ ] Select real event from search results
-- [ ] Store user logs mapped to events in Supabase
-- [ ] Add optional notes, rating, photos (in Supabase Storage)
-- [ ] Add companions (tag friends or freeform)
-- [ ] Privacy configuration (public / friends / private)
-- [ ] Prevent duplicate logs for same event (or allow multiple attendances)
+- [x] Select real event from search results
+- [x] Store user logs mapped to events in Supabase
+- [x] Add optional notes, rating, photos (in Supabase Storage)
+- [x] Add companions (tag friends or freeform)
+- [x] Privacy configuration (public / friends / private)
+- [x] Prevent duplicate logs for same event (or allow multiple attendances)
 
 ### 5. Backend: Personal Logbook
-- [ ] Fetch user's logs directly from Supabase
-- [ ] Apply real filters and sorting to the database query
-- [ ] Map backend rows backwards to the existing `EventDetail` TS type to power the unified Logbook UI
+- [x] Fetch user's logs directly from Supabase
+- [x] Apply real filters and sorting to the database query
+- [x] Map backend rows backwards to the existing `EventDetail` TS type to power the unified Logbook UI
 
 ### 6. Backend: Simple Feed & Social
 - [ ] Fetch public and friend-restricted logs for global feed

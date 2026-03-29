@@ -1,7 +1,8 @@
 # Log It — API Design
 
-> **Last updated:** 2026-03-28
+> **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Added `/api/logs/update` endpoint for editing existing logs.
 > - 2026-03-28: Added implemented status markers to endpoints. Documented new cron endpoints (`sync-nba`, `backfill-nba`), event search (`/api/events/search`), and log creation (`/api/logs/create`). Added `EXTERNAL_SERVICES.md` cross-reference.
 > - 2026-03-26: Initial document creation
 
@@ -241,7 +242,7 @@ All event responses share a **common base shape** with a `type_metadata` object 
 | `POST /logs/create` | POST | Yes | Create a new log | ✅ Implemented |
 | `GET /logs` | GET | Yes | Get current user's logs (with filters) | — |
 | `GET /logs/:id` | GET | Yes | Get a specific log | — |
-| `PATCH /logs/:id` | PATCH | Yes (owner) | Update a log (notes, privacy, rating, companions) | — |
+| `POST /api/logs/update` | POST | Yes (owner) | Update a log (notes, privacy, rating, companions) | ✅ Implemented |
 | `DELETE /logs/:id` | DELETE | Yes (owner) | Delete a log | — |
 
 ### `POST /logs` — Request Body

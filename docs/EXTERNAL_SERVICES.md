@@ -1,6 +1,8 @@
 # Log It — External Services & Data Ingestion
 
-> **Last updated:** 2026-03-28
+> **Last updated:** 2026-03-29
+> **Changes:**
+> - 2026-03-29: Replaced Ball Dont Lie with ESPN API entirely for both NBA game data and high-res sports team logos. Added Wikipedia venue scraping for static photo mappings.
 > The definitive reference for how LogIt sources event data. Each event type has a different ingestion strategy depending on data volume, API cost, and nature of the data.
 
 ## Design Principles
@@ -60,8 +62,8 @@ User logs → Vercel API → upsert into Supabase events table
 
 | Event Type | Strategy | External API | Status | DB Table |
 |---|---|---|---|---|
-| **Sports (NBA)** | 🅰️ Pre-Ingest | Ball Don't Lie | **MVP** | `events` + `sports_events` |
-| **Sports (MLB/NFL/NHL)** | 🅰️ Pre-Ingest | TheSportsDB / API-Sports | v1.5 | `events` + `sports_events` |
+| **Sports (NBA)** | 🅰️ Pre-Ingest | ESPN API | **MVP** | `events` + `sports_events` |
+| **Sports (MLB/NFL/NHL)** | 🅰️ Pre-Ingest | ESPN API | v1.5 | `events` + `sports_events` |
 | **Movies** | 🅰️ Pre-Ingest | TMDB | v2.0 | `events` + `movie_events` |
 | **Concerts** | 🅱️ On-Demand | Ticketmaster Discovery | v2.0 | `events` + `concert_events` |
 | **Restaurants** | 🅱️ On-Demand | Google Places / Foursquare | v2.0 | `events` + `restaurant_events` |
@@ -76,13 +78,13 @@ User logs → Vercel API → upsert into Supabase events table
 
 | Detail | Value |
 |---|---|
-| **API** | [Ball Don't Lie](https://docs.balldontlie.io) |
+| **API** | ESPN API |
 | **Strategy** | Pre-Ingest via Vercel cron |
-| **Env key** | `BALL_DONT_LIE_API` |
-| **Free tier** | Yes — API key required, generous rate limits |
-| **SDK** | `@balldontlie/sdk` (npm) or raw REST |
-| **Data volume** | ~1,230 games/season (~15/day during season) |
-| **Season field** | BDL uses start year (e.g. `2025` = the 2025-26 season) |
+| **Env key** | N/A (unauthenticated) |
+| **Free tier** | Yes — free, undocumented API |
+| **SDK** | Built-in native `fetch` |
+| **Data volume** | ~1,230 games/season |
+| **Season field** | Derived from the date or ESPN scoreboard endpoint |
 
 #### Cron Job: Daily NBA Sync
 
@@ -90,18 +92,18 @@ User logs → Vercel API → upsert into Supabase events table
 |---|---|
 | **Schedule** | Every day at 6:00 AM UTC (`0 6 * * *`) |
 | **Endpoint** | `api/cron/sync-nba.ts` |
-| **Logic** | Fetch games for today ± 7 days from BDL. Upsert into `events` + `sports_events`. Update scores for completed games. |
-| **Dedup key** | `external_id = BDL game ID`, `external_source = 'balldontlie'` |
+| **Logic** | Fetch games for today ± 7 days from ESPN. Upsert into `events` + `sports_events`. Update scores for completed games. |
+| **Dedup key** | `external_id = ESPN game ID`, `external_source = 'espn'` |
 
 #### BDL API → LogIt Mapping
 
-| BDL Field | LogIt Field | Table |
+| ESPN Field | LogIt Field | Table |
 |---|---|---|
 | `id` | `external_id` | `events` |
-| `'balldontlie'` | `external_source` | `events` |
-| `home_team.full_name + " vs " + visitor_team.full_name` | `title` | `events` |
-| `datetime` | `event_date` | `events` |
-| `status` ("Final" / "In Progress" / future date) | `status` | `events` |
+| `'espn'` | `external_source` | `events` |
+| `name` | `title` | `events` |
+| `date` | `event_date` | `events` |
+| `status.type.state` ("post" / "in" / "pre") | `status` | `events` |
 | `home_team.city` | `venue_city` | `events` |
 | `home_team.id` | `home_team_id` | `sports_events` |
 | `visitor_team.id` | `away_team_id` | `sports_events` |
@@ -217,7 +219,8 @@ Event images are sourced separately from event data. Strategy varies:
 
 | Category | Source | Strategy |
 |---|---|---|
-| **Sports team logos** | TheSportsDB / API-Sports | Download once → store in Supabase Storage (finite set of ~120 teams) |
+| **Sports team logos** | ESPN API | Fetched directly dynamically (no storage costs) |
+| **Sports venues** | Wikipedia Images | Local static mapping holding Wikipedia CDN links |
 | **Movie posters** | TMDB | On-demand via `image.tmdb.org` URL (free, no storage needed) |
 | **Concert/artist photos** | Ticketmaster / Muzooka | On-demand via API URLs |
 | **Restaurant/venue photos** | Google Places / Foursquare | On-demand via API URLs |

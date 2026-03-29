@@ -39,6 +39,7 @@ export type EventDetail = {
   title: string;
   venue: string;
   date: string;
+  rawDate?: string;
   eventType: string;
   // Sports-specific
   homeTeamName?: string;

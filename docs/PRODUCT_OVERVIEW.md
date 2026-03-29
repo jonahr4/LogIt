@@ -1,7 +1,8 @@
 # Log It — Product Overview
 
-> **Last updated:** 2026-03-28
+> **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Migrated primary sports data source from Ball Dont Lie to ESPN API for high-resolution team logos and better backend data stability.
 > - 2026-03-28: Emphasized that events map to real-world canonical objects (APIs) rather than manual text entry.
 > - 2026-03-27: Added nightlife (clubs, bars, nights out) as a future event type.
 
@@ -58,8 +59,8 @@ Build sports first (starting with NBA) to prove the model, then expand across ev
 
 | Event Type | Data Source | Implementation |
 |---|---|---|
-| Sports (NBA) | Ball Don't Lie API | **First implementation** |
-| Sports (MLB/NFL/NHL) | TheSportsDB / API-Sports | Later |
+| Sports (NBA) | ESPN API | **First implementation** |
+| Sports (MLB/NFL/NHL) | ESPN API | Later |
 | Movies | TMDB API | v2.0+ |
 | Concerts | Ticketmaster API | v2.0+ |
 | Restaurants | Google Places / Foursquare | v2.0+ |
@@ -94,8 +95,8 @@ Event images and data are sourced from free external APIs:
 
 | Category | API | Strategy |
 |---|---|---|
-| **Sports logos** | TheSportsDB, API-Sports | Store locally in Supabase (finite set of teams) |
-| **Sports data/scores** | Ball Don't Lie (NBA) | Ingested via Vercel cron functions |
+| **Sports logos** | ESPN API | Scraped dynamically via ESPN APIs |
+| **Sports data/scores** | ESPN API | Ingested via Vercel cron functions (`api/cron/sync-nba`) |
 | **Movie posters + data** | TMDB | Fetched on-demand via API |
 | **Concert/artist photos + data** | Ticketmaster, Muzooka | Fetched on-demand |
 | **Restaurant data** | Google Places ($200/mo free), Foursquare (10k free calls) | Fetched on-demand |

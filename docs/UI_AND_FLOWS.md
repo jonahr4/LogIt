@@ -1,7 +1,9 @@
 # Log It — UI Design & User Flows
 
-> **Last updated:** 2026-03-28
-> Updated: Added Search/Explore tab for discovering events logged by other users. Added Edit/Create Log Modal with type-specific input sections for all 6 event types. Updated navigation graph with search and edit log flows.
+> **Last updated:** 2026-03-29
+> **Changes:**
+> - 2026-03-29: Fully documented the implementation of Logbook's dynamic timeline layout, including Upcoming vs Past grouping, monthly dividers, and days-remaining pills.
+> - 2026-03-28: Added Search/Explore tab for discovering events logged by other users. Added Edit/Create Log Modal with type-specific input sections for all 6 event types. Updated navigation graph with search and edit log flows.
 
 ## Navigation Structure
 
@@ -89,15 +91,11 @@ The power-user screen — your complete history.
 
 **Layout:**
 - Header with total count: "47 events logged"
-- Filter bar (collapsible or sheet):
-  - Event Type (Sports, Movies, Concerts, Restaurants, Manual)
-  - Type-specific filters (Team, League, Artist, Genre, Cuisine — shown when type selected)
-  - Date range (preset: This year, Last year, All time, Custom)
-  - Venue
-  - Privacy (Public / Friends / Private)
-  - Rating (minimum star filter)
-- Scrollable list of log entries, sorted newest first
-- Each entry: event title, date, venue, privacy badge, companion count
+- Filter bar (collapsible or sheet) with quick toggles for Event Type, Date Range, Privacy, etc.
+- **Dynamic Timeline View:**
+  - **Upcoming Events:** Stacked at the top with a dynamic days-remaining pill (`IN 5 DAYS`, `TODAY`). Auto-hides if empty.
+  - **Past Events:** Grouped chronologically with sleek `MONTH YEAR` text dividers.
+- Each entry: event title, date, venue, privacy badge, companion count, dynamic UI pill for upcoming
 
 **Design Direction:**
 - Unified single list — filter down, don't force category navigation

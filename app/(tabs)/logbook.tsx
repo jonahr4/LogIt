@@ -16,6 +16,7 @@ import {
   Modal,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +24,9 @@ import { Colors, Shadows } from '@/constants/colors';
 import { Typography, FontFamily } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EventDetailModal } from '@/components/ui/EventDetailModal';
+import { EditLogModal } from '@/components/ui/EditLogModal';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
 
 // --- Types ---
@@ -35,6 +38,7 @@ export type EventDetail = {
   venueCity?: string;
   venueState?: string;
   date: string;
+  rawDate?: string;
   dateLogged?: string;
   image?: string;
   note?: string;
@@ -60,9 +64,9 @@ export type EventDetail = {
   cuisine?: string;
   
   // Universal Metadata
-  privacy: 'public' | 'friends' | 'private';
+  privacy?: 'public' | 'friends' | 'private';
   rating?: number;
-  companions?: any[];
+  companions?: Array<{ name: string; user_id?: string }>;
   external_id?: string;
 };
 
@@ -89,6 +93,7 @@ function mapLogToEventDetail(log: any): EventDetail {
       title: 'Unknown Event',
       venue: '',
       date: new Date(log.logged_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      rawDate: log.logged_at,
       dateLogged: log.logged_at,
       privacy: log.privacy || 'public',
       rating: log.rating,
@@ -116,6 +121,7 @@ function mapLogToEventDetail(log: any): EventDetail {
     venueCity: event.venue_city,
     venueState: event.venue_state,
     date: new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    rawDate: event.event_date,
     dateLogged: log.logged_at,
     image: event.image_url,
     note: log.notes,
@@ -142,6 +148,7 @@ export default function LogbookScreen() {
   const [activeSort, setActiveSort] = useState<string>('Date Logged');
   const [searchText, setSearchText] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [editingLog, setEditingLog] = useState<EventDetail | null>(null);
   const [isSortDropdownVisible, setIsSortDropdownVisible] = useState(false);
 
   const sortButtonRef = React.useRef<View>(null);
@@ -165,15 +172,37 @@ export default function LogbookScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchLogs();
+    }, [fetchLogs])
+  );
 
   const handleOpenSort = () => {
     sortButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
       setDropdownPos({ top: pageY + height + 8, right: 16 });
       setIsSortDropdownVisible(true);
     });
+  };
+
+  const handleSaveEdit = async (updatedData: Partial<EventDetail>) => {
+    if (!editingLog) return;
+    try {
+      setIsLoading(true);
+      await api.post('/api/logs/update', {
+        log_id: editingLog.id,
+        notes: updatedData.note,
+        privacy: updatedData.privacy,
+        rating: updatedData.rating,
+        companions: updatedData.companions,
+      });
+      setEditingLog(null);
+      fetchLogs(true); // Refetch quietly
+    } catch (err) {
+      console.error('Failed to update log:', err);
+      Alert.alert('Error', 'Could not update your log.');
+      setIsLoading(false);
+    }
   };
 
   // --- Derived State ---
@@ -235,6 +264,109 @@ export default function LogbookScreen() {
     setActiveSubFilter('All');
   };
 
+  const isUpcoming = useCallback((entry: EventDetail) => {
+    if (entry.status === 'Upcoming' || entry.status === 'LIVE') return true;
+    if (entry.status === 'FINAL') return false;
+    if (entry.rawDate) {
+      return new Date(entry.rawDate as string).getTime() > Date.now();
+    }
+    return false;
+  }, []);
+
+  const getDaysUntil = useCallback((rawDate?: string) => {
+    if (!rawDate) return null;
+    const target = new Date(rawDate as string).setHours(0, 0, 0, 0);
+    const now = new Date().setHours(0, 0, 0, 0);
+    const diffTime = target - now;
+    if (diffTime <= 0) return 'TODAY';
+    
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 1) return 'TOMORROW';
+    return `IN ${diffDays} DAYS`;
+  }, []);
+
+  const upcomingEvents = useMemo(() => {
+    return filteredAndSortedEntries.filter(isUpcoming);
+  }, [filteredAndSortedEntries, isUpcoming]);
+
+  const pastEventsWithDividers = useMemo(() => {
+    const past = filteredAndSortedEntries.filter(e => !isUpcoming(e));
+    if (activeSort === 'Highest Rated') {
+      return past.map(data => ({ type: 'event' as const, data }));
+    }
+
+    const items: Array<{ type: 'event' | 'divider', data: any }> = [];
+    let currentPeriod = '';
+    
+    past.forEach(event => {
+       const dateSpace = activeSort === 'Date Logged' ? (event.dateLogged || event.rawDate) : event.rawDate;
+       const d = new Date(dateSpace);
+       const period = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+       
+       if (period !== currentPeriod) {
+         currentPeriod = period;
+         items.push({ type: 'divider', data: period });
+       }
+       items.push({ type: 'event', data: event });
+    });
+    return items;
+  }, [filteredAndSortedEntries, activeSort, isUpcoming]);
+
+  const renderEntryCard = (entry: EventDetail) => {
+    return (
+      <TouchableOpacity key={entry.id} activeOpacity={0.8} onPress={() => setSelectedEvent(entry)}>
+        <GlassCard borderRadius={20} style={styles.entryCard}>
+          <View style={styles.entryImageContainer}>
+            {entry.image ? (
+              <Image source={{ uri: entry.image }} style={styles.entryImage} />
+            ) : (
+              <View style={[styles.entryImage, { backgroundColor: 'rgba(0,255,194,0.1)' }]} />
+            )}
+            <View style={styles.entryImageOverlay} />
+          </View>
+          
+          <View style={styles.entryInfo}>
+            <View style={styles.titleRow}>
+              <Text style={styles.entryTitle} numberOfLines={1}>{entry.title}</Text>
+              {isUpcoming(entry) && entry.rawDate && (
+                <View style={[styles.upcomingPill, getDaysUntil(entry.rawDate) === 'TODAY' && { backgroundColor: Colors.primaryContainer }]}>
+                  <Text style={[styles.upcomingPillText, getDaysUntil(entry.rawDate) === 'TODAY' && { color: Colors.surface }]}>
+                    {getDaysUntil(entry.rawDate)}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.entryMeta} numberOfLines={1}>
+              {entry.venue ? entry.venue.toUpperCase() + ' • ' : ''}{entry.date.toUpperCase()}
+            </Text>
+            
+            {/* Unified Metadata Row */}
+            <View style={styles.bottomMetaRow}>
+              {entry.rating !== undefined && (
+                <View style={styles.metaIconRow}>
+                  <Ionicons name="star" size={12} color="#FFD700" />
+                  <Text style={styles.metaText}>{entry.rating}</Text>
+                </View>
+              )}
+              {entry.companions && entry.companions.length > 0 && (
+                <View style={styles.metaIconRow}>
+                  <Ionicons name="people" size={12} color={Colors.textMuted} />
+                  <Text style={styles.metaText}>{entry.companions.length}</Text>
+                </View>
+              )}
+              <Ionicons 
+                name={entry.privacy === 'private' ? 'lock-closed' : entry.privacy === 'friends' ? 'people' : 'globe-outline'} 
+                size={12} 
+                color={Colors.textMuted} 
+              />
+            </View>
+          </View>
+
+          {renderRightSide(entry)}
+        </GlassCard>
+      </TouchableOpacity>
+    );
+  };
 
   const renderRightSide = (entry: EventDetail) => {
     const isSports = ['NBA', 'NFL', 'MLB', 'NHL'].includes(entry.eventType);
@@ -376,55 +508,33 @@ export default function LogbookScreen() {
               </Text>
             </GlassCard>
           ) : (
-            filteredAndSortedEntries.map((entry) => (
-            <TouchableOpacity key={entry.id} activeOpacity={0.8} onPress={() => setSelectedEvent(entry)}>
-              <GlassCard borderRadius={20} style={styles.entryCard}>
-                <View style={styles.entryImageContainer}>
-                  {entry.image ? (
-                    <Image source={{ uri: entry.image }} style={styles.entryImage} />
-                  ) : (
-                    <View style={[styles.entryImage, { backgroundColor: 'rgba(0,255,194,0.1)' }]} />
-                  )}
-                  <View style={styles.entryImageOverlay} />
-                </View>
-                
-                <View style={styles.entryInfo}>
-                  <Text style={styles.entryTitle} numberOfLines={1}>{entry.title}</Text>
-                  <Text style={styles.entryMeta} numberOfLines={1}>
-                    {entry.venue ? entry.venue.toUpperCase() + ' • ' : ''}{entry.date.toUpperCase()}
-                  </Text>
-                  
-                  {/* Unified Metadata Row */}
-                  <View style={styles.bottomMetaRow}>
-                    {/* Stars */}
-                    {entry.rating !== undefined && (
-                      <View style={styles.metaIconRow}>
-                        <Ionicons name="star" size={12} color="#FFD700" />
-                        <Text style={styles.metaText}>{entry.rating}</Text>
-                      </View>
-                    )}
-                    
-                    {/* Companions */}
-                    {entry.companions && entry.companions.length > 0 && (
-                      <View style={styles.metaIconRow}>
-                        <Ionicons name="people" size={12} color={Colors.textMuted} />
-                        <Text style={styles.metaText}>{entry.companions.length}</Text>
-                      </View>
-                    )}
-
-                    {/* Privacy */}
-                    <Ionicons 
-                      name={entry.privacy === 'private' ? 'lock-closed' : entry.privacy === 'friends' ? 'people' : 'globe-outline'} 
-                      size={12} 
-                      color={Colors.textMuted} 
-                    />
+            <>
+              {upcomingEvents.length > 0 && (
+                <>
+                  <View style={styles.sectionHeaderRow}>
+                    <Text style={styles.sectionHeaderText}>UPCOMING</Text>
                   </View>
-                </View>
-
-                {renderRightSide(entry)}
-              </GlassCard>
-            </TouchableOpacity>
-          )))}
+                  {upcomingEvents.map(renderEntryCard)}
+                  <View style={{ height: 24 }} />
+                  <View style={styles.sectionHeaderRow}>
+                    <Text style={styles.sectionHeaderText}>PAST</Text>
+                  </View>
+                </>
+              )}
+              
+              {pastEventsWithDividers.map((item, idx) => {
+                if (item.type === 'divider') {
+                  return (
+                    <View key={`div-${item.data}-${idx}`} style={styles.dividerRow}>
+                      <Text style={styles.dividerText}>{item.data.toUpperCase()}</Text>
+                      <View style={styles.dividerLine} />
+                    </View>
+                  );
+                }
+                return renderEntryCard(item.data);
+              })}
+            </>
+          )}
         </View>
 
         {/* Bottom spacer */}
@@ -435,7 +545,20 @@ export default function LogbookScreen() {
       <EventDetailModal
          event={selectedEvent}
          onClose={() => setSelectedEvent(null)}
+         onEdit={(e) => setEditingLog(e)}
       />
+      
+      {/* Edit Log Modal */}
+      {editingLog && (
+        <EditLogModal
+          visible={!!editingLog}
+          onClose={() => setEditingLog(null)}
+          event={editingLog}
+          mode="edit"
+          onSave={handleSaveEdit}
+        />
+      )}
+
       {/* Custom Sort Dropdown Modal */}
       <Modal visible={isSortDropdownVisible} transparent animationType="fade">
         <TouchableOpacity style={styles.dropdownOverlay} activeOpacity={1} onPress={() => setIsSortDropdownVisible(false)}>
@@ -643,6 +766,35 @@ const styles = StyleSheet.create({
     color: Colors.primaryContainer,
   },
 
+  sectionHeaderRow: {
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  sectionHeaderText: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 16,
+    letterSpacing: 2,
+    color: Colors.textMuted,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  dividerText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    letterSpacing: 1,
+    color: '#8B95A5',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+
   // Entries list
   entriesList: {
     gap: 12,
@@ -674,11 +826,29 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
   entryTitle: {
     fontFamily: FontFamily.headlineBold,
     fontSize: 17,
     color: Colors.text,
-    marginBottom: 3,
+    flexShrink: 1,
+  },
+  upcomingPill: {
+    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  upcomingPillText: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 9,
+    color: Colors.primaryContainer,
+    letterSpacing: 0.5,
   },
   entryMeta: {
     fontFamily: FontFamily.bodySemiBold,

@@ -1,7 +1,8 @@
 # Log It — Tech Stack & Architecture
 
-> **Last updated:** 2026-03-28
+> **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Replaced Ball Dont Lie with ESPN API for primary sports ingestion and media. Added Wikipedia scraper strategy for NBA generic venue imagery.
 > - 2026-03-28: Added cron job architecture (daily NBA sync), NBA venue static mapping, backfill endpoint. Cross-ref `EXTERNAL_SERVICES.md` for full ingestion strategy per event type.
 > - 2026-03-26: Updated project structure to match Phase 1 implementation (auth/onboarding groups, API layer, store, actual dependencies)
 
@@ -15,10 +16,10 @@
 | **Auth** | Firebase Authentication | Familiar, mature, Google/Apple built-in |
 | **Database** | Supabase (Postgres) | Relational — natural fit for events, logs, friendships |
 | **Storage** | Supabase Storage | User photos, avatars, sports team logos |
-| **Event Data (Sports)** | Ball Don't Lie (NBA first) | Free, well-documented, clean NBA data |
+| **Event Data (Sports)** | ESPN API | Free, unauthenticated, reliable box scores and schedules |
 | **Event Data (Movies)** | TMDB | Free API key, movie posters + metadata |
 | **Event Data (Concerts)** | Ticketmaster Discovery API | Free, millions of events, artist data |
-| **Event Media (Sports)** | TheSportsDB / API-Sports | Team logos stored locally in Supabase |
+| **Event Media (Sports)** | ESPN API / Wikipedia | High-res EPSN team logos + Wikipedia scraped arena photos |
 | **Event Media (Artists)** | Muzooka | Artist photos, free tier |
 | **State Management** | Zustand or React Context | Lightweight, no boilerplate |
 | **Language** | TypeScript | Type safety across the app |
@@ -63,10 +64,10 @@ graph TB
     end
 
     subgraph External["🌐 External APIs"]
-        SportsAPI[Ball Dont Lie API]
+        SportsAPI[ESPN API]
         TMDB[TMDB API]
         Ticketmaster[Ticketmaster API]
-        TheSportsDB[TheSportsDB]
+        Wikipedia[Wikipedia Scraper]
     end
 
     UI --> State
@@ -89,7 +90,7 @@ graph TB
 
 ### Strategy
 
-1. **Source:** External APIs for each event type (starting with Ball Don't Lie for NBA)
+1. **Source:** External APIs for each event type (starting with ESPN API for NBA)
 2. **Ingestion:** Vercel cron functions run on a schedule (daily or per-event-day)
 3. **Storage:** Canonical `Event` records in Supabase Postgres (base table + type-specific child tables)
 4. **Matching:** `external_id` + `external_source` fields prevent duplicates
@@ -99,10 +100,9 @@ graph TB
 
 | Event Type | API | Free Tier | What It Provides |
 |---|---|---|---|
-| **Sports (NBA)** | Ball Don't Lie | ✅ Free | NBA schedules, scores, teams — **MVP choice** |
+| **Sports (NBA)** | ESPN API | ✅ Free | NBA schedules, scores, teams, high-res logos — **MVP choice** |
 | **Sports (all)** | TheSportsDB | ✅ Free JSON API | Schedules, results, team data for NBA/MLB/NFL/NHL |
 | **Sports (all)** | API-Sports | 100 req/day free | Comprehensive sports data; logo calls are free |
-| **Sports (all)** | ESPN (unofficial) | Free (no key) | Undocumented, could change |
 | **Movies** | TMDB | ✅ Free API key | Movie metadata, posters, cast, genres, ratings |
 | **Concerts** | Ticketmaster Discovery | ✅ Free | Millions of events, artist data, venues, tour dates |
 | **Concerts** | Setlist.fm | ✅ Free (non-commercial) | Setlists, artist history, venue data |
@@ -113,7 +113,8 @@ graph TB
 
 | Category | API | Strategy |
 |---|---|---|
-| **Sports team logos** | TheSportsDB, API-Sports | Download once, **store locally in Supabase Storage** (finite set of teams) |
+| **Sports team logos** | ESPN API | Fetched directly dynamically (no storage costs) |
+| **Sports venues** | Wikipedia Images | Local static mapping holding Wikipedia CDN links |
 | **Movie posters** | TMDB | Fetch on-demand via `https://image.tmdb.org/t/p/w500/{path}` |
 | **Artist/concert photos** | Muzooka, Ticketmaster | Fetch on-demand |
 | **Restaurant photos** | Google Places, Foursquare | Fetch on-demand |
