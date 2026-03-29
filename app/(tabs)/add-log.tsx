@@ -13,6 +13,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -146,8 +147,15 @@ export default function AddLogScreen() {
       });
       console.log('Log created successfully!');
     } catch (err: any) {
+      const code = err?.error?.code || err?.code || '';
+      if (code === 'CONFLICT') {
+        Alert.alert('Already Logged', 'You have already logged this event!');
+      } else if (code === 'UNAUTHORIZED') {
+        Alert.alert('Sign In Required', 'Please sign in to log events.');
+      } else {
+        Alert.alert('Error', 'Failed to save your log. Please try again.');
+      }
       console.error('Save log error:', err);
-      // TODO: show user-facing error toast
     } finally {
       setIsSaving(false);
       setSelectedEventToLog(null);

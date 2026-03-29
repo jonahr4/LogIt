@@ -1,9 +1,10 @@
 /**
  * LogIt — Logbook Screen
  * Spatial Green v2: search, filter chips, sub-filters, sorting, compact polymorphic list entries
+ * Connected to real Supabase data via /api/logs/mine
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +14,8 @@ import {
   TextInput,
   Image,
   Modal,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,20 +24,21 @@ import { Typography, FontFamily } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EventDetailModal } from '@/components/ui/EventDetailModal';
 import { LinearGradient } from 'expo-linear-gradient';
+import { api } from '@/lib/api';
 
 // --- Types ---
 export type EventDetail = {
   id: string;
-  eventType: string; // 'NBA', 'NFL', 'Movie', 'Concert', 'Restaurant', 'Nightlife', 'Custom'
+  eventType: string;
   title: string;
   venue: string;
   venueCity?: string;
   venueState?: string;
   date: string;
-  dateLogged?: string; // for sorting
+  dateLogged?: string;
   image?: string;
-  note?: string; // missing in old mock schema
-  status?: string; // missing in old mock schema
+  note?: string;
+  status?: string;
   
   // Sports
   homeTeamName?: string;
@@ -61,116 +65,6 @@ export type EventDetail = {
   companions?: any[];
 };
 
-// --- Mock Data ---
-// NOTE TO DEVELOPER: In the future API integration phase, these entries will be exactly the same rich 
-// 'EventDetail' schema as used in feed.tsx, ensuring the EventDetailModal always receives things like 
-// team logos, 'status' (FINAL • OT), 'timeAgo', and full 'notes' regardless of where it was opened from.
-const MOCK_ENTRIES: EventDetail[] = [
-  {
-    id: '1',
-    eventType: 'NBA',
-    title: 'Celtics vs Lakers',
-    venue: 'Crypto.com Arena',
-    date: 'Mar 15, 2026',
-    dateLogged: '2026-03-15T22:00:00Z',
-    image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=200&auto=format&fit=crop',
-    homeTeamName: 'Celtics',
-    awayTeamName: 'Lakers',
-    homeTeamLogo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/1200px-Boston_Celtics.svg.png',
-    awayTeamLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/1200px-Los_Angeles_Lakers_logo.svg.png',
-    status: 'FINAL • OT',
-    homeScore: 112,
-    awayScore: 108,
-    rating: 5,
-    privacy: 'public',
-    note: 'Incredible game, went to OT! Tatum was on fire in the 4th quarter. Sat in section 301, great view of the court. The energy was electric.',
-    companions: [{ name: 'Alex' }, { name: 'Sarah' }],
-  },
-  {
-    id: '2',
-    eventType: 'NBA',
-    title: 'Knicks vs 76ers',
-    venue: 'Madison Square Garden',
-    date: 'Mar 14, 2026',
-    dateLogged: '2026-03-14T23:00:00Z',
-    image: 'https://images.unsplash.com/photo-1577223625816-7546f13df25d?q=80&w=200&auto=format&fit=crop',
-    homeTeamName: 'Knicks',
-    awayTeamName: '76ers',
-    homeScore: 98,
-    awayScore: 104,
-    rating: 4,
-    privacy: 'friends',
-    companions: [{ name: 'Mike' }],
-  },
-  {
-    id: '3',
-    eventType: 'NFL',
-    title: 'Chiefs vs Eagles',
-    venue: 'Arrowhead Stadium',
-    date: 'Mar 12, 2026',
-    dateLogged: '2026-03-13T10:00:00Z',
-    image: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?q=80&w=200&auto=format&fit=crop',
-    homeTeamName: 'Chiefs',
-    awayTeamName: 'Eagles',
-    homeScore: 31,
-    awayScore: 24,
-    rating: 5,
-    privacy: 'public',
-    companions: [{ name: 'Dad' }, { name: 'Jake' }],
-  },
-  {
-    id: '4',
-    eventType: 'Movie',
-    title: 'Dune: Part Two',
-    venue: 'AMC Lincoln Square',
-    date: 'Mar 14, 2026',
-    dateLogged: '2026-03-14T20:00:00Z',
-    image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=200&auto=format&fit=crop',
-    watchedAt: 'Theater',
-    rating: 5,
-    privacy: 'public',
-    companions: [{ name: 'Sarah' }],
-  },
-  {
-    id: '5',
-    eventType: 'Concert',
-    title: 'SZA',
-    venue: 'Madison Square Garden',
-    date: 'Mar 13, 2026',
-    dateLogged: '2026-03-14T02:00:00Z',
-    image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=200&auto=format&fit=crop',
-    rating: 5,
-    privacy: 'public',
-    companions: [{ name: 'Lily' }, { name: 'Marcus' }],
-  },
-  {
-    id: '6',
-    eventType: 'Restaurant',
-    title: 'Carbone',
-    venue: 'Carbone',
-    date: 'Mar 12, 2026',
-    dateLogged: '2026-03-13T09:00:00Z',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop',
-    priceLevel: '$$$$',
-    rating: 4,
-    privacy: 'public',
-    companions: [{ name: 'Tom' }],
-  },
-  {
-    id: '7',
-    eventType: 'Nightlife',
-    title: 'Marquee NYC',
-    venue: 'Marquee New York',
-    date: 'Mar 14, 2026',
-    dateLogged: '2026-03-15T01:00:00Z',
-    image: 'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?q=80&w=200&auto=format&fit=crop',
-    priceLevel: '$$$',
-    rating: 3,
-    privacy: 'friends',
-    companions: [{ name: 'Sam' }, { name: 'Eli' }, { name: 'Nina' }, { name: 'Zoey' }],
-  },
-];
-
 // --- Constants ---
 const FILTER_CHIPS = ['All', 'Sports', 'Movies', 'Concerts', 'Restaurants', 'Nightlife'] as const;
 
@@ -184,7 +78,61 @@ const SUB_FILTERS: Record<string, string[]> = {
 
 const SORT_OPTIONS = ['Date Logged', 'Date Attended', 'Highest Rated'] as const;
 
+/** Map API log response to EventDetail for the UI */
+function mapLogToEventDetail(log: any): EventDetail {
+  const event = log.event;
+  if (!event) {
+    return {
+      id: log.id,
+      eventType: 'Custom',
+      title: 'Unknown Event',
+      venue: '',
+      date: new Date(log.logged_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      dateLogged: log.logged_at,
+      privacy: log.privacy || 'public',
+      rating: log.rating,
+      note: log.notes,
+      companions: log.companions,
+    };
+  }
+
+  // Determine eventType label
+  let eventType = event.event_type || 'Custom';
+  if (eventType === 'sports' && event.league) {
+    eventType = event.league; // 'NBA', 'NFL', etc.
+  } else if (eventType === 'sports') {
+    eventType = 'NBA'; // Default
+  } else {
+    // Capitalize first letter
+    eventType = eventType.charAt(0).toUpperCase() + eventType.slice(1);
+  }
+
+  return {
+    id: log.id,
+    eventType,
+    title: event.title,
+    venue: event.venue_name || event.venue_city || '',
+    venueCity: event.venue_city,
+    venueState: event.venue_state,
+    date: new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    dateLogged: log.logged_at,
+    image: event.image_url,
+    note: log.notes,
+    status: event.status === 'completed' ? 'FINAL' : event.status === 'in_progress' ? 'LIVE' : 'Upcoming',
+    homeTeamName: event.home_team_name,
+    awayTeamName: event.away_team_name,
+    homeScore: event.home_score,
+    awayScore: event.away_score,
+    privacy: log.privacy || 'public',
+    rating: log.rating,
+    companions: log.companions,
+  };
+}
+
 export default function LogbookScreen() {
+  const [entries, setEntries] = useState<EventDetail[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('All');
   const [activeSubFilter, setActiveSubFilter] = useState<string>('All');
   const [activeSort, setActiveSort] = useState<string>('Date Logged');
@@ -195,6 +143,28 @@ export default function LogbookScreen() {
   const sortButtonRef = React.useRef<View>(null);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 16 });
 
+  // Fetch logs from API
+  const fetchLogs = useCallback(async (showRefresh = false) => {
+    if (showRefresh) setIsRefreshing(true);
+    else setIsLoading(true);
+
+    try {
+      const data = await api.get<{ logs: any[]; total: number }>('/api/logs/mine');
+      const mapped = (data.logs || []).map(mapLogToEventDetail);
+      setEntries(mapped);
+    } catch (err) {
+      console.error('Failed to fetch logs:', err);
+      // Keep existing entries on error
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
   const handleOpenSort = () => {
     sortButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
       setDropdownPos({ top: pageY + height + 8, right: 16 });
@@ -204,7 +174,7 @@ export default function LogbookScreen() {
 
   // --- Derived State ---
   const filteredAndSortedEntries = useMemo(() => {
-    let result = [...MOCK_ENTRIES];
+    let result = [...entries];
 
     // Search filter
     if (searchText) {
@@ -297,12 +267,19 @@ export default function LogbookScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => fetchLogs(true)}
+            tintColor={Colors.primaryContainer}
+          />
+        }
       >
         {/* Header */}
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.title}>Logbook</Text>
-            <Text style={styles.subtitle}>{MOCK_ENTRIES.length} events logged</Text>
+            <Text style={styles.subtitle}>{entries.length} events logged</Text>
           </View>
         </View>
 
@@ -381,18 +358,36 @@ export default function LogbookScreen() {
 
         {/* Log entries */}
         <View style={styles.entriesList}>
-          {filteredAndSortedEntries.map((entry) => (
+          {isLoading ? (
+            <View style={{ paddingVertical: 60, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={Colors.primaryContainer} />
+              <Text style={[styles.resultsText, { marginTop: 12 }]}>Loading your logs...</Text>
+            </View>
+          ) : filteredAndSortedEntries.length === 0 ? (
+            <GlassCard borderRadius={20} style={{ padding: 32, alignItems: 'center' as const, gap: 12 }}>
+              <Ionicons name="book-outline" size={36} color={Colors.textMuted} />
+              <Text style={[styles.entryTitle, { textAlign: 'center' as const }]}>No logs yet</Text>
+              <Text style={[styles.resultsText, { textAlign: 'center' as const }]}>
+                Start logging events from the + tab!
+              </Text>
+            </GlassCard>
+          ) : (
+            filteredAndSortedEntries.map((entry) => (
             <TouchableOpacity key={entry.id} activeOpacity={0.8} onPress={() => setSelectedEvent(entry)}>
               <GlassCard borderRadius={20} style={styles.entryCard}>
                 <View style={styles.entryImageContainer}>
-                  <Image source={{ uri: entry.image }} style={styles.entryImage} />
+                  {entry.image ? (
+                    <Image source={{ uri: entry.image }} style={styles.entryImage} />
+                  ) : (
+                    <View style={[styles.entryImage, { backgroundColor: 'rgba(0,255,194,0.1)' }]} />
+                  )}
                   <View style={styles.entryImageOverlay} />
                 </View>
                 
                 <View style={styles.entryInfo}>
                   <Text style={styles.entryTitle} numberOfLines={1}>{entry.title}</Text>
                   <Text style={styles.entryMeta} numberOfLines={1}>
-                    {entry.venue.toUpperCase()} • {entry.date.toUpperCase()}
+                    {entry.venue ? entry.venue.toUpperCase() + ' • ' : ''}{entry.date.toUpperCase()}
                   </Text>
                   
                   {/* Unified Metadata Row */}
@@ -425,7 +420,7 @@ export default function LogbookScreen() {
                 {renderRightSide(entry)}
               </GlassCard>
             </TouchableOpacity>
-          ))}
+          )))}
         </View>
 
         {/* Bottom spacer */}
