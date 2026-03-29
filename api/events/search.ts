@@ -69,6 +69,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           away_team_id,
           home_team_name,
           away_team_name,
+          home_team_logo,
+          away_team_logo,
           home_score,
           away_score
         )
@@ -119,6 +121,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             away_team_id,
             home_team_name,
             away_team_name,
+            home_team_logo,
+            away_team_logo,
             home_score,
             away_score
           )
@@ -175,6 +179,8 @@ function formatEvent(row: any) {
       away_team_id: sportsData.away_team_id,
       home_team_name: sportsData.home_team_name,
       away_team_name: sportsData.away_team_name,
+      home_team_logo: sportsData.home_team_logo,
+      away_team_logo: sportsData.away_team_logo,
       home_score: sportsData.home_score,
       away_score: sportsData.away_score,
     };

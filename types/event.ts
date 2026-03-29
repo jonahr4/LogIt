@@ -37,6 +37,8 @@ export interface SportsEvent {
   away_team_id: string | null;
   home_team_name: string;
   away_team_name: string;
+  home_team_logo: string | null;
+  away_team_logo: string | null;
   home_score: number | null;
   away_score: number | null;
 }
@@ -55,6 +57,8 @@ export interface SportsEventMetadata {
   away_team_id: string | null;
   home_team_name: string;
   away_team_name: string;
+  home_team_logo: string | null;
+  away_team_logo: string | null;
   home_score: number | null;
   away_score: number | null;
 }
@@ -73,42 +77,3 @@ export interface EventSearchResult {
   type_metadata: SportsEventMetadata | null;
 }
 
-// ────────────────────────────────────────────
-// Ball Don't Lie API Types
-// ────────────────────────────────────────────
-
-/** BDL Team response */
-export interface BDLTeam {
-  id: number;
-  conference: string;
-  division: string;
-  city: string;
-  name: string;
-  full_name: string;
-  abbreviation: string;
-}
-
-/** BDL Game response */
-export interface BDLGame {
-  id: number;
-  date: string;
-  season: number;
-  status: string;
-  period: number;
-  time: string;
-  postseason: boolean;
-  home_team_score: number;
-  visitor_team_score: number;
-  datetime: string | null;
-  home_team: BDLTeam;
-  visitor_team: BDLTeam;
-}
-
-/** BDL paginated response */
-export interface BDLResponse<T> {
-  data: T[];
-  meta: {
-    next_cursor: number | null;
-    per_page: number;
-  };
-}

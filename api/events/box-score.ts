@@ -1,53 +1,12 @@
 /**
  * Log It — GET /api/events/box-score
- * On-demand box score fetcher — calls Ball Don't Lie only when user requests it.
- * NOT stored in our DB — purely a proxy to avoid exposing the API key.
+ * On-demand box score fetcher — calls ESPN API
  *
  * Query params:
- *   external_id - BDL game ID (stored on our events table)
+ *   external_id - ESPN game ID (stored on our events table)
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-const BDL_BASE = 'https://api.balldontlie.io/v1';
-
-interface BDLPlayer {
-  id: number;
-  first_name: string;
-  last_name: string;
-  position: string;
-  jersey_number: string;
-  team: {
-    id: number;
-    abbreviation: string;
-    full_name: string;
-  };
-}
-
-interface BDLStat {
-  id: number;
-  min: string;
-  pts: number;
-  reb: number;
-  ast: number;
-  stl: number;
-  blk: number;
-  fgm: number;
-  fga: number;
-  fg3m: number;
-  fg3a: number;
-  ftm: number;
-  fta: number;
-  oreb: number;
-  dreb: number;
-  turnover: number;
-  pf: number;
-  fg_pct: number;
-  fg3_pct: number;
-  ft_pct: number;
-  player: BDLPlayer;
-  game: { id: number };
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -64,85 +23,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const apiKey = process.env.BALL_DONT_LIE_API;
-  if (!apiKey) {
-    return res.status(500).json({
-      error: { code: 'SERVER_ERROR', message: 'Missing API key', status: 500 },
-    });
-  }
-
   try {
-    // Fetch player stats for this game
-    const url = `${BDL_BASE}/stats?game_ids[]=${external_id}&per_page=100`;
-    const response = await fetch(url, {
-      headers: { Authorization: apiKey },
-    });
+    const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${external_id}`;
+    const response = await fetch(url);
 
     if (!response.ok) {
-      const errText = await response.text();
-      console.error(`BDL stats error: ${response.status} ${errText}`);
+      console.error(`ESPN stats error: ${response.status}`);
       return res.status(502).json({
         error: { code: 'UPSTREAM_ERROR', message: 'Failed to fetch box score', status: 502 },
       });
     }
 
-    const data: { data: BDLStat[] } = await response.json();
+    const data = await response.json();
 
-    if (!data.data || data.data.length === 0) {
-      return res.status(200).json({ home: [], away: [], available: false });
+    if (!data.boxscore || !data.boxscore.players) {
+      return res.status(200).json({ available: false });
     }
 
-    // Group stats by team
-    // Determine home/away from the first stat's game context
-    // BDL stats don't have home/away directly, so we group by team abbreviation
-    const teamGroups: Record<string, any[]> = {};
+    const formattedTeams = data.boxscore.players.map((teamData: any) => {
+      const statsBlock = teamData.statistics[0];
+      if (!statsBlock) return null;
 
-    for (const stat of data.data) {
-      const teamAbbr = stat.player.team.abbreviation;
-      if (!teamGroups[teamAbbr]) {
-        teamGroups[teamAbbr] = [];
-      }
+      const keys = statsBlock.names;
+      const idxMin = keys.indexOf('MIN');
+      const idxPts = keys.indexOf('PTS');
+      const idxReb = keys.indexOf('REB');
+      const idxAst = keys.indexOf('AST');
 
-      teamGroups[teamAbbr].push({
-        player: {
-          id: stat.player.id,
-          name: `${stat.player.first_name} ${stat.player.last_name}`,
-          position: stat.player.position,
-          jersey: stat.player.jersey_number,
-        },
-        minutes: stat.min,
-        points: stat.pts,
-        rebounds: stat.reb,
-        assists: stat.ast,
-        steals: stat.stl,
-        blocks: stat.blk,
-        turnovers: stat.turnover,
-        fouls: stat.pf,
-        fg: `${stat.fgm}/${stat.fga}`,
-        fg_pct: stat.fg_pct,
-        three_pt: `${stat.fg3m}/${stat.fg3a}`,
-        three_pct: stat.fg3_pct,
-        ft: `${stat.ftm}/${stat.fta}`,
-        ft_pct: stat.ft_pct,
-        off_reb: stat.oreb,
-        def_reb: stat.dreb,
+      const players = statsBlock.athletes.map((ath: any) => {
+        const stats = ath.stats;
+        return {
+          player: { name: ath.athlete.displayName },
+          minutes: idxMin >= 0 ? stats[idxMin] : '-',
+          points: idxPts >= 0 ? parseInt(stats[idxPts], 10) || 0 : 0,
+          rebounds: idxReb >= 0 ? parseInt(stats[idxReb], 10) || 0 : 0,
+          assists: idxAst >= 0 ? parseInt(stats[idxAst], 10) || 0 : 0,
+        };
       });
-    }
 
-    // Sort players by points (descending) within each team
-    const teams = Object.keys(teamGroups);
-    for (const team of teams) {
-      teamGroups[team].sort((a: any, b: any) => b.points - a.points);
-    }
+      // Sort players by points descendings
+      players.sort((a: any, b: any) => b.points - a.points);
 
-    // Return as two team arrays
+      return {
+        abbreviation: teamData.team.abbreviation,
+        full_name: teamData.team.displayName,
+        players,
+      };
+    }).filter(Boolean);
+
     return res.status(200).json({
       available: true,
-      teams: teams.map((abbr) => ({
-        abbreviation: abbr,
-        full_name: data.data.find((s) => s.player.team.abbreviation === abbr)?.player.team.full_name || abbr,
-        players: teamGroups[abbr],
-      })),
+      teams: formattedTeams,
     });
   } catch (error: any) {
     console.error('Box score error:', error);

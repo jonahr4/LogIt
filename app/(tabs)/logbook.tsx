@@ -122,6 +122,8 @@ function mapLogToEventDetail(log: any): EventDetail {
     status: event.status === 'completed' ? 'FINAL' : event.status === 'in_progress' ? 'LIVE' : 'Upcoming',
     homeTeamName: event.home_team_name,
     awayTeamName: event.away_team_name,
+    homeTeamLogo: event.home_team_logo,
+    awayTeamLogo: event.away_team_logo,
     homeScore: event.home_score,
     awayScore: event.away_score,
     privacy: log.privacy || 'public',
