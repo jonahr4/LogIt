@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -308,44 +309,91 @@ export default function AddLogScreen() {
                 )}
 
               {/* Result cards */}
-              {searchResults.map((event) => (
-                <TouchableOpacity
-                  key={event.id}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    setSelectedEventToLog(mapEventForModal(event));
-                  }}
-                >
-                  <GlassCard borderRadius={16} style={styles.apiResultCard}>
-                    <Ionicons
-                      name="checkmark-circle-outline"
-                      size={24}
-                      color={Colors.primaryContainer}
-                    />
-                    <View style={styles.apiResultInfo}>
-                      <Text style={styles.apiResultTitle}>{event.title}</Text>
-                      <Text style={styles.apiResultSub}>
-                        {getResultSubtitle(event)}
-                      </Text>
-                      {event.type_metadata?.home_score != null && (
-                        <Text style={styles.apiResultScore}>
-                          {event.type_metadata.home_team_name} {event.type_metadata.home_score} —{' '}
-                          {event.type_metadata.away_team_name} {event.type_metadata.away_score}
-                        </Text>
+              {searchResults.map((event) => {
+                const meta = event.type_metadata;
+                const isSports = !!meta?.home_team_name;
+                const dateStr = event.event_date
+                  ? new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  : '';
+                const statusLabel = event.status === 'completed' ? 'Final' : event.status === 'in_progress' ? 'Live' : 'Upcoming';
+
+                return (
+                  <TouchableOpacity
+                    key={event.id}
+                    activeOpacity={0.7}
+                    onPress={() => setSelectedEventToLog(mapEventForModal(event))}
+                  >
+                    <GlassCard borderRadius={16} style={styles.apiResultCard}>
+                      {isSports ? (
+                        /* ── Sports card: logo vs logo layout ── */
+                        <>
+                          {/* Venue thumbnail */}
+                          {event.image_url ? (
+                            <Image source={{ uri: event.image_url }} style={styles.venueThumbnail} />
+                          ) : (
+                            <View style={[styles.venueThumbnail, styles.venueThumbnailFallback]}>
+                              <Ionicons name="business-outline" size={18} color={Colors.textMuted} />
+                            </View>
+                          )}
+
+                          <View style={styles.apiResultInfo}>
+                            {/* Team logos row */}
+                            <View style={styles.teamsLogoRow}>
+                              {meta?.home_team_logo ? (
+                                <Image source={{ uri: meta.home_team_logo }} style={styles.searchTeamLogo} resizeMode="contain" />
+                              ) : (
+                                <View style={[styles.searchTeamLogo, styles.logoFallback]}>
+                                  <Text style={styles.logoFallbackText}>{meta?.home_team_name?.charAt(0) || '?'}</Text>
+                                </View>
+                              )}
+                              <Text style={styles.vsText}>vs</Text>
+                              {meta?.away_team_logo ? (
+                                <Image source={{ uri: meta.away_team_logo }} style={styles.searchTeamLogo} resizeMode="contain" />
+                              ) : (
+                                <View style={[styles.searchTeamLogo, styles.logoFallback]}>
+                                  <Text style={styles.logoFallbackText}>{meta?.away_team_name?.charAt(0) || '?'}</Text>
+                                </View>
+                              )}
+                              {/* Score pill */}
+                              {meta?.home_score != null && (
+                                <View style={styles.searchScorePill}>
+                                  <Text style={styles.searchScoreText}>
+                                    {meta.home_score} - {meta.away_score}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                            {/* Team names */}
+                            <Text style={styles.teamNamesText} numberOfLines={1}>
+                              {meta?.home_team_name} vs {meta?.away_team_name}
+                            </Text>
+                            {/* Date · venue · league */}
+                            <Text style={styles.apiResultSub} numberOfLines={1}>
+                              {dateStr}{event.venue_city ? ` · ${event.venue_city}` : ''}{meta?.league ? ` · ${meta.league}` : ''}
+                            </Text>
+                          </View>
+
+                          <View style={styles.statusBadge}>
+                            <Text style={styles.statusBadgeText}>{statusLabel}</Text>
+                          </View>
+                        </>
+                      ) : (
+                        /* ── Non-sports card: text layout ── */
+                        <>
+                          <Ionicons name="checkmark-circle-outline" size={24} color={Colors.primaryContainer} />
+                          <View style={styles.apiResultInfo}>
+                            <Text style={styles.apiResultTitle}>{event.title}</Text>
+                            <Text style={styles.apiResultSub}>{getResultSubtitle(event)}</Text>
+                          </View>
+                          <View style={styles.statusBadge}>
+                            <Text style={styles.statusBadgeText}>{statusLabel}</Text>
+                          </View>
+                        </>
                       )}
-                    </View>
-                    <View style={styles.statusBadge}>
-                      <Text style={styles.statusBadgeText}>
-                        {event.status === 'completed'
-                          ? 'Final'
-                          : event.status === 'in_progress'
-                            ? 'Live'
-                            : 'Upcoming'}
-                      </Text>
-                    </View>
-                  </GlassCard>
-                </TouchableOpacity>
-              ))}
+                    </GlassCard>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             <View style={styles.fallbackContainer}>
@@ -544,6 +592,62 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.primaryContainer,
     letterSpacing: 0.5,
+  },
+  // Sports search card
+  venueThumbnail: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+  },
+  venueThumbnailFallback: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamsLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  searchTeamLogo: {
+    width: 22,
+    height: 22,
+  },
+  logoFallback: {
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoFallbackText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    color: Colors.textMuted,
+  },
+  vsText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    color: Colors.textMuted,
+    letterSpacing: 0.5,
+  },
+  searchScorePill: {
+    marginLeft: 4,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  searchScoreText: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 11,
+    color: Colors.text,
+    letterSpacing: 0.3,
+  },
+  teamNamesText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.text,
   },
   fallbackContainer: {
     marginTop: 32,

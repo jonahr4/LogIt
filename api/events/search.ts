@@ -1,10 +1,10 @@
 /**
  * Log It — GET /api/events/search
- * Searches our Supabase events table using full-text search
- * Returns events with type-specific metadata
+ * Multi-field search using Postgres RPC function `search_events`
+ * Searches across: title, venue name, venue city, team names, league, sport
  *
  * Query params:
- *   q          - search query (searches title, venue, city) — required
+ *   q          - search query — required (partial matches supported)
  *   event_type - filter by type (e.g. 'sports')
  *   date_from  - ISO date string
  *   date_to    - ISO date string
@@ -38,77 +38,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabase = getSupabaseAdmin();
 
   try {
-    // Build the base query with a join to sports_events
-    // We use a text search approach: Postgres full-text search via to_tsquery
-    // Convert the user's search into a tsquery-compatible format
-    const tsQuery = searchQuery
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((word) => `${word}:*`)  // prefix matching for partial words
-      .join(' & ');
-
-    // Build query
-    let query = supabase
-      .from('events')
-      .select(`
-        id,
-        event_type,
-        title,
-        status,
-        event_date,
-        venue_name,
-        venue_city,
-        venue_state,
-        image_url,
-        external_id,
-        venues (
-          name,
-          city,
-          state,
-          lat,
-          lng,
-          image_url
-        ),
-        sports_events (
-          sport,
-          league,
-          season,
-          home_team_id,
-          away_team_id,
-          home_team_name,
-          away_team_name,
-          home_team_logo,
-          away_team_logo,
-          home_score,
-          away_score
-        )
-      `)
-      .textSearch(
-        'title',
-        tsQuery,
-        { type: 'websearch' }
-      )
-      .order('event_date', { ascending: false })
-      .limit(limit);
-
-    // Apply filters
-    if (event_type && typeof event_type === 'string') {
-      query = query.eq('event_type', event_type);
-    }
-    if (date_from && typeof date_from === 'string') {
-      query = query.gte('event_date', date_from);
-    }
-    if (date_to && typeof date_to === 'string') {
-      query = query.lte('event_date', date_to);
-    }
-
-    const { data: events, error } = await query;
+    // Call the multi-field search Postgres function
+    const { data: rows, error } = await supabase.rpc('search_events', {
+      search_term: searchQuery,
+      event_type_filter: (event_type && typeof event_type === 'string') ? event_type : null,
+      date_from_filter: (date_from && typeof date_from === 'string') ? date_from : null,
+      date_to_filter: (date_to && typeof date_to === 'string') ? date_to : null,
+      result_limit: limit,
+    });
 
     if (error) {
-      console.error('Event search error:', error);
+      console.error('RPC search error, falling back to ILIKE:', error);
 
-      // Fallback: if full-text search fails, try ilike pattern match
-      const fallbackQuery = supabase
+      // Fallback: simple ILIKE on title if RPC not available yet
+      const { data: fallbackEvents, error: fallbackError } = await supabase
         .from('events')
         .select(`
           id,
@@ -147,25 +90,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .order('event_date', { ascending: false })
         .limit(limit);
 
-      if (event_type && typeof event_type === 'string') {
-        fallbackQuery.eq('event_type', event_type);
-      }
-
-      const { data: fallbackEvents, error: fallbackError } = await fallbackQuery;
-
-      if (fallbackError) {
-        throw fallbackError;
-      }
+      if (fallbackError) throw fallbackError;
 
       return res.status(200).json({
-        data: (fallbackEvents || []).map(formatEvent),
+        data: (fallbackEvents || []).map(formatFallbackEvent),
         meta: { count: fallbackEvents?.length || 0, query: searchQuery },
       });
     }
 
+    // Format RPC results into the standard EventSearchResult shape
+    const formatted = (rows || []).map(formatRpcRow);
+
     return res.status(200).json({
-      data: (events || []).map(formatEvent),
-      meta: { count: events?.length || 0, query: searchQuery },
+      data: formatted,
+      meta: { count: formatted.length, query: searchQuery },
     });
   } catch (error: any) {
     console.error('Event search error:', error);
@@ -176,16 +114,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 /**
- * Formats a raw Supabase row into the EventSearchResult shape
- * Flattens the child table join into a type_metadata object
+ * Formats a row from the search_events RPC into EventSearchResult shape
  */
-function formatEvent(row: any) {
-  const { sports_events, venues, ...base } = row;
+function formatRpcRow(row: any) {
+  const base: any = {
+    id: row.id,
+    event_type: row.event_type,
+    title: row.title,
+    status: row.status,
+    event_date: row.event_date,
+    // Prefer venue table data, fall back to flat columns
+    venue_name: row.v_name || row.venue_name,
+    venue_city: row.v_city || row.venue_city,
+    venue_state: row.v_state || row.venue_state,
+    image_url: row.v_image_url || row.image_url,
+    external_id: row.external_id,
+  };
 
-  // sports_events comes as an array from the join — take first (1:1)
+  let type_metadata = null;
+  if (row.home_team_name) {
+    type_metadata = {
+      sport: row.sport,
+      league: row.league,
+      season: row.season,
+      home_team_id: row.home_team_id,
+      away_team_id: row.away_team_id,
+      home_team_name: row.home_team_name,
+      away_team_name: row.away_team_name,
+      home_team_logo: row.home_team_logo,
+      away_team_logo: row.away_team_logo,
+      home_score: row.home_score,
+      away_score: row.away_score,
+    };
+  }
+
+  return { ...base, type_metadata };
+}
+
+/**
+ * Formats a fallback Supabase row (used when RPC is not available)
+ */
+function formatFallbackEvent(row: any) {
+  const { sports_events, venues, ...base } = row;
   const sportsData = Array.isArray(sports_events) ? sports_events[0] : sports_events;
 
-  // Merge venue data from venues table (prefer over flat columns)
   if (venues) {
     base.venue_name = venues.name || base.venue_name;
     base.venue_city = venues.city || base.venue_city;
@@ -210,8 +182,5 @@ function formatEvent(row: any) {
     };
   }
 
-  return {
-    ...base,
-    type_metadata,
-  };
+  return { ...base, type_metadata };
 }

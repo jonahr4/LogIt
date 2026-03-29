@@ -85,24 +85,26 @@ const SUB_FILTERS: Record<string, string[]> = {
   Nightlife: ['All', 'Club', 'Bar', 'Lounge'],
 };
 
-/** Compute a human-readable "time ago" string from a timestamp */
+/** Compute a human-readable relative time string from a timestamp */
 function getTimeAgo(dateStr: string): string {
   const now = new Date();
   const then = new Date(dateStr);
   const diffMs = now.getTime() - then.getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  const isFuture = diffMs < 0;
+  const absDiff = Math.abs(diffMs);
+  const mins = Math.floor(absDiff / 60000);
+  if (mins < 1) return isFuture ? 'Now' : 'Just now';
+  if (mins < 60) return isFuture ? `in ${mins}m` : `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return isFuture ? `in ${hrs}h` : `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return isFuture ? `in ${days}d` : `${days}d ago`;
   const weeks = Math.floor(days / 7);
-  if (weeks < 5) return `${weeks}w ago`;
+  if (weeks < 5) return isFuture ? `in ${weeks}w` : `${weeks}w ago`;
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
+  if (months < 12) return isFuture ? `in ${months}mo` : `${months}mo ago`;
   const years = Math.floor(days / 365);
-  return `${years}y ago`;
+  return isFuture ? `in ${years}y` : `${years}y ago`;
 }
 
 const SORT_OPTIONS = ['Date Attended', 'Date Logged', 'Highest Rated'] as const;
@@ -276,9 +278,8 @@ export default function LogbookScreen() {
         return dB - dA;
       }
       if (activeSort === 'Date Attended') {
-        // mock date parsing for sorting
-        const dA = new Date(a.date).getTime();
-        const dB = new Date(b.date).getTime();
+        const dA = a.rawDate ? new Date(a.rawDate).getTime() : 0;
+        const dB = b.rawDate ? new Date(b.rawDate).getTime() : 0;
         return dB - dA;
       }
       if (activeSort === 'Highest Rated') {
