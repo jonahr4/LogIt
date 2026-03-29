@@ -1,57 +1,155 @@
 /**
- * Log It — Welcome Screen
- * Spatial Green v2 design: orbs, glass panels, branded typography
+ * LogIt — Welcome Screen
+ * Flat orange event timeline (labels above/below), open brand,
+ * gentle auto-rotating carousel with centered dots, glass CTA
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  useWindowDimensions,
+  Animated,
+} from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/colors';
-import { Typography, FontFamily } from '@/constants/typography';
+import { FontFamily } from '@/constants/typography';
 import { Button } from '@/components/ui/Button';
+
+/* ── carousel data ── */
+const FEATURES = [
+  {
+    icon: 'ticket-outline' as const,
+    title: 'Track Events',
+    desc: 'Log every game, concert, and experience you attend in one place.',
+  },
+  {
+    icon: 'book-outline' as const,
+    title: 'Your Logbook',
+    desc: 'Build a beautiful visual timeline of the moments that matter most.',
+  },
+  {
+    icon: 'people-outline' as const,
+    title: 'Social Feed',
+    desc: 'See what friends are logging and discover new events to attend.',
+  },
+  {
+    icon: 'star-outline' as const,
+    title: 'Rate & Review',
+    desc: 'Rate your experiences, add notes, and remember every detail.',
+  },
+];
+
+const SLIDE_DURATION = 6000;
+
+/* ── orange accent ── */
+const ORANGE = '#FF8A3D';
+const ORANGE_GLOW = 'rgba(255, 138, 61, 0.5)';
+const ORANGE_DIM = 'rgba(255, 138, 61, 0.5)';
+
+/* ── timeline events — labels alternate above/below ── */
+const TIMELINE_EVENTS = [
+  { label: 'Game', position: 'top' as const },
+  { label: 'Concert', position: 'bottom' as const },
+  { label: 'Movie', position: 'top' as const },
+  { label: 'Show', position: 'bottom' as const },
+];
 
 export default function WelcomeScreen() {
   const { width } = useWindowDimensions();
-  const isWide = width > 600;
+
+  /* ── carousel ── */
+  const [activeIndex, setActiveIndex] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const advanceSlide = useCallback(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setActiveIndex((prev) => (prev + 1) % FEATURES.length);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [fadeAnim]);
+
+  useEffect(() => {
+    const timer = setInterval(advanceSlide, SLIDE_DURATION);
+    return () => clearInterval(timer);
+  }, [advanceSlide]);
+
+  const feature = FEATURES[activeIndex];
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Spatial orbs — matching spatial-green-v2 */}
-      <View style={styles.orb1} />
-      <View style={styles.orb2} />
+      <View style={styles.content}>
 
-      <View style={[styles.content, isWide && styles.contentWide]}>
-        {/* Logo area */}
-        <View style={styles.logoArea}>
-          <Text style={[styles.logoText, isWide && { fontSize: 52 }]}>LOG IT</Text>
-          <Text style={[styles.tagline, isWide && { fontSize: 18 }]}>Log the events you live.</Text>
+        {/* ─── FLAT ORANGE TIMELINE ─── */}
+        <View style={styles.timelineWrap}>
+          <View style={styles.timelineRow}>
+            {TIMELINE_EVENTS.map((event, i) => (
+              <View key={i} style={styles.timelineNode}>
+                <View style={styles.timelineDot} />
+                <Text
+                  style={[
+                    styles.timelineLabel,
+                    event.position === 'top'
+                      ? styles.timelineLabelTop
+                      : styles.timelineLabelBottom,
+                  ]}
+                >
+                  {event.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Connecting line behind the dots */}
+          <View style={styles.timelineLine} />
         </View>
 
-        {/* Feature highlights — glass cards */}
-        <View style={[styles.features, isWide && styles.featuresWide]}>
-          <FeatureItem
-            iconName="ticket-outline"
-            text="Track every event you attend"
-          />
-          <FeatureItem
-            iconName="book-outline"
-            text="Build your personal logbook"
-          />
-          <FeatureItem
-            iconName="globe-outline"
-            text="Discover what others are logging"
-          />
+        {/* ─── BRAND — open, no box ─── */}
+        <View style={styles.brandSection}>
+          <Text style={styles.logoText}>LogIt</Text>
+          <Text style={styles.tagline}>Log the events you live.</Text>
         </View>
 
-        {/* CTAs */}
-        <View style={[styles.ctas, isWide && styles.ctasWide]}>
+        {/* ─── FEATURE CAROUSEL ─── */}
+        <View style={styles.glassCard}>
+          <Animated.View style={[styles.slideContent, { opacity: fadeAnim }]}>
+            <View style={styles.slideIcon}>
+              <Ionicons name={feature.icon} size={22} color={Colors.primaryContainer} />
+            </View>
+            <Text style={styles.slideTitle}>{feature.title}</Text>
+            <Text style={styles.slideDesc}>{feature.desc}</Text>
+          </Animated.View>
+
+          {/* Centered dots */}
+          <View style={styles.dotRow}>
+            {FEATURES.map((_, i) => (
+              <View
+                key={i}
+                style={[styles.dot, i === activeIndex && styles.dotActive]}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* ─── CTA — no glass ─── */}
+        <View style={styles.ctaSection}>
           <Button
             title="Get Started"
             onPress={() => router.push('/(auth)/sign-up')}
             size="lg"
           />
+          <View style={{ height: 8 }} />
           <Button
             title="I already have an account"
             onPress={() => router.push('/(auth)/sign-in')}
@@ -64,118 +162,158 @@ export default function WelcomeScreen() {
   );
 }
 
-function FeatureItem({ iconName, text }: { iconName: keyof typeof Ionicons.glyphMap; text: string }) {
-  return (
-    <View style={styles.featureItem}>
-      <View style={styles.featureIconContainer}>
-        <Ionicons name={iconName} size={20} color={Colors.primaryContainer} />
-      </View>
-      <Text style={styles.featureText}>{text}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 28,
-    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 16,
     paddingBottom: 24,
-  },
-  contentWide: {
-    maxWidth: 600,
-    alignSelf: 'center',
-    width: '100%' as any,
-    paddingHorizontal: 48,
+    justifyContent: 'space-between',
   },
 
-  // Spatial orbs — large blurred green glows
-  orb1: {
-    position: 'absolute',
-    top: -100,
-    left: -80,
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+  /* ── TIMELINE ── */
+  timelineWrap: {
+    position: 'relative',
+    height: 80,
+    marginHorizontal: 12,
+    justifyContent: 'center',
   },
-  orb2: {
-    position: 'absolute',
-    bottom: 40,
-    right: -120,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
-  },
-
-  // Logo
-  logoArea: {
+  timelineRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 100,
+    zIndex: 2,
+    paddingHorizontal: 8,
+  },
+  timelineNode: {
+    alignItems: 'center',
+    position: 'relative',
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: ORANGE,
+    shadowColor: ORANGE,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    zIndex: 3,
+  },
+  timelineLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 9,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: ORANGE_DIM,
+    position: 'absolute',
+    width: 70,
+    textAlign: 'center',
+    left: -29,
+  },
+  timelineLabelTop: {
+    bottom: 20,
+  },
+  timelineLabelBottom: {
+    top: 20,
+  },
+  timelineLine: {
+    position: 'absolute',
+    left: 8,
+    right: 8,
+    top: '50%',
+    marginTop: -1,
+    height: 2,
+    backgroundColor: ORANGE,
+    opacity: 0.25,
+    borderRadius: 1,
+    zIndex: 1,
+  },
+
+  /* ── BRAND (open, no card) ── */
+  brandSection: {
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
   },
   logoText: {
     fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 40,
-    letterSpacing: 8,
-    color: Colors.primaryContainer,
-    marginBottom: 16,
-    textShadowColor: 'rgba(0, 255, 194, 0.3)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
+    fontSize: 58,
+    letterSpacing: -1.5,
+    color: Colors.text,
+  },
+  ctaSection: {
+    paddingHorizontal: 4,
   },
   tagline: {
-    ...Typography.body,
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 16,
     color: Colors.textSecondary,
-    textAlign: 'center',
+    lineHeight: 24,
   },
 
-  // Feature cards — glass style
-  features: {
-    gap: 12,
-    paddingVertical: 40,
-  },
-  featuresWide: {
-    gap: 16,
-    paddingVertical: 48,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+  /* ── GLASS CARD ── */
+  glassCard: {
     backgroundColor: Colors.glass,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.glassBorder,
+    borderRadius: 24,
+    padding: 24,
     ...Shadows.card,
   },
-  featureIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 255, 194, 0.1)',
+
+  /* ── CAROUSEL SLIDE ── */
+  slideContent: {
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  slideIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 255, 194, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 194, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 255, 194, 0.2)',
+    marginBottom: 16,
   },
-  featureText: {
-    ...Typography.bodyMedium,
+  slideTitle: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 18,
     color: Colors.text,
-    flex: 1,
+    marginBottom: 6,
+    letterSpacing: -0.3,
+    textAlign: 'center',
+  },
+  slideDesc: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 14,
+    color: Colors.textMuted,
+    lineHeight: 21,
+    textAlign: 'center',
+    maxWidth: 260,
   },
 
-  // CTAs
-  ctas: {
+  /* ── DOTS ── */
+  dotRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     gap: 8,
   },
-  ctasWide: {
-    gap: 12,
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  dotActive: {
+    width: 22,
+    borderRadius: 4,
+    backgroundColor: Colors.primaryContainer,
   },
 });

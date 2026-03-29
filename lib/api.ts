@@ -26,6 +26,43 @@ class ApiClient {
     };
   }
 
+  private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), Config.api.timeout || 10000);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal as RequestInit['signal'],
+      });
+      return response;
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw new Error('API Request timed out.');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  private async handleResponse<T>(response: Response): Promise<T> {
+    if (!response.ok) {
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+      throw errorData as ApiError;
+    }
+    
+    // Some endpoints may return empty 204 responses
+    if (response.status === 204) return {} as T;
+    
+    return response.json();
+  }
+
   async get<T>(path: string, params?: Record<string, string>): Promise<T> {
     const url = new URL(`${this.baseUrl}${path}`);
     if (params) {
@@ -37,64 +74,44 @@ class ApiClient {
     }
 
     const headers = await this.getAuthHeaders();
-    const response = await fetch(url.toString(), {
+    const response = await this.fetchWithTimeout(url.toString(), {
       method: 'GET',
       headers,
     });
 
-    if (!response.ok) {
-      const error: ApiError = await response.json();
-      throw error;
-    }
-
-    return response.json();
+    return this.handleResponse<T>(response);
   }
 
   async post<T>(path: string, body?: unknown): Promise<T> {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    if (!response.ok) {
-      const error: ApiError = await response.json();
-      throw error;
-    }
-
-    return response.json();
+    return this.handleResponse<T>(response);
   }
 
   async patch<T>(path: string, body: unknown): Promise<T> {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      const error: ApiError = await response.json();
-      throw error;
-    }
-
-    return response.json();
+    return this.handleResponse<T>(response);
   }
 
   async delete<T>(path: string): Promise<T> {
     const headers = await this.getAuthHeaders();
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers,
     });
 
-    if (!response.ok) {
-      const error: ApiError = await response.json();
-      throw error;
-    }
-
-    return response.json();
+    return this.handleResponse<T>(response);
   }
 }
 

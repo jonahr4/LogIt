@@ -94,9 +94,7 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Spatial orbs */}
-      <View style={styles.orb1} />
-      <View style={styles.orb2} />
+
 
       <ScrollView
         contentContainerStyle={[styles.content, isWide && styles.contentWide]}
@@ -132,8 +130,8 @@ export default function SignInScreen() {
               placeholder="you@example.com"
               autoCapitalize="none"
               keyboardType="email-address"
-              textContentType="emailAddress"
-              autoComplete="email"
+              textContentType="none"
+              autoComplete="off"
             />
             <Input
               label="Password"
@@ -141,8 +139,8 @@ export default function SignInScreen() {
               onChangeText={setPassword}
               placeholder="Your password"
               secureTextEntry
-              textContentType="password"
-              autoComplete="current-password"
+              textContentType="oneTimeCode"
+              autoComplete="off"
             />
             <Button
               title="Sign In"
@@ -196,7 +194,7 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   content: {
     padding: 28,
@@ -209,25 +207,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 48,
   },
 
-  // Spatial orbs
-  orb1: {
-    position: 'absolute',
-    top: -60,
-    right: -80,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
-  },
-  orb2: {
-    position: 'absolute',
-    bottom: 60,
-    left: -100,
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
-  },
+
 
   backButton: {
     flexDirection: 'row',

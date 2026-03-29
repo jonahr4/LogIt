@@ -14,7 +14,7 @@ export default function Index() {
   }
 
   if (!isOnboarded) {
-    return <Redirect href="/(onboarding)/profile-setup" />;
+    return <Redirect href="/(onboarding)" />;
   }
 
   return <Redirect href="/(tabs)/feed" />;

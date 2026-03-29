@@ -1,14 +1,15 @@
 /**
- * Log It — Typography
- * Manrope for headlines, Inter for body (per UI_AND_FLOWS.md)
+ * LogIt — Typography
+ * Atkinson Hyperlegible Next for headlines (distinct I ≠ l), Inter for body
+ * Tight letter-spacing for bold headlines — no wide tracking
  */
 
 export const FontFamily = {
-  headlineRegular: 'Manrope_400Regular',
-  headlineMedium: 'Manrope_500Medium',
-  headlineSemiBold: 'Manrope_600SemiBold',
-  headlineBold: 'Manrope_700Bold',
-  headlineExtraBold: 'Manrope_800ExtraBold',
+  headlineRegular: 'AtkinsonHyperlegibleNext_400Regular',
+  headlineMedium: 'AtkinsonHyperlegibleNext_500Medium',
+  headlineSemiBold: 'AtkinsonHyperlegibleNext_600SemiBold',
+  headlineBold: 'AtkinsonHyperlegibleNext_700Bold',
+  headlineExtraBold: 'AtkinsonHyperlegibleNext_800ExtraBold',
   bodyRegular: 'Inter_400Regular',
   bodyMedium: 'Inter_500Medium',
   bodySemiBold: 'Inter_600SemiBold',

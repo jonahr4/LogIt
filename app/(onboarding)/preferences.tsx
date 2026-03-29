@@ -19,6 +19,7 @@ const EVENT_TYPE_CONFIG: Record<EventType, { icon: keyof typeof Ionicons.glyphMa
   movie: { icon: 'film-outline', label: 'Movies', description: 'Theater screenings' },
   concert: { icon: 'musical-notes-outline', label: 'Concerts', description: 'Shows, festivals, tours' },
   restaurant: { icon: 'restaurant-outline', label: 'Restaurants', description: 'Dining experiences' },
+  nightlife: { icon: 'wine-outline', label: 'Nightlife', description: 'Bars, clubs, nights out' },
   manual: { icon: 'create-outline', label: 'Custom', description: 'Anything else' },
 };
 
@@ -215,14 +216,14 @@ export default function PreferencesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   content: {
     padding: 28,
     paddingTop: 16,
   },
 
-  // Spatial orbs
+  // Spatial orbs — softened with shadow blur
   orb1: {
     position: 'absolute',
     top: -60,
@@ -230,7 +231,11 @@ const styles = StyleSheet.create({
     width: 320,
     height: 320,
     borderRadius: 160,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+    backgroundColor: 'rgba(0, 255, 194, 0.12)',
+    shadowColor: 'rgba(0, 255, 194, 0.4)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 60,
   },
   orb2: {
     position: 'absolute',
@@ -239,7 +244,11 @@ const styles = StyleSheet.create({
     width: 350,
     height: 350,
     borderRadius: 175,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+    backgroundColor: 'rgba(0, 255, 194, 0.12)',
+    shadowColor: 'rgba(0, 255, 194, 0.4)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 60,
   },
 
   backButton: {

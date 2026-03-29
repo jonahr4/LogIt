@@ -4,13 +4,13 @@
 
 export const Config = {
   app: {
-    name: 'Log It',
+    name: 'LogIt',
     tagline: 'Log the events you live.',
     version: '1.0.0',
   },
   api: {
     baseUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
-    timeout: 10000,
+    timeout: 3000,
   },
   supabase: {
     url: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
@@ -34,7 +34,7 @@ export const Config = {
   },
 } as const;
 
-export const EventTypes = ['sports', 'movie', 'concert', 'restaurant', 'manual'] as const;
+export const EventTypes = ['sports', 'movie', 'concert', 'restaurant', 'nightlife', 'manual'] as const;
 export type EventType = (typeof EventTypes)[number];
 
 export const PrivacyLevels = ['public', 'friends', 'private'] as const;

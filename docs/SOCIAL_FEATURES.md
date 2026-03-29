@@ -1,6 +1,8 @@
 # Log It — Social Features
 
-> **Last updated:** 2026-03-26
+> **Last updated:** 2026-03-28
+> **Changes:**
+> - 2026-03-28: Moved the Friend System into the MVP scope to align with the backend integration plan and enable the global/friends feed filtering.
 
 ## Philosophy
 
@@ -54,11 +56,17 @@ Keep social lightweight, but include hooks that make the network more valuable o
 - [x] Default privacy in settings
 - [x] **"Everyone" feed showing all public logs on the platform**
 - [x] "You" feed showing own logs
-- [x] "Friends" tab visible (even when empty — drives invite/growth flows)
-- [ ] Basic user profiles (public view — username, display name, avatar, bio)
+- [x] "Friends" tab visible
+- [ ] **Friend System Pipeline**
+  - [ ] User search (by username, display name)
+  - [ ] Send friend request
+  - [ ] Accept / decline / cancel requests
+  - [ ] Friends list management
+  - [ ] Remove friend / Block user
+- [ ] Basic user profiles (public view — username, display name, avatar, bio, feed history)
 - [ ] **Comments on public logs** (post, read, delete)
 - [ ] **Companion tagging** — tag who you went with (friends or freeform names)
-- [ ] Notifications (event reminders, post-event log prompts, comment alerts, companion tags)
+- [ ] Notifications (event reminders, post-event log prompts, comment alerts, companion tags, friend requests)
 
 ### Growth Incentives for Inviting Friends
 - Unlock overlap insights once you add friends
@@ -67,43 +75,9 @@ Keep social lightweight, but include hooks that make the network more valuable o
 - Small social badges for early friend activity
 
 ### What's NOT Included Yet
-- ❌ Full friend request flow (visible but teased)
 - ❌ Shared attendance detection
 - ❌ Reactions (emoji)
-
----
-
-## v1.5 Social — Friend System
-
-### Friend Request Flow
-
-```mermaid
-stateDiagram-v2
-    [*] --> NoRelationship
-    NoRelationship --> PendingRequest: Send Request
-    PendingRequest --> Friends: Accept
-    PendingRequest --> Declined: Decline
-    PendingRequest --> NoRelationship: Cancel Request
-    Friends --> NoRelationship: Remove Friend
-    NoRelationship --> Blocked: Block User
-    Blocked --> NoRelationship: Unblock
-```
-
-### Features
-- [ ] User search (by username, display name)
-- [ ] Send friend request
-- [ ] Accept / decline / cancel requests
-- [ ] Friends list with count
-- [ ] Remove friend
-- [ ] Block user (hides all content bidirectionally)
-- [ ] "Friends" feed tab goes live
-- [ ] Friend count on profile
-- [ ] Notification badges for pending requests
-
-### Discovery Mechanisms
-- [ ] Search by username
-- [ ] Share profile link / QR code
-- [ ] "People you may know" (stretch — based on event overlap)
+- ❌ "People you may know" (based on event overlap)
 
 ---
 

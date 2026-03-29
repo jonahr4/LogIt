@@ -1,7 +1,10 @@
 # Log It — Data Models
 
-> **Last updated:** 2026-03-27
-> Updated: Added `nightlife_events` child table for clubs/bars/nights out
+> **Last updated:** 2026-03-28
+> **Changes:**
+> - 2026-03-28: `events`, `sports_events`, `user_event_logs`, `log_companions` tables now **implemented** (migrations 003-006). Full-text search index on events. Venue fields (name, state, lat, lng) populated via static NBA venue mapping.
+> - 2026-03-28: Clarified that Manual events are specifically a fallback when canonical API search fails.
+> - 2026-03-27: Added `nightlife_events` child table for clubs/bars/nights out
 
 ## Design Principles
 
@@ -222,6 +225,8 @@ Each child table has a **1:1 relationship** with `events` via `event_id` foreign
 | `runtime_minutes` | int | Film length |
 | `tmdb_id` | string | TMDB API identifier |
 | `cast` | string[] | Major cast members |
+| `watched_at` | string | Where watched: `Theater`, `Home`, `Drive-In`, `Streaming` |
+| `theater_name` | string | Theater name (e.g., "AMC Lincoln Square") |
 
 #### `ConcertEvent`
 
@@ -233,6 +238,7 @@ Each child table has a **1:1 relationship** with `events` via `event_id` foreign
 | `genre` | string | Music genre |
 | `ticketmaster_id` | string | Ticketmaster event ID |
 | `opener` | string | Opening act |
+| `setlist` | string[] | Setlist highlights |
 
 #### `RestaurantEvent`
 
@@ -243,9 +249,9 @@ Each child table has a **1:1 relationship** with `events` via `event_id` foreign
 | `price_level` | string | Price indicator (`$`, `$$`, `$$$`, `$$$$`) |
 | `foursquare_id` | string | Foursquare venue ID |
 
-#### `ManualEvent` (future)
+#### `ManualEvent` (Fallback)
 
-For user-created events not in any external database. Uses the base `events` fields only (title, date, venue, notes). No child table needed — `event_type = 'manual'` with no child row.
+For user-created events not found in any external database API search. Uses the base `events` fields only (title, date, venue, notes). No child table needed — `event_type = 'manual'` with no child row. This ensures users are never truly blocked from logging, but it lacks the canonical overlap of API events.
 
 #### `NightlifeEvent` (future)
 

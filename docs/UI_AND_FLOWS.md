@@ -1,7 +1,7 @@
 # Log It — UI Design & User Flows
 
-> **Last updated:** 2026-03-27
-> Updated: Adopted spatial-green-v2 design language across auth/onboarding. Updated color palette (bg #030712, glass tokens), replaced emojis with Ionicons, added pulsing progress bars and circle-in-circle done screen motif.
+> **Last updated:** 2026-03-28
+> Updated: Added Search/Explore tab for discovering events logged by other users. Added Edit/Create Log Modal with type-specific input sections for all 6 event types. Updated navigation graph with search and edit log flows.
 
 ## Navigation Structure
 
@@ -11,14 +11,19 @@ graph TB
         Feed["🏠 Feed"]
         Logbook["📖 Logbook"]
         AddLog["➕ Log"]
+        Search["🔍 Search"]
         Profile["👤 Profile"]
     end
 
-    Feed --> EventDetail["Event Detail"]
+    Feed --> EventDetail["Event Detail Modal"]
     Feed --> UserProfile["Other User Profile"]
+    EventDetail --> EditLogModal["Edit Log Modal"]
     Logbook --> EventDetail
-    Logbook --> EditLog["Edit Log"]
+    Logbook --> EditLogModal
+    AddLog --> EditLogModal
     AddLog --> SearchGame["Search Game"]
+    Search --> EventDetail
+    Search --> UserProfile
     SearchGame --> ConfirmLog["Confirm & Add Notes"]
     ConfirmLog --> LogSuccess["Success → Logbook"]
     Profile --> Settings["Settings"]
@@ -36,16 +41,17 @@ graph TB
 | **Feed** | 🏠 | Default screen — scrollable feed of logged events |
 | **Logbook** | 📖 | Personal archive — all your logs with filters |
 | **Add Log** | ➕ | Entry point for logging a new event |
+| **Search** | 🔍 | Discover events, venues, and other users' logs |
 | **Profile** | 👤 | Your profile, stats summary, settings |
 
 ### Detail / Modal Screens
 
 | Screen | Access From | Purpose |
 |---|---|---|
-| **Event Detail** | Feed, Logbook | Rich game info — score, teams, venue, attendees |
+| **Event Detail Modal** | Feed, Logbook | Rich event info — score, teams, venue, attendees |
+| **Edit/Create Log Modal** | Add Log, Event Detail | Create new or edit existing log with type-specific inputs |
 | **Search Game** | Add Log | Find a game from the database |
 | **Confirm Log** | Search Game | Add notes, set privacy, confirm |
-| **Edit Log** | Logbook, Event Detail | Modify notes/privacy on an existing log |
 | **Other User Profile** | Feed | View another user's public logs |
 | **Settings** | Profile | Account, privacy defaults, notifications |
 | **Friends List** | Profile | Manage friends |
@@ -107,25 +113,26 @@ The power-user screen — your complete history.
 
 ```mermaid
 graph LR
-    A["Tap ➕"] --> B["Search for Game"]
-    B --> C["Select Game"]
-    C --> D["Add Details"]
-    D --> E["Log Created ✅"]
+    A["Tap ➕"] --> B["Select Event Type"]
+    B --> C["Search Real-World Events (API)"]
+    C --> D["Select Real Event"]
+    D --> E["Add Details & Log It ✅"]
 
-    B -.-> F["Game Not Found?"]
-    F -.-> G["Manual Entry"]
-    G --> D
+    C -.-> F["Event Not Found?"]
+    F -.-> G["Manual Custom Entry"]
+    G --> E
 ```
 
-**Step 1 — Search for Game:**
-- Search bar with auto-suggest
-- Filter by sport, team, date
-- Results show: Teams vs Teams · Date · Venue
-- "Can't find your game?" → manual entry fallback
+**Step 1 — Choose Type & Search Real Events (API):**
+- Users first select the event type (Sports, Movies, Concerts, Nightlife, etc.)
+- **CRITICAL REQUIREMENT:** The search bar always queries a **real-world database** via our APIs (e.g., Ball Don't Lie for NBA, TMDB for Movies, Google Places for Restaurants/Nightlife).
+- Users DO NOT type custom text here by default; they search to select a canonical, shared object from the API.
+- Results display rich entity data (e.g., "Celtics vs Mavericks · TD Garden · Nov 1").
 
-**Step 2 — Select Game:**
-- Tapping a result shows a preview card with game details
-- "Log This Game" button
+**Step 2 — Select Event & Fallback:**
+- Tapping a result selects the canonical event.
+- If the search yields no results, a "Can't find it? Add Manually" fallback button appears.
+- Manual entry allows freeform text, but this is the exception, not the rule. Real API events ensure data cleanliness and social overlap matching.
 
 **Step 3 — Add Details:**
 - Notes field (optional, multiline)
@@ -141,6 +148,76 @@ graph LR
 **Step 4 — Success:**
 - Confirmation animation
 - "View in Logbook" or "Log Another" actions
+
+---
+
+### 3a. Edit / Create Log Modal (`EditLogModal`)
+
+Ticket-style modal (mirroring the Event Detail Modal design) used for both **creating** a new log and **editing** an existing one. Accessed from:
+- **Add Log tab** → tap any event type card → opens in create mode
+- **Event Detail Modal** → tap "Edit Log" → opens in edit mode, pre-filled with existing data
+
+**Structure:**
+```
+┌─────────────────────────────┐
+│  ≡ Drag handle              │
+│  ┌─────────────────────────┐│
+│  │  "New [Type]" badge     ││
+│  │  Title / Venue / Date   ││
+│  │  TYPE-SPECIFIC INPUTS   ││
+│  └─────────────────────────┘│
+│  ╌╌╌╌ dashed separator ╌╌╌╌│
+│  ┌─────────────────────────┐│
+│  │  ★ Rating (1-5 stars)   ││
+│  │  Notes (multiline)      ││
+│  │  Privacy selector       ││
+│  │  Companions (chip list) ││
+│  │  Photos (placeholder)   ││
+│  │  [Log It]  [Cancel]     ││
+│  └─────────────────────────┘│
+└─────────────────────────────┘
+```
+
+**Type-specific input sections:**
+
+| Type | Fields |
+|---|---|
+| **Sports** | Sport picker (Basketball/Football/Baseball/Hockey), league, season, home/away team names, home/away scores, status |
+| **Movie** | Director, genre, runtime, cast (comma-separated), watched-at picker (Theater/Home/Drive-In/Streaming), theater name |
+| **Concert** | Artist, tour name, opener, genre, setlist (dynamic add/remove list) |
+| **Restaurant** | Cuisine, price level segmented control ($–$$$$) |
+| **Nightlife** | Venue type picker (Club/Bar/Lounge/Rooftop/Pub), vibe, dress code, music genre, price level |
+| **Custom** | No extra fields — uses shared inputs only |
+
+**Shared bottom inputs (all types):** Rating stars, notes, privacy (Public/Friends/Private), companions (add names + chip list), photos placeholder.
+
+**Component:** [`EditLogModal.tsx`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/components/ui/EditLogModal.tsx)
+
+---
+
+### 3b. Search / Explore (`search.tsx`)
+
+Discover events and browse logs from other users. Positioned to the right of the ➕ button in the tab bar.
+
+**Layout:**
+- **Header:** "Explore" title
+- **Search bar:** Full-text search across events, venues, and usernames (GlassCard styled)
+- **Type filter chips:** Horizontal scrollable row — All, Sports, Movies, Concerts, Dining, Nightlife
+- **Recent searches:** Displayed when search bar is empty, tappable to re-search
+- **Trending events:** Cards showing popular/recently logged events with:
+  - Type icon, title, venue, date
+  - Log count badge (👥 number of users who logged it)
+  - Average rating (⭐)
+- **Browse by Category:** Grid of type cards for quick category exploration
+- Tapping any result card → opens EventDetailModal
+
+**Future enhancements:**
+- Server-side full-text search via Supabase
+- Popularity ranking based on number of logs
+- User search + profile discovery
+- Location-based nearby events
+
+**Component:** [`search.tsx`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/app/(tabs)/search.tsx)
 
 ---
 

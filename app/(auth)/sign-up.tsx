@@ -98,9 +98,7 @@ export default function SignUpScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Spatial orbs */}
-      <View style={styles.orb1} />
-      <View style={styles.orb2} />
+
 
       <ScrollView
         contentContainerStyle={[styles.content, isWide && styles.contentWide]}
@@ -136,8 +134,8 @@ export default function SignUpScreen() {
               placeholder="you@example.com"
               autoCapitalize="none"
               keyboardType="email-address"
-              textContentType="emailAddress"
-              autoComplete="email"
+              textContentType="none"
+              autoComplete="off"
             />
             <Input
               label="Password"
@@ -145,8 +143,8 @@ export default function SignUpScreen() {
               onChangeText={setPassword}
               placeholder="At least 6 characters"
               secureTextEntry
-              textContentType="newPassword"
-              autoComplete="new-password"
+              textContentType="oneTimeCode"
+              autoComplete="off"
             />
             <Input
               label="Confirm Password"
@@ -154,7 +152,8 @@ export default function SignUpScreen() {
               onChangeText={setConfirmPassword}
               placeholder="Confirm your password"
               secureTextEntry
-              textContentType="newPassword"
+              textContentType="oneTimeCode"
+              autoComplete="off"
             />
             <Button
               title="Create Account"
@@ -208,7 +207,7 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   content: {
     padding: 28,
@@ -221,25 +220,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 48,
   },
 
-  // Spatial orbs
-  orb1: {
-    position: 'absolute',
-    top: -80,
-    left: -60,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
-  },
-  orb2: {
-    position: 'absolute',
-    bottom: 100,
-    right: -120,
-    width: 380,
-    height: 380,
-    borderRadius: 190,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
-  },
+
 
   backButton: {
     flexDirection: 'row',

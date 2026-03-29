@@ -131,7 +131,12 @@ export default function DoneScreen() {
         <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
           <Button
             title="Start Exploring"
-            onPress={() => router.replace('/(tabs)/feed')}
+            onPress={async () => {
+              // Mark onboarding complete — this triggers root layout to navigate to tabs
+              const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+              await AsyncStorage.setItem('@logit_is_onboarded', 'true');
+              useAuthStore.setState({ isOnboarded: true });
+            }}
             size="lg"
           />
         </Animated.View>
@@ -143,7 +148,7 @@ export default function DoneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
@@ -151,7 +156,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 
-  // Spatial orbs — celebration mode
+  // Spatial orbs — celebration mode, softened with shadow blur
   orb1: {
     position: 'absolute',
     top: '15%',
@@ -159,7 +164,11 @@ const styles = StyleSheet.create({
     width: 350,
     height: 350,
     borderRadius: 175,
-    backgroundColor: 'rgba(0, 255, 194, 0.18)',
+    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+    shadowColor: 'rgba(0, 255, 194, 0.4)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 60,
   },
   orb2: {
     position: 'absolute',
@@ -168,7 +177,11 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: 'rgba(0, 255, 194, 0.12)',
+    backgroundColor: 'rgba(0, 255, 194, 0.10)',
+    shadowColor: 'rgba(0, 255, 194, 0.3)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 50,
   },
   orb3: {
     position: 'absolute',
@@ -177,8 +190,13 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: 'rgba(0, 255, 194, 0.08)',
+    backgroundColor: 'rgba(0, 255, 194, 0.06)',
+    shadowColor: 'rgba(0, 255, 194, 0.25)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 40,
   },
+
 
   // Progress bars — all complete
   progress: {

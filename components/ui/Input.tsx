@@ -101,6 +101,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
     paddingVertical: 14,
     paddingHorizontal: 16,
+    backgroundColor: 'transparent',
   },
   rightElement: {
     paddingRight: 12,
