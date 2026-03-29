@@ -5,8 +5,8 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifyAuth, type AuthenticatedRequest } from '../middleware/auth';
-import { getSupabaseAdmin } from '../lib/supabase-admin';
+import { verifyAuth, type AuthenticatedRequest } from '../../server-lib/auth';
+import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

@@ -7,8 +7,8 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSupabaseAdmin } from '../lib/supabase-admin';
-import { getVenueForTeam } from '../lib/nba-venues';
+import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
+import { getVenueForTeam } from '../../server-lib/nba-venues';
 
 const BDL_BASE = 'https://api.balldontlie.io/v1';
 
