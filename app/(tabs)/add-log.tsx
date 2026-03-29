@@ -355,7 +355,7 @@ export default function AddLogScreen() {
                                 </View>
                               )}
                               {/* Score pill */}
-                              {meta?.home_score != null && (
+                              {meta?.home_score != null && event.status !== 'upcoming' && (
                                 <View style={styles.searchScorePill}>
                                   <Text style={styles.searchScoreText}>
                                     {meta.home_score} - {meta.away_score}

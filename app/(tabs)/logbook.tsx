@@ -211,6 +211,18 @@ export default function LogbookScreen() {
     }, [fetchLogs])
   );
 
+  const handleDeleteLog = useCallback(async (event: EventDetail) => {
+    try {
+      setIsLoading(true);
+      await api.post('/api/logs/delete', { log_id: event.id });
+      fetchLogs(true);
+    } catch (err) {
+      console.error('Failed to delete log:', err);
+      Alert.alert('Error', 'Could not delete your log.');
+      setIsLoading(false);
+    }
+  }, [fetchLogs]);
+
   const handleOpenSort = () => {
     sortButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
       setDropdownPos({ top: pageY + height + 8, right: 16 });
@@ -375,9 +387,24 @@ export default function LogbookScreen() {
             {/* Unified Metadata Row */}
             <View style={styles.bottomMetaRow}>
               {entry.rating !== undefined && (
-                <View style={styles.metaIconRow}>
-                  <Ionicons name="star" size={12} color="#FFD700" />
-                  <Text style={styles.metaText}>{entry.rating}</Text>
+                <View style={{ flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+                  {Array.from({ length: 5 }).map((_, i) => {
+                    const threshold = i + 1;
+                    const r = entry.rating || 0;
+                    const iconName = r >= threshold
+                      ? 'star' as const
+                      : r >= threshold - 0.5
+                        ? 'star-half' as const
+                        : 'star-outline' as const;
+                    return (
+                      <Ionicons
+                        key={`star-${i}`}
+                        name={iconName}
+                        size={12}
+                        color={r > i ? '#FFD700' : Colors.textMuted}
+                      />
+                    );
+                  })}
                 </View>
               )}
               {entry.companions && entry.companions.length > 0 && (
@@ -403,7 +430,7 @@ export default function LogbookScreen() {
   const renderRightSide = (entry: EventDetail) => {
     const isSports = ['NBA', 'NFL', 'MLB', 'NHL'].includes(entry.eventType);
     
-    if (isSports && entry.homeScore !== undefined && entry.awayScore !== undefined) {
+    if (isSports && entry.homeScore !== undefined && entry.awayScore !== undefined && !isUpcoming(entry)) {
       // Logic for W/L: Did Home Win? Wait, we don't know who user supports. We'll derive W from result string if we had it, but let's mock W/L by random or just W for demo
       const isWin = entry.homeScore > entry.awayScore; // Assuming home team for now
       return (
@@ -578,6 +605,7 @@ export default function LogbookScreen() {
          event={selectedEvent}
          onClose={() => setSelectedEvent(null)}
          onEdit={(e) => setEditingLog(e)}
+         onDelete={handleDeleteLog}
       />
       
       {/* Edit Log Modal */}

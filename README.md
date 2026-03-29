@@ -32,7 +32,7 @@ People who attend games track them in Notes, spreadsheets, photos, or memory. Th
 | Auth | Firebase Authentication |
 | Database | Supabase (Postgres) |
 | Storage | Supabase Storage |
-| Sports Data | Ball Don't Lie (NBA first) |
+| Sports Data | ESPN API (NBA first) |
 | Language | TypeScript |
 
 ## Roadmap
@@ -54,10 +54,11 @@ All planning docs live in [`docs/`](./docs/):
 - [`API_DESIGN.md`](./docs/API_DESIGN.md) — API endpoints and request/response contracts
 - [`FEATURE_ROADMAP.md`](./docs/FEATURE_ROADMAP.md) — Phased feature breakdown with checklists
 - [`SOCIAL_FEATURES.md`](./docs/SOCIAL_FEATURES.md) — Privacy model, friend system, and social layer design
+- [`EXTERNAL_SERVICES.md`](./docs/EXTERNAL_SERVICES.md) — Data ingestion strategies and external API integration
 
 ## Status
 
-🟢 **Phase 1 (Auth + Onboarding)** — implemented. Email, Google, and Apple sign-in. Onboarding flow with profile setup and event preferences. Vercel API endpoints and Supabase database ready.
+🟢 **Phases 1–5 complete** — Auth + onboarding, UI foundation, NBA event data & search (ESPN API cron sync, fuzzy search, venue normalization), log creation with companions, and personal logbook with real Supabase data. Next up: feed, friends, and notifications.
 
 ---
 

@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Added implemented `Venue` entity (migration 008). Added `venue_id` FK on `events`. Added `nightlife` to event_type enum in entity details.
 > - 2026-03-29: Added `home_team_logo` and `away_team_logo` columns to `sports_events` for ESPN API caching compliance.
 > - 2026-03-28: `events`, `sports_events`, `user_event_logs`, `log_companions` tables now **implemented** (migrations 003-006). Full-text search index on events. Venue fields (name, state, lat, lng) populated via static NBA venue mapping.
 > - 2026-03-28: Clarified that Manual events are specifically a fallback when canonical API search fails.
@@ -32,6 +33,7 @@ erDiagram
     EVENT ||--o| CONCERT_EVENT : "extends (concert)"
     EVENT ||--o| RESTAURANT_EVENT : "extends (restaurant)"
     EVENT ||--o| NIGHTLIFE_EVENT : "extends (nightlife)"
+    EVENT }o--o| VENUE : "hosted at"
     USER {
         uuid id PK
         string email
@@ -58,6 +60,7 @@ erDiagram
         float venue_lat
         float venue_lng
         string image_url
+        uuid venue_id FK "nullable - normalized venue"
         string external_id
         string external_source
         timestamp created_at
@@ -184,7 +187,7 @@ The shared base for all event types. One record per real-world event.
 | Field | Type | Description |
 |---|---|---|
 | `id` | UUID | Primary key |
-| `event_type` | enum | `sports`, `movie`, `concert`, `restaurant`, `manual` |
+| `event_type` | enum | `sports`, `movie`, `concert`, `restaurant`, `nightlife`, `manual` |
 | `title` | string | Display title (e.g., "Lakers vs Celtics", "Oppenheimer") |
 | `status` | enum | `upcoming`, `in_progress`, `completed` |
 | `event_date` | timestamp | Event date and time |
@@ -194,6 +197,7 @@ The shared base for all event types. One record per real-world event.
 | `venue_lat` | float | Latitude for map features |
 | `venue_lng` | float | Longitude for map features |
 | `image_url` | string | Primary image (team logo, movie poster, artist photo) |
+| `venue_id` | UUID (FK, nullable) | Reference to `venues` table (if venue is normalized) |
 | `external_id` | string | ID from source API |
 | `external_source` | string | Which API sourced this event |
 | `created_at` | timestamp | Record creation |
@@ -343,6 +347,33 @@ Bidirectional friend relationship.
 
 ---
 
+## Implemented Entities
+
+### `Venue` (Migration 008)
+
+Normalized venue data, currently seeded with all 30 NBA arenas.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | UUID | Primary key |
+| `name` | string | Venue name |
+| `city` | string | City |
+| `state` | string | State |
+| `country` | string | Country (default: `US`) |
+| `lat` | float | Latitude |
+| `lng` | float | Longitude |
+| `image_url` | string | Venue photo (Wikipedia CDN) |
+| `venue_type` | string | `arena`, `stadium`, `theater`, `restaurant`, `bar`, `club`, `other` |
+| `capacity` | int | Venue capacity |
+| `external_id` | string | External reference ID |
+| `external_source` | string | Source of external ID |
+| `created_at` | timestamp | Record creation |
+| `updated_at` | timestamp | Last update |
+
+> **Backfill:** Events are linked to venues via `venue_id` FK, backfilled by matching `venue_name` + `venue_city`.
+
+---
+
 ## Future Entities (Post-MVP)
 
 | Entity | Purpose |
@@ -367,6 +398,8 @@ Bidirectional friend relationship.
 | Filter by sport (type-specific) | `sports_event(sport)` | MVP |
 | Filter by team | `sports_event(home_team_id)`, `sports_event(away_team_id)` | MVP |
 | Filter by league | `sports_event(league)` | MVP |
+| Event-to-venue join | `event(venue_id)` | MVP |
+| Venue name search (trigram) | GIN index on `venue(name)` using `gin_trgm_ops` | MVP |
 | Comments on a log | `comment(log_id, created_at)` | MVP |
 | Companions of a log | `log_companion(log_id)` | MVP |
 | Friends' logs | `friendship(status)` + `user_event_log(user_id)` | v1.5 |

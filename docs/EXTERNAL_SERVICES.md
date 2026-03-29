@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Fixed stale BDL section headers and env var references to match ESPN-only ingestion.
 > - 2026-03-29: Replaced Ball Dont Lie with ESPN API entirely for both NBA game data and high-res sports team logos. Added Wikipedia venue scraping for static photo mappings.
 > The definitive reference for how LogIt sources event data. Each event type has a different ingestion strategy depending on data volume, API cost, and nature of the data.
 
@@ -95,7 +96,7 @@ User logs → Vercel API → upsert into Supabase events table
 | **Logic** | Fetch games for today ± 7 days from ESPN. Upsert into `events` + `sports_events`. Update scores for completed games. |
 | **Dedup key** | `external_id = ESPN game ID`, `external_source = 'espn'` |
 
-#### BDL API → LogIt Mapping
+#### ESPN API → LogIt Mapping
 
 | ESPN Field | LogIt Field | Table |
 |---|---|---|
@@ -115,14 +116,13 @@ User logs → Vercel API → upsert into Supabase events table
 | `'basketball'` | `sport` | `sports_events` |
 | `'NBA'` | `league` | `sports_events` |
 
-#### BDL Endpoints Used
+#### ESPN Endpoints Used
 
 | Endpoint | Purpose | Tier |
 |---|---|---|
-| `GET /v1/teams` | Get all NBA teams (for ID→name mapping) | Free |
-| `GET /v1/games?dates[]=YYYY-MM-DD` | Get games by date | Free |
-| `GET /v1/games?team_ids[]=ID` | Get games by team | Free |
-| `GET /v1/games/:id` | Get single game (score updates) | Free |
+| `GET /apis/site/v2/sports/basketball/nba/scoreboard?dates=YYYYMMDD` | Get games by date (scores, status, teams) | Free |
+| `GET /apis/site/v2/sports/basketball/nba/summary?event=ID` | Get detailed box score for a game | Free |
+| `GET /apis/site/v2/sports/basketball/nba/teams` | Get all NBA teams (logos, names, IDs) | Free |
 
 #### User Search Flow (MVP)
 
@@ -233,7 +233,7 @@ Event images are sourced separately from event data. Strategy varies:
 
 | Variable | Used By | Required For |
 |---|---|---|
-| `BALL_DONT_LIE_API` | Vercel API (server-side) | NBA game sync (MVP) |
+| _(none for ESPN)_ | ESPN API is unauthenticated | NBA game sync (MVP) |
 | `TMDB_API_KEY` | Vercel API (server-side) | Movie sync (v2.0) |
 | `TICKETMASTER_API_KEY` | Vercel API (server-side) | Concert search (v2.0) |
 | `GOOGLE_PLACES_API_KEY` | Vercel API (server-side) | Restaurant/nightlife search (v2.0) |

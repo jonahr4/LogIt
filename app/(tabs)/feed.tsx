@@ -396,9 +396,18 @@ function FeedCard({
               <View style={styles.imageBottom}>
                 <Text style={styles.cardVenue}>{card.venue.toUpperCase()}</Text>
                 <View style={styles.starsRow}>
-                  {Array.from({ length: card.rating }).map((_, i) => (
-                    <Ionicons key={i} name="star" size={14} color="#facc15" />
-                  ))}
+                  {Array.from({ length: 5 }).map((_, i) => {
+                    const threshold = i + 1;
+                    const r = card.rating || 0;
+                    const iconName = r >= threshold
+                      ? 'star' as const
+                      : r >= threshold - 0.5
+                        ? 'star-half' as const
+                        : 'star-outline' as const;
+                    return (
+                      <Ionicons key={`star-${i}`} name={iconName} size={14} color={r > i ? '#facc15' : Colors.textMuted} />
+                    );
+                  })}
                 </View>
               </View>
             </View>

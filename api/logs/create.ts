@@ -41,14 +41,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  // Validate rating if provided
+  // Validate rating if provided (0.5 increments: 0.5, 1, 1.5, ..., 5)
   if (rating !== undefined && rating !== null) {
     const r = Number(rating);
-    if (!Number.isInteger(r) || r < 1 || r > 5) {
+    if (r < 0.5 || r > 5 || (r * 2) % 1 !== 0) {
       return res.status(422).json({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Rating must be an integer between 1 and 5',
+          message: 'Rating must be between 0.5 and 5 in 0.5 increments',
           status: 422,
         },
       });

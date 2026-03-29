@@ -17,6 +17,7 @@ import {
   Animated,
   PanResponder,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -86,9 +87,10 @@ interface Props {
   event: EventDetail | null;
   onClose: () => void;
   onEdit?: (event: EventDetail) => void;
+  onDelete?: (event: EventDetail) => void;
 }
 
-export function EventDetailModal({ event, onClose, onEdit }: Props) {
+export function EventDetailModal({ event, onClose, onEdit, onDelete }: Props) {
   const translateY = useRef(new Animated.Value(800)).current;
   const [topHeight, setTopHeight] = useState(0);
   const onCloseRef = useRef(onClose);
@@ -564,11 +566,6 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
 
   return (
     <View style={styles.bottomContent}>
-      {/* ── Sports: Box Score Tab ── */}
-      {isSportsType && (
-        <BoxScoreSection event={event} />
-      )}
-
       {/* ── Movie: Watched At ── */}
       {isMovie && event.watchedAt && (
         <>
@@ -660,15 +657,40 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
 
       {/* ── Rating (all types) ── */}
       <Text style={styles.miniLabel}>YOUR RATING</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
       <View style={styles.starsRow}>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Ionicons
-            key={i}
-            name={i < event.rating ? 'star' : 'star-outline'}
-            size={26}
-            color={i < event.rating ? '#facc15' : Colors.textMuted}
-          />
-        ))}
+          {Array.from({ length: 5 }).map((_, i) => {
+            const threshold = i + 1;
+            const iconName = event.rating >= threshold
+              ? 'star' as const
+              : event.rating >= threshold - 0.5
+                ? 'star-half' as const
+                : 'star-outline' as const;
+            return (
+              <Ionicons
+                key={i}
+                name={iconName}
+                size={26}
+                color={event.rating > i ? '#facc15' : Colors.textMuted}
+              />
+            );
+          })}
+          {event.rating > 0 && (
+            <Text style={styles.ratingValueLabel}>{Number(event.rating).toFixed(1)}</Text>
+          )}
+        </View>
+        {event.privacy && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.06)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+            <Ionicons
+              name={event.privacy === 'public' ? 'globe-outline' : event.privacy === 'friends' ? 'people-outline' : 'lock-closed-outline'}
+              size={13}
+              color={Colors.textMuted}
+            />
+            <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.textMuted, letterSpacing: 0.5 }}>
+              {event.privacy === 'public' ? 'Public' : event.privacy === 'friends' ? 'Friends Only' : 'Private'}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.divider} />
@@ -679,10 +701,25 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
         <Text style={styles.sectionTitle}>Personal Notes</Text>
       </View>
       <View style={styles.notesBox}>
-        <Text style={styles.notesText}>{event.note}</Text>
+        {event.note && event.note.trim().length > 0 ? (
+          <Text style={styles.notesText}>{event.note}</Text>
+        ) : (
+          <View style={{ alignItems: 'center', paddingVertical: 10, gap: 8 }}>
+            <Ionicons name="pencil-outline" size={20} color={'rgba(255,255,255,0.2)'} />
+            <Text style={{ fontFamily: FontFamily.bodyMedium, fontSize: 13, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+              No notes written
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.divider} />
+
+      {/* ── Sports: Box Score Tab ── */}
+      {isSportsType && (
+        <BoxScoreSection event={event} />
+      )}
+
 
       {/* ── Info chips ── */}
       <View style={styles.chipsRow}>
@@ -695,12 +732,6 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
           />
         )}
         {event.genre && <InfoChip icon="film-outline" label={event.genre} />}
-        {event.privacy && (
-          <InfoChip
-            icon={event.privacy === 'public' ? 'globe-outline' : event.privacy === 'friends' ? 'people-outline' : 'lock-closed-outline'}
-            label={event.privacy === 'public' ? 'Public' : event.privacy === 'friends' ? 'Friends Only' : 'Private'}
-          />
-        )}
       </View>
 
       {/* ── Companions ── */}
@@ -729,13 +760,26 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
 
       {/* ── Action buttons ── */}
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.shareButton} activeOpacity={0.8}>
-          <Ionicons name="share-outline" size={18} color={Colors.background} />
-          <Text style={styles.shareButtonText}>Share</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={() => { if (onEdit) { onClose(); setTimeout(() => onEdit(event), 300); } }}>
           <Ionicons name="create-outline" size={18} color={Colors.text} />
           <Text style={styles.editButtonText}>Edit Log</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.deleteButton} 
+          activeOpacity={0.8}
+          onPress={() => {
+            Alert.alert(
+              'Are you sure?',
+              'This cannot be undone.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => { if (onDelete) { onClose(); setTimeout(() => onDelete(event), 300); } } }
+              ]
+            );
+          }}
+        >
+          <Ionicons name="trash-outline" size={18} color={Colors.error} />
+          <Text style={styles.deleteButtonText}>Delete</Text>
         </TouchableOpacity>
       </View>
 
@@ -1171,6 +1215,13 @@ const styles = StyleSheet.create({
   starsRow: {
     flexDirection: 'row',
     gap: 4,
+    alignItems: 'center',
+  },
+  ratingValueLabel: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 14,
+    color: '#facc15',
+    marginLeft: 8,
   },
   photo: {
     width: 140,
@@ -1241,20 +1292,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
-  shareButton: {
+  deleteButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: Colors.primaryContainer,
+    backgroundColor: 'rgba(255, 113, 108, 0.15)',
     paddingVertical: 15,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 113, 108, 0.3)',
   },
-  shareButtonText: {
+  deleteButtonText: {
     fontFamily: FontFamily.headlineBold,
     fontSize: 15,
-    color: Colors.background,
+    color: Colors.error,
   },
   editButton: {
     flex: 1,

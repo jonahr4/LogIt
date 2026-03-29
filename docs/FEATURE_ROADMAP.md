@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Added venue normalization and improved search (migrations 008–009) to Event Data & Search phase. Noted log deletion endpoint as implemented.
 > - 2026-03-29: Marked Phase 4 (Log Creation) and Phase 5 (Personal Logbook) complete — API endpoints and UI fully wired for reading/writing logs.
 > - 2026-03-28: Marked Phase 3 (Event Data & Search) complete — NBA cron sync, full-text search, venue enrichment, season backfill implemented. Added `EXTERNAL_SERVICES.md` reference. Added event countdown stretch goal to Notifications.
 > - 2026-03-28: Consolidated completed UI foundation under MVP, reprioritized full backend execution (NBA Search, Real Log Creation, Logbook Fetching), and pulled Friend System into MVP for global feed filtering.
@@ -61,6 +62,8 @@ gantt
 - [x] Deduplication via `external_id` + `external_source` unique index
 - [x] Post-game score/status updates (cron updates existing rows)
 - [x] Venue enrichment — static NBA arena mapping with name, city, state, lat/lng
+- [x] Venue normalization — `venues` table (migration 008) with `venue_id` FK on `events`
+- [x] Fuzzy/typo-tolerant search — `pg_trgm` trigram indexes (migration 009)
 - [x] Season backfill endpoint (`api/cron/backfill-nba.ts`) for historical data
 - [ ] "Event not found" → manual entry fallback (UI wired, backend pending)
 
@@ -124,7 +127,7 @@ gantt
 - [ ] Attendance by city/state
 
 ### 12. Additional Sports
-- [ ] Add MLB support (Ball Don't Lie or equivalent)
+- [ ] Add MLB support (ESPN API)
 - [ ] Add NFL support
 - [ ] Add NHL support
 - [ ] Multi-sport filter in logbook and feed

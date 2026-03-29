@@ -18,10 +18,12 @@ import {
   PanResponder,
   KeyboardAvoidingView,
   Platform,
+  type GestureResponderEvent,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/colors';
 import { FontFamily, FontSize } from '@/constants/typography';
 import type { EventDetail } from './EventDetailModal';
@@ -373,17 +375,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
                 <LabeledInput label="TITLE" value={title} onChangeText={setTitle} placeholder={`e.g. ${getPlaceholder(effectiveType, 'title')}`} editable={canEditCanonical} />
 
                 <Text style={styles.miniLabel}>YOUR RATING</Text>
-                <View style={styles.starsRow}>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <TouchableOpacity key={i} onPress={() => setRating(i + 1)} activeOpacity={0.7}>
-                      <Ionicons
-                        name={i < rating ? 'star' : 'star-outline'}
-                        size={30}
-                        color={i < rating ? '#facc15' : Colors.textMuted}
-                      />
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <HalfStarRating value={rating} onChange={setRating} size={30} />
               </View>
             </View>
 
@@ -569,6 +561,102 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
+  );
+}
+
+// ─── HALF-STAR RATING COMPONENT ───────────────────────────────────────────────
+
+function HalfStarRating({
+  value,
+  onChange,
+  size = 30,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  size?: number;
+}) {
+  const containerRef = useRef<View>(null);
+  const lastHapticValue = useRef(value);
+  const STAR_GAP = 6;
+  const STAR_COUNT = 5;
+  const totalWidth = STAR_COUNT * size + (STAR_COUNT - 1) * STAR_GAP;
+
+  const valueFromX = (x: number): number => {
+    const starWidth = size + STAR_GAP;
+    const clamped = Math.max(0, Math.min(x, totalWidth));
+    const starIndex = Math.floor(clamped / starWidth);
+    const withinStar = clamped - starIndex * starWidth;
+    if (starIndex >= STAR_COUNT) return STAR_COUNT;
+    if (withinStar <= size / 2) return starIndex + 0.5;
+    return starIndex + 1;
+  };
+
+  const triggerHaptic = (newVal: number) => {
+    if (newVal !== lastHapticValue.current) {
+      lastHapticValue.current = newVal;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleTap = (evt: GestureResponderEvent) => {
+    containerRef.current?.measure((_x, _y, _w, _h, pageX) => {
+      const localX = evt.nativeEvent.pageX - pageX;
+      const newVal = valueFromX(localX);
+      // Tap same value to clear
+      const finalVal = newVal === value ? 0 : newVal;
+      triggerHaptic(finalVal);
+      onChange(finalVal);
+    });
+  };
+
+  const starPan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        containerRef.current?.measure((_x, _y, _w, _h, pageX) => {
+          const localX = evt.nativeEvent.pageX - pageX;
+          const newVal = valueFromX(localX);
+          triggerHaptic(newVal);
+          onChange(newVal);
+        });
+      },
+      onPanResponderMove: (evt) => {
+        containerRef.current?.measure((_x, _y, _w, _h, pageX) => {
+          const localX = evt.nativeEvent.pageX - pageX;
+          const newVal = valueFromX(localX);
+          triggerHaptic(newVal);
+          onChange(newVal);
+        });
+      },
+    })
+  ).current;
+
+  const getStarIcon = (starIndex: number): React.ComponentProps<typeof Ionicons>['name'] => {
+    const threshold = starIndex + 1;
+    if (value >= threshold) return 'star';
+    if (value >= threshold - 0.5) return 'star-half';
+    return 'star-outline';
+  };
+
+  return (
+    <View
+      ref={containerRef}
+      style={styles.starsRow}
+      {...starPan.panHandlers}
+    >
+      {Array.from({ length: STAR_COUNT }).map((_, i) => (
+        <Ionicons
+          key={i}
+          name={getStarIcon(i)}
+          size={size}
+          color={value > i ? '#facc15' : Colors.textMuted}
+        />
+      ))}
+      {value > 0 && (
+        <Text style={styles.ratingValueLabel}>{value.toFixed(1)}</Text>
+      )}
+    </View>
   );
 }
 
@@ -1136,6 +1224,14 @@ const styles = StyleSheet.create({
   starsRow: {
     flexDirection: 'row',
     gap: 6,
+    alignItems: 'center',
+  },
+  ratingValueLabel: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 16,
+    color: '#facc15',
+    marginLeft: 10,
+    minWidth: 28,
   },
   divider: {
     height: 1,

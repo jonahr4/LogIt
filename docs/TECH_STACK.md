@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Updated project structure to reflect actual repo (added `server-lib/`, `scripts/`, `api/` subdirectories). Removed stale Ball Don't Lie decision note.
 > - 2026-03-29: Replaced Ball Dont Lie with ESPN API for primary sports ingestion and media. Added Wikipedia scraper strategy for NBA generic venue imagery.
 > - 2026-03-28: Added cron job architecture (daily NBA sync), NBA venue static mapping, backfill endpoint. Cross-ref `EXTERNAL_SERVICES.md` for full ingestion strategy per event type.
 > - 2026-03-26: Updated project structure to match Phase 1 implementation (auth/onboarding groups, API layer, store, actual dependencies)
@@ -120,7 +121,7 @@ graph TB
 | **Restaurant photos** | Google Places, Foursquare | Fetch on-demand |
 | **Fallback/generic images** | Unsplash API (50 req/hr free) | Default event imagery |
 
-> **Decision:** Start with Ball Don't Lie for NBA. Sports logos are pre-downloaded to Supabase. Movie and concert API integrations come when those event types launch.
+> **Decision:** Start with ESPN API for NBA (free, unauthenticated). Team logos are fetched dynamically from ESPN CDN (no storage costs). Movie and concert API integrations come when those event types launch.
 
 ---
 
@@ -141,27 +142,32 @@ LogIt/
 │   ├── (auth)/             # Auth group (welcome, sign-in, sign-up)
 │   ├── (onboarding)/       # Post-auth (profile-setup, preferences, done)
 │   ├── (tabs)/             # Tab-based navigation
+│   │   ├── _layout.tsx     # Tab navigator config
 │   │   ├── feed.tsx
 │   │   ├── logbook.tsx
 │   │   ├── add-log.tsx
+│   │   ├── search.tsx
 │   │   └── profile.tsx
 │   ├── index.tsx           # Entry redirect (auth-aware)
 │   └── _layout.tsx         # Root layout with auth gate
 ├── api/                    # Vercel serverless functions
 │   ├── auth/               # Auth endpoints (signup, me)
-│   ├── users/              # User endpoints (profile, username check)
-│   ├── middleware/         # Auth middleware (Firebase token verification)
-│   └── lib/                # Server-side utilities (Supabase admin)
+│   ├── cron/               # Scheduled jobs (sync-nba, backfill-nba)
+│   ├── events/             # Event endpoints (search, box-score)
+│   ├── logs/               # Log endpoints (create, update, delete, mine)
+│   └── users/              # User endpoints (profile, username check)
+├── server-lib/             # Server-side utilities (Supabase admin, auth, NBA venues)
+├── scripts/                # One-off scripts (ESPN backfill, arena images)
 ├── components/             # Reusable UI components
-│   └── ui/                 # Base UI (Button, Input)
-├── constants/              # Colors, typography, config, enums
+│   └── ui/                 # EditLogModal, EventDetailModal, GlassCard, etc.
+├── constants/              # Colors, typography, config, enums, theme
 ├── hooks/                  # Custom React hooks
 ├── lib/                    # Client-side utilities (Supabase, Firebase, API client)
-├── store/                  # Zustand state management
-├── types/                  # TypeScript type definitions
+├── store/                  # Zustand state management (authStore)
+├── types/                  # TypeScript type definitions (event, log, user, api)
 ├── assets/                 # Images, fonts
 ├── supabase/               # Database migrations
-│   └── migrations/
+│   └── migrations/         # 001-009 (users, events, sports, logs, venues, search)
 └── docs/                   # Planning documentation
 ```
 

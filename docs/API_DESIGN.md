@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Added implemented `POST /api/logs/delete` and `GET /api/events/box-score` endpoints.
 > - 2026-03-29: Added `/api/logs/update` endpoint for editing existing logs.
 > - 2026-03-28: Added implemented status markers to endpoints. Documented new cron endpoints (`sync-nba`, `backfill-nba`), event search (`/api/events/search`), and log creation (`/api/logs/create`). Added `EXTERNAL_SERVICES.md` cross-reference.
 > - 2026-03-26: Initial document creation
@@ -77,6 +78,7 @@ Events follow a **polymorphic pattern** — all event types share a common base 
 |---|---|---|---|---|
 | `GET /events` | GET | Optional | Search/browse events across all types | — |
 | `GET /events/search` | GET | No | Full-text search on pre-ingested events | ✅ Implemented |
+| `GET /events/box-score` | GET | No | Fetch on-demand box score from ESPN for a game | ✅ Implemented |
 | `GET /events/:id` | GET | Yes | Get single event with full details + type metadata | — |
 | `GET /events/:id/attendees` | GET | Yes | Get users who logged this event (respects privacy) | — |
 
@@ -240,10 +242,11 @@ All event responses share a **common base shape** with a `type_metadata` object 
 | Endpoint | Method | Auth | Description | Status |
 |---|---|---|---|---|
 | `POST /logs/create` | POST | Yes | Create a new log | ✅ Implemented |
+| `GET /api/logs/mine` | GET | Yes | Get current user's logs with event joins | ✅ Implemented |
 | `GET /logs` | GET | Yes | Get current user's logs (with filters) | — |
 | `GET /logs/:id` | GET | Yes | Get a specific log | — |
 | `POST /api/logs/update` | POST | Yes (owner) | Update a log (notes, privacy, rating, companions) | ✅ Implemented |
-| `DELETE /logs/:id` | DELETE | Yes (owner) | Delete a log | — |
+| `POST /api/logs/delete` | POST | Yes (owner) | Delete a log and its companions | ✅ Implemented |
 
 ### `POST /logs` — Request Body
 

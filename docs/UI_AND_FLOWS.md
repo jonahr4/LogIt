@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Fixed stale Ball Don't Lie reference in Add Log search to ESPN.
 > - 2026-03-29: Fully documented the implementation of Logbook's dynamic timeline layout, including Upcoming vs Past grouping, monthly dividers, and days-remaining pills.
 > - 2026-03-28: Added Search/Explore tab for discovering events logged by other users. Added Edit/Create Log Modal with type-specific input sections for all 6 event types. Updated navigation graph with search and edit log flows.
 
@@ -123,7 +124,7 @@ graph LR
 
 **Step 1 — Choose Type & Search Real Events (API):**
 - Users first select the event type (Sports, Movies, Concerts, Nightlife, etc.)
-- **CRITICAL REQUIREMENT:** The search bar always queries a **real-world database** via our APIs (e.g., Ball Don't Lie for NBA, TMDB for Movies, Google Places for Restaurants/Nightlife).
+- **CRITICAL REQUIREMENT:** The search bar always queries a **real-world database** via our APIs (e.g., ESPN for NBA, TMDB for Movies, Google Places for Restaurants/Nightlife).
 - Users DO NOT type custom text here by default; they search to select a canonical, shared object from the API.
 - Results display rich entity data (e.g., "Celtics vs Mavericks · TD Garden · Nov 1").
 
