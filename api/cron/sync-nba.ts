@@ -130,57 +130,84 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const status = mapBDLStatus(game.status);
       const eventDate = game.datetime || `${game.date}T00:00:00Z`;
 
-      // Upsert into events table
-      const { data: eventRow, error: eventError } = await supabase
-        .from('events')
-        .upsert(
-          {
-            event_type: 'sports',
-            title,
-            status,
-            event_date: eventDate,
-            venue_city: game.home_team.city,
-            external_id: externalId,
-            external_source: 'balldontlie',
-          },
-          { onConflict: 'external_id,external_source' }
-        )
-        .select('id')
-        .single();
+      try {
+        // Check if event already exists by external_id
+        const { data: existing } = await supabase
+          .from('events')
+          .select('id')
+          .eq('external_id', externalId)
+          .eq('external_source', 'balldontlie')
+          .maybeSingle();
 
-      if (eventError) {
-        console.error(`Error upserting event for game ${game.id}:`, eventError);
+        let eventId: string;
+
+        if (existing) {
+          // Update existing event (scores, status may have changed)
+          const { error: updateError } = await supabase
+            .from('events')
+            .update({ title, status, event_date: eventDate, venue_city: game.home_team.city })
+            .eq('id', existing.id);
+
+          if (updateError) {
+            console.error(`Error updating event ${game.id}:`, updateError);
+            continue;
+          }
+          eventId = existing.id;
+        } else {
+          // Insert new event
+          const { data: newEvent, error: insertError } = await supabase
+            .from('events')
+            .insert({
+              event_type: 'sports',
+              title,
+              status,
+              event_date: eventDate,
+              venue_city: game.home_team.city,
+              external_id: externalId,
+              external_source: 'balldontlie',
+            })
+            .select('id')
+            .single();
+
+          if (insertError || !newEvent) {
+            console.error(`Error inserting event ${game.id}:`, insertError);
+            continue;
+          }
+          eventId = newEvent.id;
+        }
+
+        // Upsert sports_events child (event_id is PK so onConflict works here)
+        const { error: sportsError } = await supabase
+          .from('sports_events')
+          .upsert(
+            {
+              event_id: eventId,
+              sport: 'basketball',
+              league: 'NBA',
+              season: formatSeason(game.season),
+              home_team_id: String(game.home_team.id),
+              away_team_id: String(game.visitor_team.id),
+              home_team_name: game.home_team.full_name,
+              away_team_name: game.visitor_team.full_name,
+              home_score: game.home_team_score || null,
+              away_score: game.visitor_team_score || null,
+            },
+            { onConflict: 'event_id' }
+          );
+
+        if (sportsError) {
+          console.error(`Error upserting sports_event ${game.id}:`, sportsError);
+          continue;
+        }
+
+        if (status === 'completed') {
+          updated++;
+        }
+        synced++;
+      } catch (err) {
+        console.error(`Unexpected error for game ${game.id}:`, err);
         continue;
       }
-
-      // Upsert into sports_events child table
-      const { error: sportsError } = await supabase
-        .from('sports_events')
-        .upsert(
-          {
-            event_id: eventRow.id,
-            sport: 'basketball',
-            league: 'NBA',
-            season: formatSeason(game.season),
-            home_team_id: String(game.home_team.id),
-            away_team_id: String(game.visitor_team.id),
-            home_team_name: game.home_team.full_name,
-            away_team_name: game.visitor_team.full_name,
-            home_score: game.home_team_score || null,
-            away_score: game.visitor_team_score || null,
-          },
-          { onConflict: 'event_id' }
-        );
-
-      if (sportsError) {
-        console.error(`Error upserting sports_event for game ${game.id}:`, sportsError);
-        continue;
-      }
-
-      if (status === 'completed') {
-        updated++;
-      }
-      synced++;
     }
 
     console.log(`Synced ${synced} games (${updated} with scores)`);
