@@ -419,7 +419,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user,
       firebaseUser: fbUser,
       pendingCredentials: null,
-      isOnboarded: true,
+      isOnboarded: false,  // Stay false — done screen will set true after animation
       isLoading: false,
     });
   },

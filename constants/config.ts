@@ -34,7 +34,7 @@ export const Config = {
   },
 } as const;
 
-export const EventTypes = ['sports', 'movie', 'concert', 'restaurant', 'manual'] as const;
+export const EventTypes = ['sports', 'movie', 'concert', 'restaurant', 'nightlife', 'manual'] as const;
 export type EventType = (typeof EventTypes)[number];
 
 export const PrivacyLevels = ['public', 'friends', 'private'] as const;

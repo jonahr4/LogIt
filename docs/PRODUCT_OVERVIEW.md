@@ -1,7 +1,9 @@
 # Log It — Product Overview
 
-> **Last updated:** 2026-03-27
-> Updated: Added nightlife (clubs, bars, nights out) as a future event type
+> **Last updated:** 2026-03-28
+> **Changes:**
+> - 2026-03-28: Emphasized that events map to real-world canonical objects (APIs) rather than manual text entry.
+> - 2026-03-27: Added nightlife (clubs, bars, nights out) as a future event type.
 
 ## One-Line Concept
 
@@ -41,7 +43,7 @@ People who attend many events often track them in Notes, spreadsheets, photos, t
 
 ## Why This Is Compelling
 
-1. **Structured event identity** instead of freeform notes
+1. **Structured, shared event identity** instead of freeform notes. You are linking to a canonical, real-world database object via an API, which allows universal overlaps with friends (e.g., you both tagged the actual `TMDB-12345` movie object). Manual entry is strictly a fallback.
 2. **Better browsing** than a notepad
 3. **Personal collection feel**, similar to Letterboxd for movies
 4. **Natural social layer**: "you and your friend were both at this event"
@@ -51,6 +53,8 @@ People who attend many events often track them in Notes, spreadsheets, photos, t
 ## Implementation Strategy
 
 Build sports first (starting with NBA) to prove the model, then expand across event types. The architecture is designed to be event-type agnostic from day one.
+
+**Core Philosophy:** When adding an event, the user *must* search an API database by default (search TMDB for movies, Google Places for restaurants). They do not just type "I saw a movie" into a blank box. This enforces data cleanliness and powers the social discovery engine.
 
 | Event Type | Data Source | Implementation |
 |---|---|---|

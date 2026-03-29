@@ -18,6 +18,7 @@ import { Colors, Shadows } from '@/constants/colors';
 import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { OrbBackground } from '@/components/ui/OrbBackground';
+import { EditLogModal } from '@/components/ui/EditLogModal';
 import { EventDetailModal, type EventDetail } from '@/components/ui/EventDetailModal';
 
 import { useAuthStore } from '@/store/authStore';
@@ -30,9 +31,22 @@ type MockCard = EventDetail & {
   eventIcon: React.ComponentProps<typeof Ionicons>['name'];
   score?: string;
   timeAgo: string;
+  secondaryPill?: string;
+  secondaryPillColor?: string;
 };
 
+function getSecondaryPill(card: MockCard): { text: string; color: string } | null {
+  const t = card.eventType?.toLowerCase() || '';
+  if (card.score) return { text: card.score, color: '#FF8A3D' };
+  if (t === 'movie' && card.runtime) return { text: `${card.runtime} min`, color: '#679cff' };
+  if (t === 'concert' && card.genre) return { text: card.genre, color: '#ac89ff' };
+  if (t === 'restaurant' && card.priceLevel) return { text: card.priceLevel, color: '#facc15' };
+  if (t === 'nightlife' && card.vibe) return { text: card.vibe, color: '#00FFC2' };
+  return null;
+}
+
 const MOCK_CARDS: MockCard[] = [
+  // ── Sports (NBA) ──
   {
     id: '1',
     user: { name: '@jonah', avatar: 'https://i.pravatar.cc/100?img=33' },
@@ -98,12 +112,188 @@ const MOCK_CARDS: MockCard[] = [
       { name: 'Mike', avatar: 'https://i.pravatar.cc/100?img=7' },
     ],
   },
+  // ── Sports (NFL) ──
+  {
+    id: '3',
+    user: { name: '@mike', avatar: 'https://i.pravatar.cc/100?img=12' },
+    timeAgo: '1 day ago',
+    image: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?q=80&w=800&auto=format&fit=crop',
+    title: 'Chiefs vs Eagles',
+    venue: 'Arrowhead Stadium',
+    venueCity: 'Kansas City',
+    venueState: 'MO',
+    date: 'Mar 12, 2026',
+    eventType: 'NFL',
+    eventIcon: 'american-football-outline',
+    score: '31 - 24',
+    status: 'FINAL',
+    homeTeamName: 'Chiefs',
+    awayTeamName: 'Eagles',
+    homeScore: 31,
+    awayScore: 24,
+    league: 'NFL',
+    season: '2025-26',
+    sport: 'football',
+    privacy: 'public',
+    rating: 5,
+    note: 'Mahomes threw 4 TDs. Tailgate was unreal — best BBQ I\'ve ever had. Seats were 10 rows up on the 50.',
+    photos: [
+      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=400&auto=format&fit=crop',
+    ],
+    companions: [
+      { name: 'Dad' },
+      { name: 'Jake', avatar: 'https://i.pravatar.cc/100?img=15' },
+    ],
+  },
+  // ── Movie ──
+  {
+    id: '4',
+    user: { name: '@alex', avatar: 'https://i.pravatar.cc/100?img=1' },
+    timeAgo: '3 hours ago',
+    image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop',
+    title: 'Dune: Part Two',
+    venue: 'AMC Lincoln Square',
+    venueCity: 'New York',
+    venueState: 'NY',
+    date: 'Mar 14, 2026',
+    eventType: 'Movie',
+    eventIcon: 'film-outline',
+    director: 'Denis Villeneuve',
+    genre: 'Sci-Fi',
+    runtime: 166,
+    cast: ['Timothée Chalamet', 'Zendaya', 'Austin Butler', 'Florence Pugh'],
+    watchedAt: 'IMAX',
+    theaterName: 'AMC Lincoln Square',
+    privacy: 'public',
+    rating: 5,
+    note: 'Absolutely stunning in IMAX. The sandworm riding sequence was breathtaking. Denis Villeneuve outdid himself.',
+    photos: [
+      'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=400&auto=format&fit=crop',
+    ],
+    companions: [
+      { name: 'Sarah', avatar: 'https://i.pravatar.cc/100?img=2' },
+    ],
+  },
+  // ── Concert ──
+  {
+    id: '5',
+    user: { name: '@maya', avatar: 'https://i.pravatar.cc/100?img=9' },
+    timeAgo: '8 hours ago',
+    image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=800&auto=format&fit=crop',
+    title: 'SZA',
+    venue: 'Madison Square Garden',
+    venueCity: 'New York',
+    venueState: 'NY',
+    date: 'Mar 13, 2026',
+    eventType: 'Concert',
+    eventIcon: 'musical-notes-outline',
+    artist: 'SZA',
+    tourName: 'SOS Tour',
+    opener: 'Omar Apollo',
+    genre: 'R&B',
+    setlist: ['Kill Bill', 'Snooze', 'Shirt', 'Love Galore', 'Kiss Me More', 'Good Days'],
+    privacy: 'public',
+    rating: 5,
+    note: 'SZA\'s vocals were insane live. She played for almost 2 hours straight. Omar Apollo opened and was incredible too.',
+    photos: [
+      'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=400&auto=format&fit=crop',
+    ],
+    companions: [
+      { name: 'Lily', avatar: 'https://i.pravatar.cc/100?img=10' },
+      { name: 'Marcus', avatar: 'https://i.pravatar.cc/100?img=11' },
+    ],
+  },
+  // ── Restaurant ──
+  {
+    id: '6',
+    user: { name: '@emma', avatar: 'https://i.pravatar.cc/100?img=20' },
+    timeAgo: '1 day ago',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop',
+    title: 'Carbone',
+    venue: 'Carbone',
+    venueCity: 'New York',
+    venueState: 'NY',
+    date: 'Mar 12, 2026',
+    eventType: 'Restaurant',
+    eventIcon: 'restaurant-outline',
+    cuisine: 'Italian-American',
+    priceLevel: '$$$$',
+    privacy: 'public',
+    rating: 4,
+    note: 'Finally got a reservation. The spicy rigatoni lived up to the hype. Veal parm was unreal. Definitely going back.',
+    photos: [
+      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=400&auto=format&fit=crop',
+    ],
+    companions: [
+      { name: 'Tom', avatar: 'https://i.pravatar.cc/100?img=22' },
+    ],
+  },
+  // ── Nightlife ──
+  {
+    id: '7',
+    user: { name: '@jake', avatar: 'https://i.pravatar.cc/100?img=15' },
+    timeAgo: '12 hours ago',
+    image: 'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?q=80&w=800&auto=format&fit=crop',
+    title: 'Marquee NYC',
+    venue: 'Marquee New York',
+    venueCity: 'New York',
+    venueState: 'NY',
+    date: 'Mar 14, 2026',
+    eventType: 'Nightlife',
+    eventIcon: 'wine-outline',
+    venueType: 'Club',
+    vibe: 'High-Energy',
+    dressCode: 'Smart Casual',
+    musicGenre: 'House / EDM',
+    priceLevel: '$$$',
+    privacy: 'friends',
+    rating: 4,
+    note: 'Incredible night. DJ was spinning house all night. Great energy on the dance floor. VIP was absolutely worth it.',
+    photos: [
+      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?q=80&w=400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=400&auto=format&fit=crop',
+    ],
+    companions: [
+      { name: 'Alex', avatar: 'https://i.pravatar.cc/100?img=1' },
+      { name: 'Maya', avatar: 'https://i.pravatar.cc/100?img=9' },
+      { name: 'Chris' },
+    ],
+  },
+  // ── Custom ──
+  {
+    id: '8',
+    user: { name: '@jonah', avatar: 'https://i.pravatar.cc/100?img=33' },
+    timeAgo: '2 days ago',
+    image: 'https://images.unsplash.com/photo-1523050854058-8df90110c476?q=80&w=800&auto=format&fit=crop',
+    title: 'Graduation Day',
+    venue: 'Boston University',
+    venueCity: 'Boston',
+    venueState: 'MA',
+    date: 'May 18, 2025',
+    eventType: 'Custom',
+    eventIcon: 'calendar-outline',
+    privacy: 'public',
+    rating: 5,
+    note: 'Finally walked across that stage. 4 years of hard work paid off. So grateful for everyone who came out to celebrate.',
+    photos: [
+      'https://images.unsplash.com/photo-1627556704302-624286467c65?q=80&w=400&auto=format&fit=crop',
+    ],
+    companions: [
+      { name: 'Mom' },
+      { name: 'Dad' },
+      { name: 'Sarah', avatar: 'https://i.pravatar.cc/100?img=2' },
+    ],
+  },
 ];
 
 export default function FeedScreen() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<FeedTab>('Following');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
+  const [editEvent, setEditEvent] = useState<EventDetail | null>(null);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -155,6 +345,17 @@ export default function FeedScreen() {
       <EventDetailModal
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
+        onEdit={(ev) => setEditEvent(ev)}
+      />
+
+      <EditLogModal
+        visible={!!editEvent}
+        event={editEvent}
+        onClose={() => setEditEvent(null)}
+        onSave={(data) => {
+          console.log('Saved log:', data);
+          setEditEvent(null);
+        }}
       />
     </SafeAreaView>
   );
@@ -167,6 +368,8 @@ function FeedCard({
   card: MockCard;
   onPress: () => void;
 }) {
+  const pill = getSecondaryPill(card);
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
       <GlassCard borderRadius={32} style={styles.card}>
@@ -206,16 +409,16 @@ function FeedCard({
               <Text style={styles.eventPillText}>{card.eventType}</Text>
             </View>
 
-            {/* Score pill (top right) */}
-            {card.score && (
-              <View style={styles.scorePill}>
-                <Text style={styles.scoreText}>{card.score}</Text>
+            {/* Secondary pill (top right) — type-aware */}
+            {pill && (
+              <View style={[styles.scorePill, { borderColor: `${pill.color}35` }]}>
+                <Text style={[styles.scoreText, { color: pill.color }]}>{pill.text}</Text>
               </View>
             )}
           </View>
 
           {/* Note */}
-          <Text style={styles.noteText}>{card.note}</Text>
+          <Text style={styles.noteText} numberOfLines={2}>{card.note}</Text>
         </View>
       </GlassCard>
     </TouchableOpacity>

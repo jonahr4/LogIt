@@ -131,7 +131,12 @@ export default function DoneScreen() {
         <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
           <Button
             title="Start Exploring"
-            onPress={() => router.replace('/(tabs)/feed')}
+            onPress={async () => {
+              // Mark onboarding complete — this triggers root layout to navigate to tabs
+              const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+              await AsyncStorage.setItem('@logit_is_onboarded', 'true');
+              useAuthStore.setState({ isOnboarded: true });
+            }}
             size="lg"
           />
         </Animated.View>

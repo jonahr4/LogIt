@@ -23,6 +23,7 @@ function FloatingTabBar({ state, descriptors, navigation }: any) {
     { key: 'feed', icon: 'home-outline', iconFilled: 'home' },
     { key: 'logbook', icon: 'book-outline', iconFilled: 'book' },
     { key: 'add-log', icon: 'add', iconFilled: 'add', isAdd: true },
+    { key: 'search', icon: 'search-outline', iconFilled: 'search' },
     { key: 'profile', icon: 'person-outline', iconFilled: 'person' },
   ];
 
@@ -98,6 +99,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="feed" options={{ title: 'Feed' }} />
         <Tabs.Screen name="logbook" options={{ title: 'Logbook' }} />
         <Tabs.Screen name="add-log" options={{ title: 'Log' }} />
+        <Tabs.Screen name="search" options={{ title: 'Search' }} />
         <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
       </Tabs>
     </View>
