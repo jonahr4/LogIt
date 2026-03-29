@@ -1,9 +1,10 @@
 /**
  * LogIt — Add Log Screen
  * Spatial Green v2: "Log New" header, glass search input, type-specific editors
+ * Now connected to real Supabase data via /api/events/search and /api/logs/create
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,14 +12,16 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Shadows } from '@/constants/colors';
-import { Typography, FontFamily } from '@/constants/typography';
+import { Colors } from '@/constants/colors';
+import { FontFamily } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EditLogModal } from '@/components/ui/EditLogModal';
-
+import { api } from '@/lib/api';
+import type { EventSearchResult } from '@/types/event';
 
 const EVENT_TYPES = [
   { key: 'sports', icon: 'basketball-outline' as const, label: 'Sports' },
@@ -29,34 +32,154 @@ const EVENT_TYPES = [
   { key: 'custom', icon: 'create-outline' as const, label: 'Custom' },
 ] as const;
 
-const MOCK_API_RESULTS: Record<string, any[]> = {
-  sports: [
-    { id: 'api-1', title: 'Celtics vs Knicks', eventType: 'NBA', date: 'Mar 25, 2026', venue: 'TD Garden', venueCity: 'Boston', venueState: 'MA', homeTeamName: 'Celtics', awayTeamName: 'Knicks' },
-    { id: 'api-2', title: 'Lakers vs Warriors', eventType: 'NBA', date: 'Mar 26, 2026', venue: 'Crypto.com Arena', venueCity: 'Los Angeles', venueState: 'CA', homeTeamName: 'Lakers', awayTeamName: 'Warriors' },
-  ],
-  movie: [
-    { id: 'api-3', title: 'Dune: Part Two', eventType: 'movie', director: 'Denis Villeneuve', genre: 'Sci-Fi', runtime: 166 },
-    { id: 'api-4', title: 'Oppenheimer', eventType: 'movie', director: 'Christopher Nolan', genre: 'Drama', runtime: 180 },
-  ],
-  concert: [
-    { id: 'api-5', title: 'SZA — SOS Tour', eventType: 'concert', artist: 'SZA', venue: 'Madison Square Garden' },
-  ],
-  restaurant: [
-    { id: 'api-6', title: 'Carbone', eventType: 'restaurant', cuisine: 'Italian', venueCity: 'New York', priceLevel: '$$$$' },
-  ],
-  nightlife: [
-    { id: 'api-7', title: 'Paul\'s Casablanca', eventType: 'nightlife', venueType: 'club', vibe: 'Exclusive', venueCity: 'New York' },
-  ],
-};
-
 export default function AddLogScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [selectedEventToLog, setSelectedEventToLog] = useState<any>(null);
 
+  // Real API search state
+  const [searchResults, setSearchResults] = useState<EventSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ─── Debounced search ────────────────────────────────────────────────
+  const handleSearchChange = useCallback(
+    (text: string) => {
+      setActiveSearchQuery(text);
+      setSearchError(null);
+
+      // Clear previous timer
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+
+      // Don't search for very short queries
+      if (text.trim().length < 2) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
+
+      setIsSearching(true);
+
+      // Debounce 500ms
+      debounceTimer.current = setTimeout(async () => {
+        try {
+          const params: Record<string, string> = { q: text.trim() };
+          if (selectedType && selectedType !== 'custom') {
+            params.event_type = selectedType;
+          }
+
+          const response = await api.get<{
+            data: EventSearchResult[];
+            meta: { count: number; query: string };
+          }>('/api/events/search', params);
+
+          setSearchResults(response.data || []);
+          setSearchError(null);
+        } catch (err: any) {
+          console.error('Search error:', err);
+          setSearchError(err?.error?.message || 'Search failed. Try again.');
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 500);
+    },
+    [selectedType]
+  );
+
+  // ─── Map search result to EditLogModal event format ──────────────────
+  const mapEventForModal = (event: EventSearchResult) => {
+    const mapped: any = {
+      id: event.id,
+      title: event.title,
+      eventType: event.event_type,
+      venue: event.venue_name || '',
+      venueCity: event.venue_city || '',
+      venueState: event.venue_state || '',
+      date: event.event_date
+        ? new Date(event.event_date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
+        : '',
+      status: event.status,
+    };
+
+    // Add sports-specific fields
+    if (event.type_metadata) {
+      mapped.sport = event.type_metadata.sport;
+      mapped.league = event.type_metadata.league;
+      mapped.season = event.type_metadata.season;
+      mapped.homeTeamName = event.type_metadata.home_team_name;
+      mapped.awayTeamName = event.type_metadata.away_team_name;
+      mapped.homeScore = event.type_metadata.home_score;
+      mapped.awayScore = event.type_metadata.away_score;
+    }
+
+    return mapped;
+  };
+
+  // ─── Save handler — create log via API ───────────────────────────────
+  const handleSaveLog = async (data: any) => {
+    if (!selectedEventToLog?.id) {
+      console.log('Manual/fallback log (no event_id):', data);
+      setSelectedEventToLog(null);
+      setSelectedType(null);
+      setActiveSearchQuery('');
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await api.post('/api/logs/create', {
+        event_id: selectedEventToLog.id,
+        notes: data.note || null,
+        privacy: data.privacy || 'public',
+        rating: data.rating || null,
+        companions: data.companions || [],
+      });
+      console.log('Log created successfully!');
+    } catch (err: any) {
+      console.error('Save log error:', err);
+      // TODO: show user-facing error toast
+    } finally {
+      setIsSaving(false);
+      setSelectedEventToLog(null);
+      setSelectedType(null);
+      setActiveSearchQuery('');
+      setSearchResults([]);
+    }
+  };
+
+  // ─── Helper: subtitle text for result cards ──────────────────────────
+  const getResultSubtitle = (event: EventSearchResult) => {
+    const parts: string[] = [];
+    if (event.event_date) {
+      parts.push(
+        new Date(event.event_date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      );
+    }
+    if (event.venue_city) {
+      parts.push(event.venue_city);
+    }
+    if (event.type_metadata?.league) {
+      parts.push(event.type_metadata.league);
+    }
+    return parts.join(' · ');
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -100,52 +223,116 @@ export default function AddLogScreen() {
             <GlassCard borderRadius={20} style={styles.emptyRecent}>
               <Ionicons name="time-outline" size={32} color={Colors.textMuted} />
               <Text style={styles.emptyRecentText}>
-                Recent events will appear here once the data pipeline is connected.
+                Recent events will appear here once you start logging.
               </Text>
             </GlassCard>
           </>
         ) : (
           <View style={styles.apiSearchContainer}>
-            <TouchableOpacity onPress={() => setSelectedType(null)} style={styles.backButton}>
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedType(null);
+                setActiveSearchQuery('');
+                setSearchResults([]);
+                setSearchError(null);
+              }}
+              style={styles.backButton}
+            >
               <Ionicons name="arrow-back" size={20} color={Colors.text} />
               <Text style={styles.backButtonText}>Back to types</Text>
             </TouchableOpacity>
 
             <Text style={styles.apiSearchTitle}>
-              Find your {EVENT_TYPES.find(t => t.key === selectedType)?.label.slice(0, -1)}
+              Find your{' '}
+              {EVENT_TYPES.find((t) => t.key === selectedType)?.label.slice(0, -1)}
             </Text>
             <Text style={styles.apiSearchSubtitle}>
-              Search our global database to log the exact event.
+              Search our database to log the exact event you attended.
             </Text>
 
             <GlassCard borderRadius={20} style={[styles.searchBar, { marginTop: 16 }]}>
               <TextInput
                 style={styles.searchInput}
-                placeholder={`Search API for ${selectedType}...`}
+                placeholder={`Search ${selectedType === 'sports' ? 'teams or games' : selectedType}...`}
                 placeholderTextColor={Colors.textMuted}
                 value={activeSearchQuery}
-                onChangeText={setActiveSearchQuery}
+                onChangeText={handleSearchChange}
                 autoFocus
               />
-              <Ionicons name="search" size={22} color={Colors.textMuted} />
+              {isSearching ? (
+                <ActivityIndicator size="small" color={Colors.primaryContainer} />
+              ) : (
+                <Ionicons name="search" size={22} color={Colors.textMuted} />
+              )}
             </GlassCard>
 
+            {/* Results */}
             <View style={styles.apiResultsList}>
-              <Text style={styles.sectionLabel}>TOP RESULTS (MOCK API)</Text>
-              {(MOCK_API_RESULTS[selectedType] || []).map((apiEvent) => (
+              {/* Error state */}
+              {searchError && (
+                <GlassCard borderRadius={16} style={styles.errorCard}>
+                  <Ionicons name="alert-circle-outline" size={20} color="#ff6b6b" />
+                  <Text style={styles.errorText}>{searchError}</Text>
+                </GlassCard>
+              )}
+
+              {/* Results header */}
+              {searchResults.length > 0 && (
+                <Text style={styles.sectionLabel}>
+                  {searchResults.length} RESULT{searchResults.length !== 1 ? 'S' : ''}
+                </Text>
+              )}
+
+              {/* No results state */}
+              {activeSearchQuery.length >= 2 &&
+                !isSearching &&
+                searchResults.length === 0 &&
+                !searchError && (
+                  <GlassCard borderRadius={16} style={styles.noResultsCard}>
+                    <Ionicons name="search-outline" size={24} color={Colors.textMuted} />
+                    <Text style={styles.noResultsText}>
+                      No events found for "{activeSearchQuery}"
+                    </Text>
+                    <Text style={styles.noResultsHint}>
+                      Try a different search or add manually below
+                    </Text>
+                  </GlassCard>
+                )}
+
+              {/* Result cards */}
+              {searchResults.map((event) => (
                 <TouchableOpacity
-                  key={apiEvent.id}
+                  key={event.id}
                   activeOpacity={0.7}
                   onPress={() => {
-                    setSelectedEventToLog(apiEvent);
+                    setSelectedEventToLog(mapEventForModal(event));
                   }}
                 >
                   <GlassCard borderRadius={16} style={styles.apiResultCard}>
-                    <Ionicons name="checkmark-circle-outline" size={24} color={Colors.primaryContainer} />
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={24}
+                      color={Colors.primaryContainer}
+                    />
                     <View style={styles.apiResultInfo}>
-                      <Text style={styles.apiResultTitle}>{apiEvent.title}</Text>
+                      <Text style={styles.apiResultTitle}>{event.title}</Text>
                       <Text style={styles.apiResultSub}>
-                        {apiEvent.date ? `${apiEvent.date} · ` : ''}{apiEvent.venueCity || apiEvent.director || apiEvent.artist || ''}
+                        {getResultSubtitle(event)}
+                      </Text>
+                      {event.type_metadata?.home_score != null && (
+                        <Text style={styles.apiResultScore}>
+                          {event.type_metadata.home_team_name} {event.type_metadata.home_score} —{' '}
+                          {event.type_metadata.away_team_name} {event.type_metadata.away_score}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusBadgeText}>
+                        {event.status === 'completed'
+                          ? 'Final'
+                          : event.status === 'in_progress'
+                            ? 'Live'
+                            : 'Upcoming'}
                       </Text>
                     </View>
                   </GlassCard>
@@ -154,11 +341,18 @@ export default function AddLogScreen() {
             </View>
 
             <View style={styles.fallbackContainer}>
-              <Text style={styles.fallbackText}>Can't find what you're looking for?</Text>
+              <Text style={styles.fallbackText}>
+                Can't find what you're looking for?
+              </Text>
               <TouchableOpacity
                 style={styles.fallbackButton}
                 activeOpacity={0.7}
-                onPress={() => setSelectedEventToLog({ eventType: selectedType, isManualFallback: true })}
+                onPress={() =>
+                  setSelectedEventToLog({
+                    eventType: selectedType,
+                    isManualFallback: true,
+                  })
+                }
               >
                 <Text style={styles.fallbackButtonText}>Add Manually</Text>
               </TouchableOpacity>
@@ -177,12 +371,7 @@ export default function AddLogScreen() {
         mode="create"
         event={selectedEventToLog?.isManualFallback ? null : selectedEventToLog}
         onClose={() => setSelectedEventToLog(null)}
-        onSave={(data) => {
-          console.log('Created log:', data);
-          setSelectedEventToLog(null);
-          setSelectedType(null);
-          setActiveSearchQuery('');
-        }}
+        onSave={handleSaveLog}
       />
     </SafeAreaView>
   );
@@ -328,6 +517,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textMuted,
   },
+  apiResultScore: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    color: Colors.primaryContainer,
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 255, 194, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 194, 0.15)',
+  },
+  statusBadgeText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    color: Colors.primaryContainer,
+    letterSpacing: 0.5,
+  },
   fallbackContainer: {
     marginTop: 32,
     alignItems: 'center',
@@ -350,5 +559,38 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
     color: Colors.text,
+  },
+
+  // Error state
+  errorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 10,
+  },
+  errorText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: '#ff6b6b',
+    flex: 1,
+  },
+
+  // No results state
+  noResultsCard: {
+    padding: 24,
+    alignItems: 'center',
+    gap: 8,
+  },
+  noResultsText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  noResultsHint: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 12,
+    color: Colors.textMuted,
+    textAlign: 'center',
   },
 });

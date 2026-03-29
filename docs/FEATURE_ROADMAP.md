@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-28
 > **Changes:**
+> - 2026-03-28: Consolidated completed UI foundation under MVP, reprioritized full backend execution (NBA Search, Real Log Creation, Logbook Fetching), and pulled Friend System into MVP for global feed filtering.
 > - 2026-03-28: Clarified that Event Search queries real-world APIs (canonical objects), with manual entry as a fallback.
 > - 2026-03-28: Added Search/Explore tab for discovering events and other users' logs. Event Detail Page with type-specific variants. Edit/Create Log Modal. Multi-type feed cards. Add Log screen with 6 event types.
 
@@ -12,20 +13,17 @@ gantt
     title Log It — Build Phases
     dateFormat  YYYY-MM-DD
     section MVP (v1.0)
-    Auth + Onboarding           :a1, 2026-04-01, 7d
-    Event Data Ingestion (NBA)  :a2, after a1, 7d
-    Search / Explore            :a3, after a2, 5d
-    Log Creation + Companions   :a4, after a3, 5d
-    Personal Logbook + Filters  :a5, after a4, 7d
-    Event Detail Page           :a6, after a5, 5d
-    Simple Feed + Comments      :a7, after a6, 5d
-    Notifications               :a8, after a7, 5d
+    Auth + UI Foundation        :done, a1, 2026-04-01, 14d
+    Backend - Event Data & Search:active, a2, after a1, 7d
+    Backend - Log Creation       :a3, after a2, 5d
+    Backend - Personal Logbook   :a4, after a3, 5d
+    Backend - Feed & Friends     :a5, after a4, 7d
+    Notifications               :a6, after a5, 5d
     section v1.5
-    Friend System               :b1, after a8, 7d
-    Stats Dashboard             :b2, after b1, 7d
-    Map View                    :b3, after b2, 5d
+    Stats Dashboard             :b1, after a6, 7d
+    Map View                    :b2, after b1, 5d
     section v2.0
-    Shared Attendance           :c1, after b3, 5d
+    Shared Attendance           :c1, after b2, 5d
     Reactions                   :c2, after c1, 3d
     Event Discovery + Reviews   :c3, after c2, 7d
     Multi-Type Expansion        :c4, after c3, 10d
@@ -36,7 +34,7 @@ gantt
 
 ## MVP (v1.0) — Core Product
 
-> **Goal:** A user can sign up, find an event, log it, and browse their history. Starting with NBA games as the first event type, but the architecture supports all types from day one.
+> **Goal:** A user can sign up, find an event (via real-world API search), log it, browse their history, and interact with friends in a global feed. Starting with NBA games as the first data type.
 
 ### 1. Auth & Onboarding
 - [x] Email + password sign-up/sign-in
@@ -48,69 +46,47 @@ gantt
 - [x] Event type preferences (choose which types you'll use: sports, movies, concerts, etc.)
 - [x] Default privacy selection
 
-### 2. Event Data (NBA First Implementation)
-- [ ] Integrate Ball Don't Lie API for NBA games
+### 2. UI & Mock Data Foundation
+- [x] **Search / Explore:** Tab UI, search bar, type filter chips, trending events, recent searches, browse by category grid
+- [x] **Personal Logbook:** Unified list UI, top counts, animated horizontal scroll filters, custom drop-down event sorting
+- [x] **Feed Cards:** Polymorphic layout, type-specific secondary pills (score for sports, runtime for movies, price for dining)
+- [x] **Event Detail Page:** Ticket-style modal, dynamic headers, user attendance badge, photo gallery, type-specific bottom content panels
+
+### 3. Backend: Event Data & Search
+- [ ] Implement robust full-text search querying real-world API (Ball Don't Lie API for NBA games)
 - [ ] Vercel cron function for scheduled ingestion (daily sync)
-- [ ] Store canonical `Event` records in Supabase Postgres (base table + `sports_events` child)
+- [ ] Store canonical `Event` records and `sports_events` child records in Supabase Postgres on selection
 - [ ] Deduplication via `external_id`
 - [ ] Post-game score/status updates
-- [ ] Store sports team logos locally in Supabase Storage
-
-### 3. Search / Explore
-- [x] Search/Explore tab in nav bar (right of ➕)
-- [x] Search bar with clear button (GlassCard styled)
-- [x] Type filter chips (All, Sports, Movies, Concerts, Dining, Nightlife)
-- [x] Recent searches (tappable re-search)
-- [x] Trending events with log count + average rating badges
-- [x] Browse by Category grid
-- [ ] **API Integrations:** Full-text search must query real-world APIs (Ball Don't Lie, TMDB, Ticketmaster, Google Places) to ensure canonical event matching across users.
-- [ ] Full-text search via Supabase (for cached/previously logged events)
-- [ ] Filter by event type, date range
-- [ ] Type-specific filters (team, league, season for sports)
-- [ ] Paginated results
-- [ ] User search / profile discovery
 - [ ] "Event not found" → manual entry fallback
 
-### 4. Log Creation
-- [ ] Select event from search results
-- [ ] Add optional notes
-- [ ] Set privacy (public / friends / private)
-- [ ] Optional star rating (1-5)
-- [ ] Photo upload (up to a few per log, stored in Supabase Storage)
-- [ ] Add companions — tag friends or enter freeform names
-- [ ] Success confirmation with animation
-- [ ] Prevent duplicate logs for same event
+### 4. Backend: Log Creation
+- [ ] Select real event from search results
+- [ ] Store user logs mapped to events in Supabase
+- [ ] Add optional notes, rating, photos (in Supabase Storage)
+- [ ] Add companions (tag friends or freeform)
+- [ ] Privacy configuration (public / friends / private)
+- [ ] Prevent duplicate logs for same event (or allow multiple attendances)
 
-### 5. Personal Logbook
-- [ ] Unified list of all logs, newest first
-- [ ] Filter by: event type, date range, venue, privacy, rating
-- [ ] Type-specific filters when event type is selected (team, sport, etc.)
-- [ ] Active filters shown as removable chips
-- [ ] Total count header ("47 events logged")
-- [ ] Tap to view event detail
+### 5. Backend: Personal Logbook
+- [ ] Fetch user's logs directly from Supabase
+- [ ] Apply real filters and sorting to the database query
+- [ ] Map backend rows backwards to the existing `EventDetail` TS type to power the unified Logbook UI
 
-### 6. Event Detail Page
-- [x] Event header (title, type-specific display — e.g., teams + score for sports, director/cast for movies, artist/tour for concerts)
-- [x] Date, time, venue with city/state
-- [x] User's attendance badge + notes + rating + companions
-- [x] Edit log button → opens Edit Log Modal
-- [x] Photos gallery
-- [x] Type-specific bottom content (box score tab, watched-at, setlist, cuisine/price, venue details)
+### 6. Backend: Simple Feed & Social
+- [ ] Fetch public and friend-restricted logs for global feed
+- [ ] "Following" / "For You" tabs working with real user data
+- [ ] **Friend System:** Search users, send/accept requests, friend list management
+- [ ] User profiles loading real feed history
+- [ ] Comments on public logs (post, read, delete)
 
-### 7. Simple Feed + Comments
-- [x] "Following" / "For You" tabs
-- [x] Feed cards with type-specific secondary pills (score, runtime, genre, price, vibe)
-- [x] Each post shows: user, event, notes, rating
-- [x] Tap card → event detail modal
-- [ ] Comments on any public log (post, read, delete)
-- [ ] Pull-to-refresh
-- [ ] Empty states for first-time users
-
-### 8. Notifications (MVP)
+### 7. Notifications (MVP)
 - [ ] Upcoming event reminders (configurable timing: 24h, 2h, 30min before)
 - [ ] Post-event prompt: add photos, rating, and notes after event concludes
 - [ ] Companion tagged notification
 - [ ] Comment notification
+
+---ment notification
 - [ ] In-app notification center
 - [ ] Push notification infrastructure (Firebase Cloud Messaging)
 
