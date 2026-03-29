@@ -63,6 +63,7 @@ export type EventDetail = {
   privacy: 'public' | 'friends' | 'private';
   rating?: number;
   companions?: any[];
+  external_id?: string;
 };
 
 // --- Constants ---
@@ -126,6 +127,7 @@ function mapLogToEventDetail(log: any): EventDetail {
     privacy: log.privacy || 'public',
     rating: log.rating,
     companions: log.companions,
+    external_id: event.external_id,
   };
 }
 
@@ -224,7 +226,7 @@ export default function LogbookScreen() {
     });
 
     return result;
-  }, [searchText, activeFilter, activeSubFilter, activeSort]);
+  }, [entries, searchText, activeFilter, activeSubFilter, activeSort]);
 
   const handleFilterPress = (chip: string) => {
     setActiveFilter(chip);

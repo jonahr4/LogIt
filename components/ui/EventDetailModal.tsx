@@ -16,12 +16,14 @@ import {
   StyleSheet,
   Animated,
   PanResponder,
+  ActivityIndicator,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { FontFamily, FontSize } from '@/constants/typography';
+import { api } from '@/lib/api';
 
 const NOTCH_SIZE = 30;
 const SEPARATOR_HEIGHT = 44;
@@ -548,16 +550,9 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
 
   return (
     <View style={styles.bottomContent}>
-      {/* ── Sports: Box Score Tab (placeholder) ── */}
+      {/* ── Sports: Box Score Tab ── */}
       {isSportsType && (
-        <>
-          <TouchableOpacity style={styles.boxScoreTab} activeOpacity={0.7}>
-            <Ionicons name="stats-chart-outline" size={16} color={Colors.primaryContainer} />
-            <Text style={styles.boxScoreTabText}>Box Score</Text>
-            <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
-          </TouchableOpacity>
-          <View style={styles.divider} />
-        </>
+        <BoxScoreSection event={event} />
       )}
 
       {/* ── Movie: Watched At ── */}
@@ -736,6 +731,100 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
       </TouchableOpacity>
 
     </View>
+  );
+}
+
+// ─── BOX SCORE SECTION ────────────────────────────────────────────────────────
+
+function BoxScoreSection({ event }: { event: EventDetail }) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [boxScoreData, setBoxScoreData] = React.useState<any>(null);
+  const [isLoadingBS, setIsLoadingBS] = React.useState(false);
+  const [bsError, setBsError] = React.useState<string | null>(null);
+
+  const handleToggle = async () => {
+    if (isExpanded) {
+      setIsExpanded(false);
+      return;
+    }
+    setIsExpanded(true);
+    if (boxScoreData) return; // Already loaded
+
+    // Need external_id to call box score API
+    const extId = (event as any).external_id;
+    if (!extId) {
+      setBsError('Box score not available for this game');
+      return;
+    }
+
+    setIsLoadingBS(true);
+    setBsError(null);
+    try {
+      const data = await api.get<any>(`/api/events/box-score?external_id=${extId}`);
+      if (!data.available) {
+        setBsError('Box score not available yet');
+      } else {
+        setBoxScoreData(data.teams);
+      }
+    } catch (err) {
+      setBsError('Failed to load box score');
+      console.error('Box score error:', err);
+    } finally {
+      setIsLoadingBS(false);
+    }
+  };
+
+  return (
+    <>
+      <TouchableOpacity style={styles.boxScoreTab} activeOpacity={0.7} onPress={handleToggle}>
+        <Ionicons name="stats-chart-outline" size={16} color={Colors.primaryContainer} />
+        <Text style={styles.boxScoreTabText}>Box Score</Text>
+        <Ionicons name={isExpanded ? 'chevron-down' : 'chevron-forward'} size={14} color={Colors.textMuted} />
+      </TouchableOpacity>
+
+      {isExpanded && (
+        <View style={{ paddingBottom: 8 }}>
+          {isLoadingBS && (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color={Colors.primaryContainer} />
+            </View>
+          )}
+          {bsError && (
+            <Text style={{ color: Colors.textMuted, fontSize: 12, fontFamily: FontFamily.bodyMedium, textAlign: 'center', paddingVertical: 12 }}>
+              {bsError}
+            </Text>
+          )}
+          {boxScoreData && boxScoreData.map((team: any) => (
+            <View key={team.abbreviation} style={{ marginTop: 8 }}>
+              <Text style={{ fontFamily: FontFamily.headlineBold, fontSize: 14, color: Colors.primaryContainer, marginBottom: 6 }}>
+                {team.full_name}
+              </Text>
+              {/* Header */}
+              <View style={{ flexDirection: 'row', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}>
+                <Text style={{ flex: 2, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, letterSpacing: 1 }}>PLAYER</Text>
+                <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 1 }}>PTS</Text>
+                <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 1 }}>REB</Text>
+                <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 1 }}>AST</Text>
+                <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 1 }}>MIN</Text>
+              </View>
+              {/* Players */}
+              {team.players.slice(0, 8).map((p: any, i: number) => (
+                <View key={i} style={{ flexDirection: 'row', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' }}>
+                  <Text numberOfLines={1} style={{ flex: 2, fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.text }}>
+                    {p.player.name}
+                  </Text>
+                  <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.text, textAlign: 'center' }}>{p.points}</Text>
+                  <Text style={{ width: 28, fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.textMuted, textAlign: 'center' }}>{p.rebounds}</Text>
+                  <Text style={{ width: 28, fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.textMuted, textAlign: 'center' }}>{p.assists}</Text>
+                  <Text style={{ width: 28, fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.textMuted, textAlign: 'center' }}>{p.minutes || '-'}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+      )}
+      <View style={styles.divider} />
+    </>
   );
 }
 
