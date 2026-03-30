@@ -2,7 +2,9 @@
 
 > **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Documented sports browse flow (Sports Hub → Teams grid → pre-filled search) in Add Log. Updated search to note pagination/load more and multi-word token search.
 > - 2026-03-29: Fixed stale Ball Don't Lie reference in Add Log search to ESPN.
+
 > - 2026-03-29: Fully documented the implementation of Logbook's dynamic timeline layout, including Upcoming vs Past grouping, monthly dividers, and days-remaining pills.
 > - 2026-03-28: Added Search/Explore tab for discovering events logged by other users. Added Edit/Create Log Modal with type-specific input sections for all 6 event types. Updated navigation graph with search and edit log flows.
 
@@ -122,18 +124,25 @@ graph LR
     G --> E
 ```
 
-**Step 1 — Choose Type & Search Real Events (API):**
-- Users first select the event type (Sports, Movies, Concerts, Nightlife, etc.)
-- **CRITICAL REQUIREMENT:** The search bar always queries a **real-world database** via our APIs (e.g., ESPN for NBA, TMDB for Movies, Google Places for Restaurants/Nightlife).
-- Users DO NOT type custom text here by default; they search to select a canonical, shared object from the API.
-- Results display rich entity data (e.g., "Celtics vs Mavericks · TD Garden · Nov 1").
+**Step 1 — Choose Type:**
+- Users select the event type (Sports, Movies, Concerts, Nightlife, etc.)
 
-**Step 2 — Select Event & Fallback:**
-- Tapping a result selects the canonical event.
-- If the search yields no results, a "Can't find it? Add Manually" fallback button appears.
-- Manual entry allows freeform text, but this is the exception, not the rule. Real API events ensure data cleanliness and social overlap matching.
+**Step 1a — Sports Browse Flow (Sports only):**
+- Selecting Sports shows a **Sports Hub** with two paths:
+  1. **Search All Games** — green full-width button, opens the freeform search screen
+  2. **Browse by Sport** — rows for NBA (active), NFL/MLB/NHL (coming soon)
+     - Tapping NBA shows a **3-column team logo grid** (30 NBA teams, ESPN logos)
+     - Tapping a team immediately loads that team's games — no search bar shown, just the team short name as the header (e.g. "Celtics")
+- Back navigation: Games → Teams → Hub → Type grid
 
-**Step 3 — Add Details:**
+**Step 2 — Search/Browse Real Events:**
+- Search queries Supabase via `search_events` RPC (fuzzy: trigram + levenshtein, ILIKE)
+- Multi-word queries (e.g. "celtics golden state") are tokenized: longest word sent to DB, secondary tokens post-filtered in API
+- Results paginate at 40/page; **Load More** button appears when `has_more: true`
+- If search yields no results, "Add Manually" fallback appears
+
+**Step 3 — Select Event & Add Details:**
+
 - Notes field (optional, multiline)
 - Privacy selector: 🌍 Public · 👥 Friends · 🔒 Private
 - Rating (optional, 1-5 stars)

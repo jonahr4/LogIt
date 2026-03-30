@@ -1,8 +1,11 @@
 # Log It — Feature Roadmap
 
-> **Last updated:** 2026-03-29
+> **Last updated:** 2026-03-30
 > **Changes:**
+> - 2026-03-30: Checked off photo upload (Firebase Storage, log_photos table, compression, react-native-image-viewing viewer). Fixed stale Supabase Storage reference in log creation.
+> - 2026-03-29: Checked off levenshtein search, search pagination, and sports team browse flow.
 > - 2026-03-29: Added venue normalization and improved search (migrations 008–009) to Event Data & Search phase. Noted log deletion endpoint as implemented.
+
 > - 2026-03-29: Marked Phase 4 (Log Creation) and Phase 5 (Personal Logbook) complete — API endpoints and UI fully wired for reading/writing logs.
 > - 2026-03-28: Marked Phase 3 (Event Data & Search) complete — NBA cron sync, full-text search, venue enrichment, season backfill implemented. Added `EXTERNAL_SERVICES.md` reference. Added event countdown stretch goal to Notifications.
 > - 2026-03-28: Consolidated completed UI foundation under MVP, reprioritized full backend execution (NBA Search, Real Log Creation, Logbook Fetching), and pulled Friend System into MVP for global feed filtering.
@@ -63,14 +66,18 @@ gantt
 - [x] Post-game score/status updates (cron updates existing rows)
 - [x] Venue enrichment — static NBA arena mapping with name, city, state, lat/lng
 - [x] Venue normalization — `venues` table (migration 008) with `venue_id` FK on `events`
-- [x] Fuzzy/typo-tolerant search — `pg_trgm` trigram indexes (migration 009)
+- [x] Fuzzy/typo-tolerant search — `pg_trgm` trigram + `levenshtein` word-level + multi-token API splitting (migrations 009, 011)
+- [x] Search pagination — 40 results/page, `offset` param, `has_more` flag, Load More button
+- [x] Sports browse flow — Sports Hub → 30-team NBA logo grid → pre-filled team games
 - [x] Season backfill endpoint (`api/cron/backfill-nba.ts`) for historical data
 - [ ] "Event not found" → manual entry fallback (UI wired, backend pending)
+
 
 ### 4. Backend: Log Creation
 - [x] Select real event from search results
 - [x] Store user logs mapped to events in Supabase
-- [x] Add optional notes, rating, photos (in Supabase Storage)
+- [x] Add optional notes, rating, companions — **implemented**
+- [x] Photos — up to 5 per log, stored in **Firebase Storage**, compressed on-device (~350KB), with fullscreen swipe viewer (`react-native-image-viewing`); metadata in `log_photos` table
 - [x] Add companions (tag friends or freeform)
 - [x] Privacy configuration (public / friends / private)
 - [x] Prevent duplicate logs for same event (or allow multiple attendances)

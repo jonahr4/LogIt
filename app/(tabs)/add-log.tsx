@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,10 +35,57 @@ const EVENT_TYPES = [
   { key: 'custom', icon: 'create-outline' as const, label: 'Custom' },
 ] as const;
 
+const SUPPORTED_SPORTS = [
+  { key: 'nba', label: 'NBA', icon: 'basketball-outline' as const, active: true },
+  { key: 'nfl', label: 'NFL', icon: 'american-football-outline' as const, active: false },
+  { key: 'mlb', label: 'MLB', icon: 'baseball-outline' as const, active: false },
+  { key: 'nhl', label: 'NHL', icon: 'snow-outline' as const, active: false },
+] as const;
+
+const NBA_TEAMS = [
+  { name: 'Atlanta Hawks',           short: 'Hawks',       abbrev: 'atl' },
+  { name: 'Boston Celtics',          short: 'Celtics',     abbrev: 'bos' },
+  { name: 'Brooklyn Nets',           short: 'Nets',        abbrev: 'bkn' },
+  { name: 'Charlotte Hornets',       short: 'Hornets',     abbrev: 'cha' },
+  { name: 'Chicago Bulls',           short: 'Bulls',       abbrev: 'chi' },
+  { name: 'Cleveland Cavaliers',     short: 'Cavs',        abbrev: 'cle' },
+  { name: 'Dallas Mavericks',        short: 'Mavs',        abbrev: 'dal' },
+  { name: 'Denver Nuggets',          short: 'Nuggets',     abbrev: 'den' },
+  { name: 'Detroit Pistons',         short: 'Pistons',     abbrev: 'det' },
+  { name: 'Golden State Warriors',   short: 'Warriors',    abbrev: 'gs'  },
+  { name: 'Houston Rockets',         short: 'Rockets',     abbrev: 'hou' },
+  { name: 'Indiana Pacers',          short: 'Pacers',      abbrev: 'ind' },
+  { name: 'Los Angeles Clippers',    short: 'Clippers',    abbrev: 'lac' },
+  { name: 'Los Angeles Lakers',      short: 'Lakers',      abbrev: 'lal' },
+  { name: 'Memphis Grizzlies',       short: 'Grizzlies',   abbrev: 'mem' },
+  { name: 'Miami Heat',              short: 'Heat',        abbrev: 'mia' },
+  { name: 'Milwaukee Bucks',         short: 'Bucks',       abbrev: 'mil' },
+  { name: 'Minnesota Timberwolves',  short: 'Wolves',      abbrev: 'min' },
+  { name: 'New Orleans Pelicans',    short: 'Pelicans',    abbrev: 'no'  },
+  { name: 'New York Knicks',         short: 'Knicks',      abbrev: 'ny'  },
+  { name: 'Oklahoma City Thunder',   short: 'Thunder',     abbrev: 'okc' },
+  { name: 'Orlando Magic',           short: 'Magic',       abbrev: 'orl' },
+  { name: 'Philadelphia 76ers',      short: '76ers',       abbrev: 'phi' },
+  { name: 'Phoenix Suns',            short: 'Suns',        abbrev: 'phx' },
+  { name: 'Portland Trail Blazers',  short: 'Blazers',     abbrev: 'por' },
+  { name: 'Sacramento Kings',        short: 'Kings',       abbrev: 'sac' },
+  { name: 'San Antonio Spurs',       short: 'Spurs',       abbrev: 'sa'  },
+  { name: 'Toronto Raptors',         short: 'Raptors',     abbrev: 'tor' },
+  { name: 'Utah Jazz',               short: 'Jazz',        abbrev: 'utah'},
+  { name: 'Washington Wizards',      short: 'Wizards',     abbrev: 'wsh' },
+].map(t => ({
+  ...t,
+  logo: `https://a.espncdn.com/i/teamlogos/nba/500/${t.abbrev}.png`,
+}));
+
 export default function AddLogScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [selectedEventToLog, setSelectedEventToLog] = useState<any>(null);
+
+  // Sports browse state
+  const [sportsStep, setSportsStep] = useState<'hub' | 'teams' | 'search'>('hub');
+  const [selectedSport, setSelectedSport] = useState<string | null>(null);
 
   // Real API search state
   const [searchResults, setSearchResults] = useState<EventSearchResult[]>([]);
@@ -49,6 +97,21 @@ export default function AddLogScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const PAGE_SIZE = 40;
+  const { width: screenWidth } = useWindowDimensions();
+  // 3-column team grid: screen - horizontal padding (32) - 2 gaps (24) / 3
+  const teamTileWidth = (screenWidth - 32 - 24) / 3;
+
+  // Fully reset sports browse + search state
+  const resetAll = useCallback(() => {
+    setSelectedType(null);
+    setSportsStep('hub');
+    setSelectedSport(null);
+    setActiveSearchQuery('');
+    setSearchResults([]);
+    setSearchError(null);
+    setHasMore(false);
+    setCurrentOffset(0);
+  }, []);
 
   // ─── Debounced search ────────────────────────────────────────────────
   const handleSearchChange = useCallback(
@@ -226,6 +289,34 @@ export default function AddLogScreen() {
     return parts.join(' · ');
   };
 
+  // ─── Immediate search for team tap (no debounce) ─────────────────────
+  const searchTeamGames = useCallback(async (teamName: string) => {
+    setActiveSearchQuery(teamName);
+    setSearchError(null);
+    setHasMore(false);
+    setCurrentOffset(0);
+    setSearchResults([]);
+    setIsSearching(true);
+    try {
+      const response = await api.get<{
+        data: EventSearchResult[];
+        meta: { count: number; query: string; has_more: boolean };
+      }>('/api/events/search', {
+        q: teamName,
+        event_type: 'sports',
+        limit: String(PAGE_SIZE),
+        offset: '0',
+      });
+      setSearchResults(response.data || []);
+      setHasMore(response.meta?.has_more ?? false);
+      setCurrentOffset(PAGE_SIZE);
+    } catch (err: any) {
+      setSearchError(err?.error?.message || 'Search failed.');
+    } finally {
+      setIsSearching(false);
+    }
+  }, [PAGE_SIZE]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -235,7 +326,7 @@ export default function AddLogScreen() {
         {/* Header */}
         <Text style={styles.title}>Log New</Text>
 
-        {/* Event type selector OR Search Step */}
+        {/* ── TYPE GRID ─────────────────────────────────────────────── */}
         {!selectedType ? (
           <>
             <Text style={styles.sectionLabel}>WHAT DID YOU DO?</Text>
@@ -249,16 +340,13 @@ export default function AddLogScreen() {
                       setSelectedEventToLog({ eventType: 'manual' });
                     } else {
                       setSelectedType(type.key);
+                      setSportsStep('hub');
                     }
                   }}
                 >
                   <GlassCard borderRadius={24} style={styles.eventTypeCard}>
                     <View style={styles.eventTypeIconCircle}>
-                      <Ionicons
-                        name={type.icon}
-                        size={26}
-                        color={Colors.primaryContainer}
-                      />
+                      <Ionicons name={type.icon} size={26} color={Colors.primaryContainer} />
                     </View>
                     <Text style={styles.eventTypeLabel}>{type.label}</Text>
                   </GlassCard>
@@ -275,46 +363,161 @@ export default function AddLogScreen() {
               </Text>
             </GlassCard>
           </>
-        ) : (
+
+        ) : selectedType === 'sports' && sportsStep === 'hub' ? (
+          /* ── SPORTS HUB ─────────────────────────────────────────── */
           <View style={styles.apiSearchContainer}>
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedType(null);
-                setActiveSearchQuery('');
-                setSearchResults([]);
-                setSearchError(null);
-                setHasMore(false);
-                setCurrentOffset(0);
-              }}
-              style={styles.backButton}
-            >
+            <TouchableOpacity onPress={resetAll} style={styles.backButton}>
               <Ionicons name="arrow-back" size={20} color={Colors.text} />
               <Text style={styles.backButtonText}>Back to types</Text>
             </TouchableOpacity>
 
-            <Text style={styles.apiSearchTitle}>
-              Find your{' '}
-              {EVENT_TYPES.find((t) => t.key === selectedType)?.label.slice(0, -1)}
-            </Text>
-            <Text style={styles.apiSearchSubtitle}>
-              Search our database to log the exact event you attended.
-            </Text>
+            <Text style={styles.apiSearchTitle}>Sports</Text>
+            <Text style={styles.apiSearchSubtitle}>Search for a game or browse by sport.</Text>
 
-            <GlassCard borderRadius={20} style={[styles.searchBar, { marginTop: 16 }]}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder={`Search ${selectedType === 'sports' ? 'teams or games' : selectedType}...`}
-                placeholderTextColor={Colors.textMuted}
-                value={activeSearchQuery}
-                onChangeText={handleSearchChange}
-                autoFocus
-              />
-              {isSearching ? (
-                <ActivityIndicator size="small" color={Colors.primaryContainer} />
-              ) : (
-                <Ionicons name="search" size={22} color={Colors.textMuted} />
-              )}
-            </GlassCard>
+            {/* Search All Games button */}
+            <TouchableOpacity
+              style={styles.searchAllButton}
+              activeOpacity={0.75}
+              onPress={() => setSportsStep('search')}
+            >
+              <Ionicons name="search" size={20} color={Colors.primaryContainer} />
+              <Text style={styles.searchAllText}>Search All Games</Text>
+              <Ionicons name="chevron-forward" size={18} color={Colors.primaryContainer} style={{ marginLeft: 'auto' }} />
+            </TouchableOpacity>
+
+            {/* Sport rows */}
+            <Text style={[styles.sectionLabel, { marginTop: 24 }]}>BROWSE BY SPORT</Text>
+            <View style={styles.sportRowsContainer}>
+              {SUPPORTED_SPORTS.map((sport) => (
+                <TouchableOpacity
+                  key={sport.key}
+                  activeOpacity={sport.active ? 0.7 : 1}
+                  onPress={() => {
+                    if (!sport.active) return;
+                    setSelectedSport(sport.key);
+                    setSportsStep('teams');
+                  }}
+                >
+                  <View style={[styles.sportRow, !sport.active && styles.sportRowInactive]}>
+                    <View style={styles.sportRowIcon}>
+                      <Ionicons name={sport.icon} size={20} color={sport.active ? Colors.primaryContainer : Colors.textMuted} />
+                    </View>
+                    <Text style={[styles.sportRowLabel, !sport.active && { color: Colors.textMuted }]}>
+                      {sport.label}
+                    </Text>
+                    {'badge' in sport && sport.active ? null
+                    : !sport.active ? (
+                      <Text style={styles.sportSoonText}>Soon</Text>
+                    ) : null}
+                    {sport.active && (
+                      <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} style={{ marginLeft: 'auto' }} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+        ) : selectedType === 'sports' && sportsStep === 'teams' ? (
+          /* ── TEAM GRID ───────────────────────────────────────────── */
+          <View style={styles.apiSearchContainer}>
+            <TouchableOpacity onPress={() => setSportsStep('hub')} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={20} color={Colors.text} />
+              <Text style={styles.backButtonText}>Back to sports</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.apiSearchTitle}>
+              {selectedSport?.toUpperCase() ?? 'NBA'} Teams
+            </Text>
+            <Text style={styles.apiSearchSubtitle}>Tap a team to see their games.</Text>
+
+            <View style={styles.teamsGrid}>
+              {NBA_TEAMS.map((team) => (
+                <TouchableOpacity
+                  key={team.abbrev}
+                  activeOpacity={0.7}
+                  style={[styles.teamTile, { width: teamTileWidth, height: teamTileWidth }]}
+                  onPress={() => {
+                    setSportsStep('search');
+                    searchTeamGames(team.name);
+                  }}
+                >
+                  <Image
+                    source={{ uri: team.logo }}
+                    style={styles.teamLogo}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.teamShortName} numberOfLines={1}>{team.short}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+        ) : (
+          /* ── SEARCH VIEW (sports pre-filled or generic) ────────── */
+          <View style={styles.apiSearchContainer}>
+            <TouchableOpacity
+              onPress={() => {
+                if (selectedType === 'sports' && selectedSport) {
+                  // came from team tap → back to team list
+                  setSportsStep('teams');
+                  setActiveSearchQuery('');
+                  setSearchResults([]);
+                } else if (selectedType === 'sports') {
+                  // came from search all → back to hub
+                  setSportsStep('hub');
+                  setActiveSearchQuery('');
+                  setSearchResults([]);
+                } else {
+                  resetAll();
+                }
+              }}
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={20} color={Colors.text} />
+              <Text style={styles.backButtonText}>
+                {selectedType === 'sports' && selectedSport ? 'Back to teams'
+                  : selectedType === 'sports' ? 'Back to sports'
+                  : 'Back to types'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Team browse header: show team name + count instead of search bar */}
+            {selectedType === 'sports' && selectedSport && activeSearchQuery ? (
+              <View style={styles.teamBrowseHeader}>
+                <Text style={styles.apiSearchTitle}>
+                  {NBA_TEAMS.find(t => t.name === activeSearchQuery)?.short ?? activeSearchQuery}
+                </Text>
+                {isSearching && (
+                  <ActivityIndicator size="small" color={Colors.primaryContainer} />
+                )}
+              </View>
+            ) : (
+              <>
+                <Text style={styles.apiSearchTitle}>
+                  {`Find your ${EVENT_TYPES.find(t => t.key === selectedType)?.label.slice(0, -1) ?? ''}`}
+                </Text>
+                <Text style={styles.apiSearchSubtitle}>
+                  Search our database to log the exact event you attended.
+                </Text>
+                <GlassCard borderRadius={20} style={[styles.searchBar, { marginTop: 16 }]}>
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder={`Search ${selectedType === 'sports' ? 'teams or games' : selectedType}...`}
+                    placeholderTextColor={Colors.textMuted}
+                    value={activeSearchQuery}
+                    onChangeText={handleSearchChange}
+                    autoFocus
+                  />
+                  {isSearching ? (
+                    <ActivityIndicator size="small" color={Colors.primaryContainer} />
+                  ) : (
+                    <Ionicons name="search" size={22} color={Colors.textMuted} />
+                  )}
+                </GlassCard>
+              </>
+            )}
 
             {/* Results */}
             <View style={styles.apiResultsList}>
@@ -778,4 +981,122 @@ const styles = StyleSheet.create({
     color: Colors.primaryContainer,
     letterSpacing: 0.3,
   },
+
+  // ── Sports Hub ─────────────────────────────────────────────────────
+  searchAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 255, 194, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 194, 0.25)',
+    marginTop: 16,
+  },
+  searchAllText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.primaryContainer,
+    flex: 1,
+  },
+
+  // ── Sport rows ─────────────────────────────────────────────────────
+  sportRowsContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  sportRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  sportRowInactive: {
+    opacity: 0.45,
+  },
+  sportRowIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0, 255, 194, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sportRowLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.text,
+    flex: 1,
+  },
+  sportLiveBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 194, 0.3)',
+  },
+  sportLiveBadgeText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 9,
+    color: Colors.primaryContainer,
+    letterSpacing: 1,
+  },
+  sportSoonText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 12,
+    color: Colors.textMuted,
+    fontStyle: 'italic',
+  },
+
+  // ── Teams grid ─────────────────────────────────────────────────────
+  teamsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 8,
+  },
+  teamTile: {
+    width: '30%',
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+    padding: 8,
+  },
+  teamLogo: {
+    width: 52,
+    height: 52,
+  },
+  teamShortName: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  teamBrowseHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  teamEventCount: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
 });
+

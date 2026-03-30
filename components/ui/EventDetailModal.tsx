@@ -19,6 +19,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import ImageViewing from 'react-native-image-viewing';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -161,6 +162,8 @@ function useLiveScore(event: EventDetail | null) {
 export function EventDetailModal({ event, onClose, onEdit, onDelete }: Props) {
   const translateY = useRef(new Animated.Value(800)).current;
   const [topHeight, setTopHeight] = useState(0);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
   const { liveScore, isFetching } = useLiveScore(event);
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
@@ -727,16 +730,41 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
       {event.photos && event.photos.length > 0 && (
         <>
           <Text style={styles.miniLabel}>PHOTOS</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -22 }} contentContainerStyle={{ paddingHorizontal: 22, gap: 10 }}>
-            {event.photos.map((uri, i) => (
-              <Image
-                key={i}
-                source={{ uri }}
-                style={isNightlife ? styles.photoLarge : styles.photo}
-              />
-            ))}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginHorizontal: -22 }}
+            contentContainerStyle={{ paddingHorizontal: 22, gap: 10 }}
+          >
+            {event.photos.map((photo: any, i: number) => {
+              const uri = typeof photo === 'string' ? photo : photo.url;
+              return (
+                <TouchableOpacity
+                  key={i}
+                  activeOpacity={0.85}
+                  onPress={() => setViewerIndex(i)}
+                >
+                  <Image
+                    source={{ uri }}
+                    style={isNightlife ? styles.photoLarge : styles.photo}
+                  />
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
           <View style={styles.divider} />
+
+          {/* Fullscreen viewer */}
+          <ImageViewing
+            images={event.photos.map((photo: any) => ({
+              uri: typeof photo === 'string' ? photo : photo.url,
+            }))}
+            imageIndex={viewerIndex ?? 0}
+            visible={viewerIndex !== null}
+            onRequestClose={() => setViewerIndex(null)}
+            swipeToCloseEnabled
+            doubleTapToZoomEnabled
+          />
         </>
       )}
 

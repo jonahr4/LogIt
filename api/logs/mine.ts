@@ -115,6 +115,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // Fetch photos for all logs
+    let photosMap: Record<string, any[]> = {};
+    if (logIds.length > 0) {
+      const { data: photos } = await supabase
+        .from('log_photos')
+        .select('id, log_id, url, firebase_path, display_order')
+        .in('log_id', logIds)
+        .order('display_order', { ascending: true });
+
+      if (photos) {
+        for (const p of photos) {
+          if (!photosMap[p.log_id]) photosMap[p.log_id] = [];
+          photosMap[p.log_id].push({ id: p.id, url: p.url, firebase_path: p.firebase_path, display_order: p.display_order });
+        }
+      }
+    }
+
     // Format response
     const formattedLogs = (logs || []).map((log: any) => {
       const event = log.events;
@@ -125,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         notes: log.notes,
         privacy: log.privacy,
         rating: log.rating,
-        photos: log.photos,
+        photos: photosMap[log.id] || [],
         logged_at: log.logged_at,
         companions: companionsMap[log.id] || [],
         event: event ? {

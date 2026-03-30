@@ -1,8 +1,11 @@
 # Log It — API Design
 
-> **Last updated:** 2026-03-29
+> **Last updated:** 2026-03-30
 > **Changes:**
+> - 2026-03-30: Added `POST/DELETE /api/logs/photos` for photo metadata management (actual upload goes client→Firebase Storage directly). Removed stale `photo_urls` from log create request body.
+> - 2026-03-29: Updated `/api/events/search` — added `offset` pagination param, `has_more` in response meta, bumped default limit to 40, documented fuzzy search strategy (trigram + levenshtein word-level + multi-token splitting).
 > - 2026-03-29: Added implemented `POST /api/logs/delete` and `GET /api/events/box-score` endpoints.
+
 > - 2026-03-29: Added `/api/logs/update` endpoint for editing existing logs.
 > - 2026-03-28: Added implemented status markers to endpoints. Documented new cron endpoints (`sync-nba`, `backfill-nba`), event search (`/api/events/search`), and log creation (`/api/logs/create`). Added `EXTERNAL_SERVICES.md` cross-reference.
 > - 2026-03-26: Initial document creation
@@ -90,11 +93,21 @@ Events follow a **polymorphic pattern** — all event types share a common base 
 | `event_type` | enum | Filter by type: `sports`, `movie`, `concert`, `restaurant`, `manual` |
 | `date_from` | ISO date | Start of date range |
 | `date_to` | ISO date | End of date range |
-| `venue` | string | Filter by venue name |
-| `city` | string | Filter by city |
-| `status` | enum | `upcoming`, `in_progress`, `completed` |
-| `page` | int | Pagination offset |
-| `limit` | int | Results per page (default 20, max 50) |
+| `limit` | int | Results per page (default 40, max 100) |
+| `offset` | int | Pagination offset (default 0) |
+
+**Fuzzy search strategy** (implemented in `search_events` RPC):
+- ILIKE substring match on title, team names, venue, league, sport
+- `pg_trgm` trigram similarity (minor typos)
+- `levenshtein` word-level distance ≤ 2 (transposition typos e.g. "celitcs" → "Celtics")
+- Multi-word queries tokenized in API: longest token queries DB, shorter tokens post-filtered
+
+**Response meta:**
+```json
+{ "count": 40, "query": "celtics", "offset": 0, "has_more": true }
+```
+Client shows a **Load More** button when `has_more: true`; tapping appends next page.
+
 
 **Type-specific filters** (applied when `event_type` is specified):
 
@@ -247,6 +260,8 @@ All event responses share a **common base shape** with a `type_metadata` object 
 | `GET /logs/:id` | GET | Yes | Get a specific log | — |
 | `POST /api/logs/update` | POST | Yes (owner) | Update a log (notes, privacy, rating, companions) | ✅ Implemented |
 | `POST /api/logs/delete` | POST | Yes (owner) | Delete a log and its companions | ✅ Implemented |
+| `POST /api/logs/photos` | POST | Yes | Save photo metadata after client uploads to Firebase Storage | ✅ Implemented |
+| `DELETE /api/logs/photos` | DELETE | Yes (owner) | Remove a photo record from DB (client deletes from Firebase) | ✅ Implemented |
 
 ### `POST /logs` — Request Body
 
@@ -256,13 +271,27 @@ All event responses share a **common base shape** with a `type_metadata` object 
   "notes": "Incredible game, went to OT!",
   "privacy": "public",
   "rating": 5,
-  "photo_urls": ["https://storage.supabase.co/..."],
   "companions": [
     { "user_id": "usr_002", "name": "Mike" },
     { "name": "My dad" }
   ]
 }
 ```
+
+> **Photos** are uploaded separately after log creation via `POST /api/logs/photos` (client uploads directly to Firebase Storage, then saves URL here).
+
+### `POST /api/logs/photos` — Request Body
+
+```json
+{
+  "log_id": "log_abc123",
+  "firebase_path": "photos/uid/log_id/1234567890.jpg",
+  "url": "https://firebasestorage.googleapis.com/...",
+  "display_order": 0
+}
+```
+
+Returns `{ photo: { id, url, firebase_path, display_order } }`. Max 5 photos per log enforced server-side.
 
 ### `POST /logs` — Response
 

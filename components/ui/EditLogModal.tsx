@@ -18,8 +18,15 @@ import {
   PanResponder,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  ActivityIndicator,
+  Alert,
   type GestureResponderEvent,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadPhoto, deletePhotoFromStorage } from '@/lib/firebaseStorage';
+import { api } from '@/lib/api';
+import { firebaseAuth } from '@/lib/firebase';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,6 +51,8 @@ const PRICE_LEVELS = ['$', '$$', '$$$', '$$$$'] as const;
 const VENUE_TYPES = ['Club', 'Bar', 'Lounge', 'Rooftop', 'Pub'] as const;
 const WATCHED_AT_OPTIONS = ['Theater', 'Home', 'Drive-In', 'Streaming'] as const;
 const SPORT_OPTIONS = ['Basketball', 'Football', 'Baseball', 'Hockey'] as const;
+
+type PhotoEntry = { localUri?: string; id?: string; url?: string; firebase_path?: string; uploading?: boolean };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -80,6 +89,9 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public');
   const [companionInput, setCompanionInput] = useState('');
   const [companions, setCompanions] = useState<Array<{ name: string }>>([]);
+
+  // Photos
+  const [photos, setPhotos] = useState<PhotoEntry[]>([]);
 
   // Sports
   const [sport, setSport] = useState('');
@@ -129,7 +141,13 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       setNote(event.note || '');
       setRating(event.rating || 0);
       setPrivacy(event.privacy || 'public');
-      setCompanions(event.companions?.map(c => ({ name: c.name })) || []);
+      setCompanions(event.companions?.map((c: any) => ({ name: c.name })) || []);
+      // Pre-fill photos from existing log
+      if (event.photos && Array.isArray(event.photos)) {
+        setPhotos(event.photos.map((p: any) => ({ id: p.id, url: p.url, firebase_path: p.firebase_path })));
+      } else {
+        setPhotos([]);
+      }
       // Sports
       setSport(event.sport || '');
       setLeague(event.league || '');
@@ -176,6 +194,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       setCuisine(''); setPriceLevel('');
       setVenueType(''); setVibe(''); setDressCode('');
       setMusicGenre(''); setNightlifePriceLevel('');
+      setPhotos([]);
     }
   }, [event]);
 
@@ -231,7 +250,74 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
     })
   ).current;
 
+  // ─── Photo handlers ──────────────────────────────────────────────────
+
+  const handlePickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow access to your photo library.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
+      allowsEditing: false,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+
+    const localUri = result.assets[0].uri;
+    const tempEntry: PhotoEntry = { localUri, uploading: true };
+    const tempIndex = photos.length;
+    setPhotos(prev => [...prev, tempEntry]);
+
+    try {
+      const userId = firebaseAuth.currentUser?.uid;
+      if (!userId || !event?.id) throw new Error('Not authenticated or no log_id');
+
+      const { url, firebasePath } = await uploadPhoto(localUri, userId, event.id);
+
+      const response = await api.post<{ photo: { id: string; url: string; firebase_path: string; display_order: number } }>(
+        '/api/logs/photos',
+        { log_id: event.id, firebase_path: firebasePath, url, display_order: tempIndex }
+      );
+
+      setPhotos(prev => {
+        const updated = [...prev];
+        updated[tempIndex] = { id: response.photo.id, url: response.photo.url, firebase_path: response.photo.firebase_path };
+        return updated;
+      });
+    } catch (err: any) {
+      // Roll back optimistic entry
+      setPhotos(prev => prev.filter((_, i) => i !== tempIndex));
+      Alert.alert('Upload failed', err?.message || 'Could not upload photo. Please try again.');
+    }
+  };
+
+  const handleRemovePhoto = async (index: number) => {
+    const photo = photos[index];
+    // Optimistic removal
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+
+    try {
+      if (photo.firebase_path) {
+        await deletePhotoFromStorage(photo.firebase_path);
+      }
+      if (photo.id) {
+        await api.delete('/api/logs/photos', { photo_id: photo.id });
+      }
+    } catch (err: any) {
+      // Restore on failure
+      setPhotos(prev => {
+        const restored = [...prev];
+        restored.splice(index, 0, photo);
+        return restored;
+      });
+      Alert.alert('Error', 'Could not remove photo. Please try again.');
+    }
+  };
+
   // ─── Save handler ────────────────────────────────────────────────────
+
   const handleSave = () => {
     const data: Partial<EventDetail> = {
       title,
@@ -525,12 +611,45 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
 
                   <View style={styles.divider} />
 
-                  {/* Photos placeholder */}
+                  {/* Photos */}
                   <Text style={styles.miniLabel}>PHOTOS</Text>
-                  <TouchableOpacity style={styles.photoPlaceholder} activeOpacity={0.7}>
-                    <Ionicons name="camera-outline" size={24} color={Colors.textMuted} />
-                    <Text style={styles.photoPlaceholderText}>Add photos (coming soon)</Text>
-                  </TouchableOpacity>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.photoRow}
+                  >
+                    {photos.map((photo, index) => (
+                      <View key={index} style={styles.photoThumb}>
+                        <Image
+                          source={{ uri: photo.url || photo.localUri }}
+                          style={styles.photoThumbImage}
+                          resizeMode="cover"
+                        />
+                        {photo.uploading ? (
+                          <View style={styles.photoUploadingOverlay}>
+                            <ActivityIndicator size="small" color="#fff" />
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={styles.photoRemoveBtn}
+                            onPress={() => handleRemovePhoto(index)}
+                          >
+                            <Ionicons name="close" size={12} color="#fff" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ))}
+                    {photos.length < 5 && (
+                      <TouchableOpacity
+                        style={styles.photoAddBtn}
+                        activeOpacity={0.7}
+                        onPress={handlePickPhoto}
+                      >
+                        <Ionicons name="camera-outline" size={22} color={Colors.textMuted} />
+                        <Text style={styles.photoAddText}>{photos.length === 0 ? 'Add Photos' : '+'}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </ScrollView>
 
                   <View style={styles.divider} />
 
@@ -1317,22 +1436,55 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
 
-  // ── Photos placeholder ──
-  photoPlaceholder: {
+  // ── Photos ──
+  photoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 10,
+    paddingVertical: 4,
+  },
+  photoThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  photoThumbImage: {
+    width: '100%',
+    height: '100%',
+  },
+  photoUploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoRemoveBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoAddBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
     backgroundColor: INPUT_BG,
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    borderRadius: 14,
     borderWidth: 1,
     borderColor: INPUT_BORDER,
     borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
-  photoPlaceholderText: {
+  photoAddText: {
     fontFamily: FontFamily.bodyMedium,
-    fontSize: 13,
+    fontSize: 11,
     color: Colors.textMuted,
   },
 

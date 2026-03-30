@@ -1,7 +1,8 @@
 # Log It — Tech Stack & Architecture
 
-> **Last updated:** 2026-03-29
+> **Last updated:** 2026-03-30
 > **Changes:**
+> - 2026-03-30: Changed Storage layer for user photos to Firebase Storage (free 5GB, already in stack). Added expo-image-picker, expo-image-manipulator, react-native-image-viewing dependencies. Updated architecture diagram. Supabase Storage still used for avatars/logos.
 > - 2026-03-29: Updated project structure to reflect actual repo (added `server-lib/`, `scripts/`, `api/` subdirectories). Removed stale Ball Don't Lie decision note.
 > - 2026-03-29: Replaced Ball Dont Lie with ESPN API for primary sports ingestion and media. Added Wikipedia scraper strategy for NBA generic venue imagery.
 > - 2026-03-28: Added cron job architecture (daily NBA sync), NBA venue static mapping, backfill endpoint. Cross-ref `EXTERNAL_SERVICES.md` for full ingestion strategy per event type.
@@ -16,7 +17,8 @@
 | **Backend / API** | Vercel (serverless functions) | Integrates cleanly with serverless API layer |
 | **Auth** | Firebase Authentication | Familiar, mature, Google/Apple built-in |
 | **Database** | Supabase (Postgres) | Relational — natural fit for events, logs, friendships |
-| **Storage** | Supabase Storage | User photos, avatars, sports team logos |
+| **Storage (user photos)** | Firebase Storage | Free 5GB tier; already in stack via Firebase Auth; client-direct upload (no API hop) |
+| **Storage (avatars/logos)** | Supabase Storage | Integrated with Supabase RLS for team logos and avatars |
 | **Event Data (Sports)** | ESPN API | Free, unauthenticated, reliable box scores and schedules |
 | **Event Data (Movies)** | TMDB | Free API key, movie posters + metadata |
 | **Event Data (Concerts)** | Ticketmaster Discovery API | Free, millions of events, artist data |
@@ -61,6 +63,7 @@ graph TB
 
     subgraph Firebase["🔥 Firebase"]
         Auth[Authentication]
+        FBStorage["Storage (user photos)"]
         Push[Push Notifications]
     end
 
@@ -76,6 +79,7 @@ graph TB
     State --> API
     State --> Auth
     State --> Realtime
+    State --> FBStorage
     API --> DB
     API --> Storage
     Cron --> SportsAPI
@@ -167,7 +171,7 @@ LogIt/
 ├── types/                  # TypeScript type definitions (event, log, user, api)
 ├── assets/                 # Images, fonts
 ├── supabase/               # Database migrations
-│   └── migrations/         # 001-009 (users, events, sports, logs, venues, search)
+│   └── migrations/         # 001-012 (users, events, sports, logs, venues, search, photos)
 └── docs/                   # Planning documentation
 ```
 

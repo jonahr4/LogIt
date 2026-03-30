@@ -1,7 +1,8 @@
 # Log It — Data Models
 
-> **Last updated:** 2026-03-29
+> **Last updated:** 2026-03-30
 > **Changes:**
+> - 2026-03-30: Added `log_photos` table (migration 012). Replaced stale `string[] photos` column on `user_event_logs` with proper FK relationship to `log_photos`. Updated ERD.
 > - 2026-03-29: Added implemented `Venue` entity (migration 008). Added `venue_id` FK on `events`. Added `nightlife` to event_type enum in entity details.
 > - 2026-03-29: Added `home_team_logo` and `away_team_logo` columns to `sports_events` for ESPN API caching compliance.
 > - 2026-03-28: `events`, `sports_events`, `user_event_logs`, `log_companions` tables now **implemented** (migrations 003-006). Full-text search index on events. Venue fields (name, state, lat, lng) populated via static NBA venue mapping.
@@ -24,6 +25,7 @@
 erDiagram
     USER ||--o{ USER_EVENT_LOG : creates
     EVENT ||--o{ USER_EVENT_LOG : "is logged in"
+    USER_EVENT_LOG ||--o{ LOG_PHOTO : "has photos"
     USER ||--o{ FRIENDSHIP : "has friends"
     USER ||--o{ NOTIFICATION : receives
     USER_EVENT_LOG ||--o{ COMMENT : "has comments"
@@ -117,10 +119,18 @@ erDiagram
         uuid event_id FK
         string notes
         enum privacy "public | friends | private"
-        int rating
-        string[] photos
+        float rating
         timestamp logged_at
         timestamp updated_at
+    }
+    LOG_PHOTO {
+        uuid id PK
+        uuid log_id FK
+        uuid user_id FK
+        string firebase_path "path in Firebase Storage for deletion"
+        string url "Firebase public download URL"
+        int display_order
+        timestamp created_at
     }
     LOG_COMPANION {
         uuid id PK

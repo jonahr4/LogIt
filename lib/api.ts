@@ -104,11 +104,12 @@ class ApiClient {
     return this.handleResponse<T>(response);
   }
 
-  async delete<T>(path: string): Promise<T> {
+  async delete<T>(path: string, body?: unknown): Promise<T> {
     const headers = await this.getAuthHeaders();
     const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers,
+      body: body ? JSON.stringify(body) : undefined,
     });
 
     return this.handleResponse<T>(response);
