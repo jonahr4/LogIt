@@ -252,45 +252,58 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
 
   // ─── Photo handlers ──────────────────────────────────────────────────
 
+  const MAX_PHOTOS = 10;
+
   const handlePickPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission needed', 'Please allow access to your photo library.');
       return;
     }
+
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) return;
+
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images' as const,
       quality: 1,
-      allowsEditing: false,
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
     });
-    if (result.canceled || !result.assets?.[0]) return;
+    if (result.canceled || !result.assets?.length) return;
 
-    const localUri = result.assets[0].uri;
-    const tempEntry: PhotoEntry = { localUri, uploading: true };
-    const tempIndex = photos.length;
-    setPhotos(prev => [...prev, tempEntry]);
-
-    try {
-      const userId = firebaseAuth.currentUser?.uid;
-      if (!userId || !event?.id) throw new Error('Not authenticated or no log_id');
-
-      const { url, firebasePath } = await uploadPhoto(localUri, userId, event.id);
-
-      const response = await api.post<{ photo: { id: string; url: string; firebase_path: string; display_order: number } }>(
-        '/api/logs/photos',
-        { log_id: event.id, firebase_path: firebasePath, url, display_order: tempIndex }
-      );
-
-      setPhotos(prev => {
-        const updated = [...prev];
-        updated[tempIndex] = { id: response.photo.id, url: response.photo.url, firebase_path: response.photo.firebase_path };
-        return updated;
-      });
-    } catch (err: any) {
-      // Roll back optimistic entry
-      setPhotos(prev => prev.filter((_, i) => i !== tempIndex));
-      Alert.alert('Upload failed', err?.message || 'Could not upload photo. Please try again.');
+    const userId = firebaseAuth.currentUser?.uid;
+    if (!userId || !event?.id) {
+      Alert.alert('Error', 'Cannot upload photos without a saved log.');
+      return;
     }
+
+    // Add all selected photos as uploading placeholders
+    const startIndex = photos.length;
+    const tempEntries: PhotoEntry[] = result.assets.map(a => ({ localUri: a.uri, uploading: true }));
+    setPhotos(prev => [...prev, ...tempEntries]);
+
+    // Upload each photo in parallel
+    await Promise.all(
+      result.assets.map(async (asset, offset) => {
+        const index = startIndex + offset;
+        try {
+          const { url, firebasePath } = await uploadPhoto(asset.uri, userId, event.id);
+          const response = await api.post<{ photo: { id: string; url: string; firebase_path: string; display_order: number } }>(
+            '/api/logs/photos',
+            { log_id: event.id, firebase_path: firebasePath, url, display_order: index }
+          );
+          setPhotos(prev => {
+            const updated = [...prev];
+            updated[index] = { id: response.photo.id, url: response.photo.url, firebase_path: response.photo.firebase_path };
+            return updated;
+          });
+        } catch (err: any) {
+          setPhotos(prev => prev.map((p, i) => i === index ? {} : p).filter(p => Object.keys(p).length > 0));
+          Alert.alert('Upload failed', `Photo ${offset + 1}: ${err?.message || 'Could not upload.'}`);
+        }
+      })
+    );
   };
 
   const handleRemovePhoto = async (index: number) => {
@@ -558,6 +571,56 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
 
                   <View style={styles.divider} />
 
+                  {/* Photos — below notes, edit mode only (requires saved log_id) */}
+                  <Text style={styles.miniLabel}>PHOTOS</Text>
+                  {isEdit ? (
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.photoRow}
+                    >
+                      {/* Add button is first */}
+                      {photos.length < MAX_PHOTOS && (
+                        <TouchableOpacity
+                          style={styles.photoAddBtn}
+                          activeOpacity={0.7}
+                          onPress={handlePickPhoto}
+                        >
+                          <Ionicons name="camera-outline" size={22} color={Colors.textMuted} />
+                          <Text style={styles.photoAddText}>Add</Text>
+                        </TouchableOpacity>
+                      )}
+                      {photos.map((photo, index) => (
+                        <View key={index} style={styles.photoThumb}>
+                          <Image
+                            source={{ uri: photo.url || photo.localUri }}
+                            style={styles.photoThumbImage}
+                            resizeMode="cover"
+                          />
+                          {photo.uploading ? (
+                            <View style={styles.photoUploadingOverlay}>
+                              <ActivityIndicator size="small" color="#fff" />
+                            </View>
+                          ) : (
+                            <TouchableOpacity
+                              style={styles.photoRemoveBtn}
+                              onPress={() => handleRemovePhoto(index)}
+                            >
+                              <Ionicons name="close" size={12} color="#fff" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <Text style={[styles.photoAddText, { color: Colors.textMuted, paddingVertical: 8 }]}>
+                      Save this log first to add photos.
+                    </Text>
+                  )}
+
+
+                  <View style={styles.divider} />
+
                   {/* Privacy */}
                   <Text style={styles.miniLabel}>PRIVACY</Text>
                   <View style={styles.segmentedRow}>
@@ -608,48 +671,6 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
                       ))}
                     </View>
                   )}
-
-                  <View style={styles.divider} />
-
-                  {/* Photos */}
-                  <Text style={styles.miniLabel}>PHOTOS</Text>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.photoRow}
-                  >
-                    {photos.map((photo, index) => (
-                      <View key={index} style={styles.photoThumb}>
-                        <Image
-                          source={{ uri: photo.url || photo.localUri }}
-                          style={styles.photoThumbImage}
-                          resizeMode="cover"
-                        />
-                        {photo.uploading ? (
-                          <View style={styles.photoUploadingOverlay}>
-                            <ActivityIndicator size="small" color="#fff" />
-                          </View>
-                        ) : (
-                          <TouchableOpacity
-                            style={styles.photoRemoveBtn}
-                            onPress={() => handleRemovePhoto(index)}
-                          >
-                            <Ionicons name="close" size={12} color="#fff" />
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    ))}
-                    {photos.length < 5 && (
-                      <TouchableOpacity
-                        style={styles.photoAddBtn}
-                        activeOpacity={0.7}
-                        onPress={handlePickPhoto}
-                      >
-                        <Ionicons name="camera-outline" size={22} color={Colors.textMuted} />
-                        <Text style={styles.photoAddText}>{photos.length === 0 ? 'Add Photos' : '+'}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </ScrollView>
 
                   <View style={styles.divider} />
 

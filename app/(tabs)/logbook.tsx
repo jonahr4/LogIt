@@ -71,6 +71,7 @@ export type EventDetail = {
   privacy?: 'public' | 'friends' | 'private';
   rating?: number;
   companions?: Array<{ name: string; user_id?: string }>;
+  photos?: Array<{ id: string; url: string; firebase_path: string; display_order?: number }>;
   external_id?: string;
 };
 
@@ -125,6 +126,7 @@ function mapLogToEventDetail(log: any): EventDetail {
       rating: log.rating,
       note: log.notes,
       companions: log.companions,
+      photos: log.photos || [],
     };
   }
 
@@ -168,6 +170,7 @@ function mapLogToEventDetail(log: any): EventDetail {
     privacy: log.privacy || 'public',
     rating: log.rating,
     companions: log.companions,
+    photos: log.photos || [],
     external_id: event.external_id,
   };
 }

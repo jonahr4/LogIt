@@ -78,7 +78,8 @@ export type EventDetail = {
   rating: number;
   note: string;
   companions?: Array<{ name: string; avatar?: string }>;
-  photos?: string[];
+  photos?: Array<{ id: string; url: string; firebase_path: string; display_order?: number }>;
+
   privacy?: 'public' | 'friends' | 'private';
   venueCity?: string;
   venueState?: string;
@@ -162,7 +163,6 @@ function useLiveScore(event: EventDetail | null) {
 export function EventDetailModal({ event, onClose, onEdit, onDelete }: Props) {
   const translateY = useRef(new Animated.Value(800)).current;
   const [topHeight, setTopHeight] = useState(0);
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const { liveScore, isFetching } = useLiveScore(event);
   const onCloseRef = useRef(onClose);
@@ -645,6 +645,18 @@ function MetaCell({
 // ─── BOTTOM CONTENT ───────────────────────────────────────────────────────────
 
 function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose: () => void; onEdit?: (event: EventDetail) => void }) {
+  // Photo viewer state — viewerOpen drives visibility, viewerInitialIndex sets starting photo
+  // currentIndexRef tracks swipe position WITHOUT causing re-renders (prevents flicker)
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
+  const currentIndexRef = useRef(0);
+  // Guard: ignore taps for 400ms after mount to prevent touch bleedthrough from the opener
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setIsReady(true), 400);
+    return () => clearTimeout(t);
+  }, []);
+
   const eventTypeLower = event.eventType?.toLowerCase() || '';
   const isSportsType = ['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(eventTypeLower);
   const isMovie = ['movie', 'film'].includes(eventTypeLower);
@@ -727,46 +739,71 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
       )}
 
       {/* ── Photos ── */}
-      {event.photos && event.photos.length > 0 && (
-        <>
-          <Text style={styles.miniLabel}>PHOTOS</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginHorizontal: -22 }}
-            contentContainerStyle={{ paddingHorizontal: 22, gap: 10 }}
-          >
-            {event.photos.map((photo: any, i: number) => {
-              const uri = typeof photo === 'string' ? photo : photo.url;
-              return (
-                <TouchableOpacity
-                  key={i}
-                  activeOpacity={0.85}
-                  onPress={() => setViewerIndex(i)}
-                >
-                  <Image
-                    source={{ uri }}
-                    style={isNightlife ? styles.photoLarge : styles.photo}
-                  />
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-          <View style={styles.divider} />
+      {event.photos && event.photos.length > 0 && (() => {
+        const openViewer = (i: number) => {
+          if (!isReady) return;
+          currentIndexRef.current = i;
+          setViewerInitialIndex(i);
+          setViewerOpen(true);
+        };
+        return (
+          <>
+            <Text style={styles.miniLabel}>PHOTOS</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginHorizontal: -22 }}
+              contentContainerStyle={{ paddingHorizontal: 22, gap: 10 }}
+            >
+              {event.photos.map((photo: any, i: number) => {
+                const uri = typeof photo === 'string' ? photo : photo.url;
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    activeOpacity={0.85}
+                    onPress={() => openViewer(i)}
+                  >
+                    <Image
+                      source={{ uri }}
+                      style={isNightlife ? styles.photoLarge : styles.photo}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <View style={styles.divider} />
 
-          {/* Fullscreen viewer */}
-          <ImageViewing
-            images={event.photos.map((photo: any) => ({
-              uri: typeof photo === 'string' ? photo : photo.url,
-            }))}
-            imageIndex={viewerIndex ?? 0}
-            visible={viewerIndex !== null}
-            onRequestClose={() => setViewerIndex(null)}
-            swipeToCloseEnabled
-            doubleTapToZoomEnabled
-          />
-        </>
-      )}
+            {/* Fullscreen viewer — onImageIndexChange uses a ref to avoid re-renders during swipe */}
+            <ImageViewing
+              images={event.photos.map((photo: any) => ({
+                uri: typeof photo === 'string' ? photo : photo.url,
+              }))}
+              imageIndex={viewerInitialIndex}
+              visible={viewerOpen}
+              onRequestClose={() => setViewerOpen(false)}
+              swipeToCloseEnabled
+              doubleTapToZoomEnabled
+              onImageIndexChange={(idx) => { currentIndexRef.current = idx; }}
+              HeaderComponent={({ imageIndex }) => (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 }}>
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '500' }}>
+                    {imageIndex + 1} / {event.photos!.length}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setViewerOpen(false)}
+                    hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                    style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Ionicons name="close" size={20} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+          </>
+        );
+      })()}
+
+
 
       {/* ── Rating (all types) ── */}
       <Text style={styles.miniLabel}>YOUR RATING</Text>

@@ -8,7 +8,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { verifyAuth, type AuthenticatedRequest } from '../../server-lib/auth';
 import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
 
-const MAX_PHOTOS_PER_LOG = 5;
+const MAX_PHOTOS_PER_LOG = 10;
+
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const authReq = req as AuthenticatedRequest;
@@ -37,15 +38,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Verify log belongs to user
-    const { data: log } = await supabase
+    console.log('[photos] POST lookup:', { log_id, supabase_user_id: user.id });
+    const { data: log, error: logError } = await supabase
       .from('user_event_logs')
       .select('id')
       .eq('id', log_id)
       .eq('user_id', user.id)
       .single();
 
+    console.log('[photos] log lookup result:', { found: !!log, error: logError?.message, code: logError?.code });
+
     if (!log) {
-      return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Log not found or not yours', status: 403 } });
+      return res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Log not found or not yours', status: 403, debug: { log_id, user_id: user.id } } });
     }
 
     // Enforce 5-photo limit
