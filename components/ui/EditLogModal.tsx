@@ -356,17 +356,20 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
               style={styles.ticketTop}
               onLayout={(e) => setTopHeight(e.nativeEvent.layout.height)}
             >
-              <View style={styles.ticketDragStrip} {...panResponder.panHandlers}>
-                <View style={styles.handleBar} />
-              </View>
+              {/* Draggable zone: handle bar + header badge */}
+              <View {...panResponder.panHandlers}>
+                <View style={styles.ticketDragStrip}>
+                  <View style={styles.handleBar} />
+                </View>
 
-              {/* Header badge */}
-              <View style={styles.editHeader}>
-                <View style={styles.editBadge}>
-                  <Ionicons name={getEventIcon(effectiveType)} size={16} color={Colors.primaryContainer} />
-                  <Text style={styles.editBadgeText}>
-                    {isEdit ? 'Edit' : 'New'} {typeLabel}
-                  </Text>
+                {/* Header badge */}
+                <View style={styles.editHeader}>
+                  <View style={styles.editBadge}>
+                    <Ionicons name={getEventIcon(effectiveType)} size={16} color={Colors.primaryContainer} />
+                    <Text style={styles.editBadgeText}>
+                      {isEdit ? 'Edit' : 'New'} {typeLabel}
+                    </Text>
+                  </View>
                 </View>
               </View>
 

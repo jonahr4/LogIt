@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-29
 > **Changes:**
+> - 2026-03-29: Added Strategy C — client-side ESPN live score fetch for non-completed sports events.
 > - 2026-03-29: Fixed stale BDL section headers and env var references to match ESPN-only ingestion.
 > - 2026-03-29: Replaced Ball Dont Lie with ESPN API entirely for both NBA game data and high-res sports team logos. Added Wikipedia venue scraping for static photo mappings.
 > The definitive reference for how LogIt sources event data. Each event type has a different ingestion strategy depending on data volume, API cost, and nature of the data.
@@ -18,7 +19,7 @@
 
 ## Ingestion Strategies
 
-There are two patterns used across event types:
+There are three patterns used across event types:
 
 ### Strategy A: Pre-Ingest via Cron (Store Everything)
 
@@ -38,6 +39,8 @@ User searches → Supabase (our own DB)
 
 **Trade-off:** Slightly more DB storage (negligible — e.g. ~1,230 NBA games/season).
 
+**Data freshness note:** The nightly cron captures final scores. For **live score display**, see Strategy C below.
+
 ---
 
 ### Strategy B: On-Demand via Live API (Store on Log)
@@ -56,6 +59,28 @@ User logs → Vercel API → upsert into Supabase events table
 | Always fresh | Results come directly from the source |
 
 **Trade-off:** Slower search (external API round-trip), higher API usage, search breaks if external API is down.
+
+---
+
+### Strategy C: Client-Side Live Fetch (Display Overlay Only)
+
+```
+User opens event detail → App fetches ESPN directly → Score overlaid on UI (no DB write)
+Nightly cron → Writes final score into DB
+```
+
+**Best for:** Surfacing **live or recently concluded** scores for pre-ingested events without requiring a server round-trip.
+
+| Advantage | Detail |
+|---|---|
+| No server needed | Client calls ESPN's public, unauthenticated API directly |
+| No API key exposed | ESPN scoreboard/summary APIs require no credentials |
+| Zero DB load | Display-only — never writes back |
+| Seamless UX | User sees the real score immediately when opening a log |
+
+**How it works in LogIt:** When a user opens `EventDetailModal` for a sports event that is not yet marked `FINAL` in our DB, the app fires a one-shot `fetch` to `site.api.espn.com/apis/site/v2/sports/{sport}/{league}/summary?event={external_id}`. The fresh score and status (e.g. `"4th QTR 2:30"` or `"FINAL"`) are merged on top of the DB data — display only. The nightly cron job eventually persists the final result into the DB. If the fetch fails, the UI silently falls back to the DB data.
+
+**Condition for trigger:** `status !== 'FINAL' && external_id is present && event is sports type`
 
 ---
 

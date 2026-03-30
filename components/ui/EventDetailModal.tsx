@@ -81,6 +81,7 @@ export type EventDetail = {
   privacy?: 'public' | 'friends' | 'private';
   venueCity?: string;
   venueState?: string;
+  external_id?: string;
 };
 
 interface Props {
@@ -90,9 +91,77 @@ interface Props {
   onDelete?: (event: EventDetail) => void;
 }
 
+// Module-level cache — persists for the app session across modal open/close.
+// Key: event.id  Value: { data, fetchedAt }
+// Live games re-fetch after 60s; FINAL games cached forever.
+const liveScoreCache = new Map<string, {
+  data: { homeScore?: number; awayScore?: number; status?: string };
+  fetchedAt: number;
+}>();
+const LIVE_CACHE_TTL_MS = 60_000; // re-fetch live scores after 60 seconds
+
+// ─── LIVE SCORE HOOK ─────────────────────────────────────────────────────────
+// Fetches fresh score from ESPN directly on the client (no server round-trip, no API key needed).
+// Only triggers for sports events that are not yet completed in our DB.
+function useLiveScore(event: EventDetail | null) {
+  const [liveScore, setLiveScore] = useState<{
+    homeScore?: number;
+    awayScore?: number;
+    status?: string;
+  } | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
+
+  useEffect(() => {
+    if (!event) { setLiveScore(null); return; }
+    const t = event.eventType?.toLowerCase() || '';
+    const isSports = ['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t);
+    const isCompleted = event.status?.toUpperCase() === 'FINAL';
+    if (!isSports || isCompleted || !event.external_id) { setLiveScore(null); return; }
+
+    // Check cache first — hydrate immediately if fresh enough
+    const cached = liveScoreCache.get(event.id);
+    const isFinal = cached?.data.status === 'FINAL';
+    const isFresh = cached && (isFinal || Date.now() - cached.fetchedAt < LIVE_CACHE_TTL_MS);
+    if (cached) setLiveScore(cached.data); // show cached data instantly even if stale
+    if (isFresh) return;                   // skip fetch if fresh
+
+    const sport = event.sport || 'basketball';
+    const league = event.league?.toLowerCase() || 'nba';
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${sport}/${league}/summary?event=${event.external_id}`;
+
+    setIsFetching(true);
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        const comp = data?.header?.competitions?.[0];
+        if (!comp) return;
+        const home = comp.competitors?.find((c: any) => c.homeAway === 'home');
+        const away = comp.competitors?.find((c: any) => c.homeAway === 'away');
+        const state = comp.status?.type?.state;
+        const detail = comp.status?.type?.shortDetail || comp.status?.type?.description;
+        const newStatus =
+          state === 'post' ? `FINAL` :
+          state === 'in' ? (detail || 'LIVE') :
+          event.status || 'Upcoming';
+        const result = {
+          homeScore: home?.score != null ? parseInt(home.score, 10) : undefined,
+          awayScore: away?.score != null ? parseInt(away.score, 10) : undefined,
+          status: newStatus,
+        };
+        liveScoreCache.set(event.id, { data: result, fetchedAt: Date.now() });
+        setLiveScore(result);
+      })
+      .catch(() => { /* silent fail — show DB data or cached data */ })
+      .finally(() => setIsFetching(false));
+  }, [event?.id]);
+
+  return { liveScore, isFetching };
+}
+
 export function EventDetailModal({ event, onClose, onEdit, onDelete }: Props) {
   const translateY = useRef(new Animated.Value(800)).current;
   const [topHeight, setTopHeight] = useState(0);
+  const { liveScore, isFetching } = useLiveScore(event);
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
@@ -187,11 +256,12 @@ export function EventDetailModal({ event, onClose, onEdit, onDelete }: Props) {
           <View
             style={styles.ticketTop}
             onLayout={(e) => setTopHeight(e.nativeEvent.layout.height)}
+            {...panResponder.panHandlers}
           >
-            <View style={styles.ticketDragStrip} {...panResponder.panHandlers}>
+            <View style={styles.ticketDragStrip}>
               <View style={styles.handleBar} />
             </View>
-            {getTopSection(event)}
+            {getTopSection(event, liveScore, isFetching)}
           </View>
 
           {/* Separator — sits above ticketBottom via zIndex */}
@@ -245,10 +315,14 @@ function DashedLine() {
 
 // ─── TOP SECTION ROUTER ───────────────────────────────────────────────────────
 
-function getTopSection(event: EventDetail) {
+function getTopSection(
+  event: EventDetail,
+  liveScore?: { homeScore?: number; awayScore?: number; status?: string } | null,
+  isFetching?: boolean,
+) {
   const t = event.eventType?.toLowerCase() || '';
   if (['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t))
-    return <SportsTop event={event} />;
+    return <SportsTop event={event} liveScore={liveScore} isFetching={isFetching} />;
   if (['movie', 'film'].includes(t))
     return <MovieTop event={event} />;
   if (['concert', 'music', 'live music'].includes(t))
@@ -298,23 +372,34 @@ function VenueDateGrid({ event }: { event: EventDetail }) {
   );
 }
 
-function SportsTop({ event }: { event: EventDetail }) {
-  const homeWon =
-    event.homeScore !== undefined &&
-    event.awayScore !== undefined &&
-    event.homeScore > event.awayScore;
-  const awayWon =
-    event.homeScore !== undefined &&
-    event.awayScore !== undefined &&
-    event.awayScore > event.homeScore;
+function SportsTop({
+  event,
+  liveScore,
+  isFetching,
+}: {
+  event: EventDetail;
+  liveScore?: { homeScore?: number; awayScore?: number; status?: string } | null;
+  isFetching?: boolean;
+}) {
+  // Merge live data on top of DB data — live takes priority when present
+  const displayHome = liveScore?.homeScore ?? event.homeScore;
+  const displayAway = liveScore?.awayScore ?? event.awayScore;
+  const displayStatus = liveScore?.status ?? event.status;
+  const isLiveNow = displayStatus && displayStatus !== 'FINAL' && displayStatus !== 'Upcoming' && displayStatus !== 'UPCOMING';
+
+  const homeWon = displayHome !== undefined && displayAway !== undefined && displayHome > displayAway;
+  const awayWon = displayHome !== undefined && displayAway !== undefined && displayAway > displayHome;
 
   return (
     <View style={styles.topContent}>
       <SeasonBadge season={event.season} />
       <TimeAgoBadge timeAgo={event.timeAgo} />
-      {event.status && (
-        <View style={styles.statusPill}>
-          <Text style={styles.statusText}>{event.status}</Text>
+      {displayStatus && (
+        <View style={[styles.statusPill, isLiveNow && styles.statusPillLive]}>
+          {isFetching
+            ? <ActivityIndicator size="small" color={Colors.textMuted} style={{ marginRight: 4 }} />
+            : isLiveNow && <View style={styles.liveDot} />}
+          <Text style={[styles.statusText, isLiveNow && styles.statusTextLive]}>{displayStatus}</Text>
         </View>
       )}
 
@@ -327,11 +412,11 @@ function SportsTop({ event }: { event: EventDetail }) {
 
         <View style={styles.scoreBlock}>
           <Text style={[styles.scoreNum, homeWon ? styles.scoreWin : styles.scoreDim]}>
-            {event.homeScore ?? '–'}
+            {displayHome ?? '–'}
           </Text>
           <Text style={styles.scoreDivider}>–</Text>
           <Text style={[styles.scoreNum, awayWon ? styles.scoreWin : styles.scoreDim]}>
-            {event.awayScore ?? '–'}
+            {displayAway ?? '–'}
           </Text>
         </View>
 
@@ -1031,6 +1116,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  statusPillLive: {
+    borderColor: 'rgba(0, 255, 194, 0.35)',
+    backgroundColor: 'rgba(0, 255, 194, 0.08)',
   },
   statusText: {
     fontFamily: FontFamily.bodySemiBold,
@@ -1038,6 +1130,15 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
     color: Colors.textMuted,
     textTransform: 'uppercase',
+  },
+  statusTextLive: {
+    color: Colors.primaryContainer,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#ff4444',
   },
   teamsRow: {
     flexDirection: 'row',

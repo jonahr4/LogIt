@@ -42,15 +42,21 @@ export default function AddLogScreen() {
   // Real API search state
   const [searchResults, setSearchResults] = useState<EventSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [currentOffset, setCurrentOffset] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const PAGE_SIZE = 40;
 
   // ─── Debounced search ────────────────────────────────────────────────
   const handleSearchChange = useCallback(
     (text: string) => {
       setActiveSearchQuery(text);
       setSearchError(null);
+      setHasMore(false);
+      setCurrentOffset(0);
 
       // Clear previous timer
       if (debounceTimer.current) {
@@ -69,17 +75,23 @@ export default function AddLogScreen() {
       // Debounce 500ms
       debounceTimer.current = setTimeout(async () => {
         try {
-          const params: Record<string, string> = { q: text.trim() };
+          const params: Record<string, string> = {
+            q: text.trim(),
+            limit: String(PAGE_SIZE),
+            offset: '0',
+          };
           if (selectedType && selectedType !== 'custom') {
             params.event_type = selectedType;
           }
 
           const response = await api.get<{
             data: EventSearchResult[];
-            meta: { count: number; query: string };
+            meta: { count: number; query: string; has_more: boolean };
           }>('/api/events/search', params);
 
           setSearchResults(response.data || []);
+          setHasMore(response.meta?.has_more ?? false);
+          setCurrentOffset(PAGE_SIZE);
           setSearchError(null);
         } catch (err: any) {
           console.error('Search error:', err);
@@ -92,6 +104,33 @@ export default function AddLogScreen() {
     },
     [selectedType]
   );
+
+  // ─── Load more ───────────────────────────────────────────────────────
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !activeSearchQuery) return;
+    setIsLoadingMore(true);
+    try {
+      const params: Record<string, string> = {
+        q: activeSearchQuery.trim(),
+        limit: String(PAGE_SIZE),
+        offset: String(currentOffset),
+      };
+      if (selectedType && selectedType !== 'custom') {
+        params.event_type = selectedType;
+      }
+      const response = await api.get<{
+        data: EventSearchResult[];
+        meta: { count: number; query: string; has_more: boolean };
+      }>('/api/events/search', params);
+      setSearchResults(prev => [...prev, ...(response.data || [])]);
+      setHasMore(response.meta?.has_more ?? false);
+      setCurrentOffset(prev => prev + PAGE_SIZE);
+    } catch (err: any) {
+      console.error('Load more error:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [activeSearchQuery, currentOffset, isLoadingMore, selectedType]);
 
   // ─── Map search result to EditLogModal event format ──────────────────
   const mapEventForModal = (event: EventSearchResult) => {
@@ -244,6 +283,8 @@ export default function AddLogScreen() {
                 setActiveSearchQuery('');
                 setSearchResults([]);
                 setSearchError(null);
+                setHasMore(false);
+                setCurrentOffset(0);
               }}
               style={styles.backButton}
             >
@@ -395,6 +436,20 @@ export default function AddLogScreen() {
                 );
               })}
             </View>
+
+            {/* Load More button */}
+            {hasMore && !isSearching && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                activeOpacity={0.7}
+                onPress={handleLoadMore}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore
+                  ? <ActivityIndicator size="small" color={Colors.primaryContainer} />
+                  : <Text style={styles.loadMoreText}>Load More Results</Text>}
+              </TouchableOpacity>
+            )}
 
             <View style={styles.fallbackContainer}>
               <Text style={styles.fallbackText}>
@@ -704,5 +759,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textMuted,
     textAlign: 'center',
+  },
+  loadMoreButton: {
+    alignSelf: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0, 255, 194, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 194, 0.25)',
+    marginTop: 4,
+    minWidth: 140,
+    alignItems: 'center',
+  },
+  loadMoreText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.primaryContainer,
+    letterSpacing: 0.3,
   },
 });

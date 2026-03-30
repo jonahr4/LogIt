@@ -34,7 +34,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const limit = Math.min(Math.max(parseInt(String(limitParam)) || 20, 1), 50);
+  const limit = Math.min(Math.max(parseInt(String(limitParam)) || 40, 1), 100);
+  const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
   const supabase = getSupabaseAdmin();
 
   try {
@@ -44,7 +45,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       event_type_filter: (event_type && typeof event_type === 'string') ? event_type : null,
       date_from_filter: (date_from && typeof date_from === 'string') ? date_from : null,
       date_to_filter: (date_to && typeof date_to === 'string') ? date_to : null,
-      result_limit: limit,
+      result_limit: limit + 1,  // fetch one extra to detect has_more
+      result_offset: offset,
     });
 
     if (error) {
@@ -88,22 +90,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `)
         .ilike('title', `%${searchQuery}%`)
         .order('event_date', { ascending: false })
-        .limit(limit);
+        .range(offset, offset + limit); // +1 to detect has_more
 
       if (fallbackError) throw fallbackError;
 
+      const hasMore = (fallbackEvents?.length || 0) > limit;
+      const pageData = (fallbackEvents || []).slice(0, limit);
       return res.status(200).json({
-        data: (fallbackEvents || []).map(formatFallbackEvent),
-        meta: { count: fallbackEvents?.length || 0, query: searchQuery },
+        data: pageData.map(formatFallbackEvent),
+        meta: { count: pageData.length, query: searchQuery, offset, has_more: hasMore },
       });
     }
 
-    // Format RPC results into the standard EventSearchResult shape
-    const formatted = (rows || []).map(formatRpcRow);
+    // Format RPC results — fetch one extra, use it only to detect has_more
+    const hasMore = (rows || []).length > limit;
+    const formatted = (rows || []).slice(0, limit).map(formatRpcRow);
 
     return res.status(200).json({
       data: formatted,
-      meta: { count: formatted.length, query: searchQuery },
+      meta: { count: formatted.length, query: searchQuery, offset, has_more: hasMore },
     });
   } catch (error: any) {
     console.error('Event search error:', error);

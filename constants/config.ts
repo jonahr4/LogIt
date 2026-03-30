@@ -10,7 +10,7 @@ export const Config = {
   },
   api: {
     baseUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
-    timeout: 3000,
+    timeout: 30000, // 30 seconds — matches Vercel function maxDuration
   },
   supabase: {
     url: process.env.EXPO_PUBLIC_SUPABASE_URL || '',

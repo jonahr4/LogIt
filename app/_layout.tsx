@@ -17,6 +17,7 @@ import {
 } from '@expo-google-fonts/atkinson-hyperlegible-next';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
+import { Config } from '@/constants/config';
 
 export default function RootLayout() {
   const { isAuthenticated, isOnboarded, isInitializing, initialize } = useAuthStore();
@@ -36,6 +37,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     const unsubscribe = initialize();
+    // Fire-and-forget ping to pre-warm the Vercel function container.
+    // Keeps cold-start latency away from the user's first search or log fetch.
+    fetch(`${Config.api.baseUrl}/ping`).catch(() => {});
     return unsubscribe;
   }, []);
 
