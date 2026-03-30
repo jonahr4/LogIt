@@ -364,7 +364,16 @@ export default function LogbookScreen() {
       <TouchableOpacity key={entry.id} activeOpacity={0.8} onPress={() => setSelectedEvent(entry)}>
         <GlassCard borderRadius={20} style={styles.entryCard}>
           <View style={styles.entryImageContainer}>
-            {entry.image ? (
+            {entry.homeTeamLogo ? (
+              // Sports: show home team logo centered on a dark background
+              <View style={[styles.entryImage, { backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' }]}>
+                <Image
+                  source={{ uri: entry.homeTeamLogo }}
+                  style={{ width: '70%', height: '70%' }}
+                  resizeMode="contain"
+                />
+              </View>
+            ) : entry.image ? (
               <Image source={{ uri: entry.image }} style={styles.entryImage} />
             ) : (
               <View style={[styles.entryImage, { backgroundColor: 'rgba(0,255,194,0.1)' }]} />

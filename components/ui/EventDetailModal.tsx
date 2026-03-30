@@ -81,6 +81,7 @@ export type EventDetail = {
   photos?: Array<{ id: string; url: string; firebase_path: string; display_order?: number }>;
 
   privacy?: 'public' | 'friends' | 'private';
+  image?: string;
   venueCity?: string;
   venueState?: string;
   external_id?: string;
@@ -143,8 +144,8 @@ function useLiveScore(event: EventDetail | null) {
         const detail = comp.status?.type?.shortDetail || comp.status?.type?.description;
         const newStatus =
           state === 'post' ? `FINAL` :
-          state === 'in' ? (detail || 'LIVE') :
-          event.status || 'Upcoming';
+            state === 'in' ? (detail || 'LIVE') :
+              event.status || 'Upcoming';
         const result = {
           homeScore: home?.score != null ? parseInt(home.score, 10) : undefined,
           awayScore: away?.score != null ? parseInt(away.score, 10) : undefined,
@@ -253,6 +254,48 @@ export function EventDetailModal({ event, onClose, onEdit, onDelete }: Props) {
           <View style={[StyleSheet.absoluteFill, styles.ticketBgClip]}>
             <BlurView intensity={BLUR_INTENSITY} tint="dark" style={StyleSheet.absoluteFill} />
             <View style={[StyleSheet.absoluteFill, styles.ticketTint]} />
+            {/* Venue atmosphere — constrained to topHeight so it stops exactly at the separator.
+                Lives in ticketBgClip so rounded corners clip it correctly. */}
+            {event?.image && topHeight > 0 && (
+              <View
+                style={{ position: 'absolute', top: 0, left: 0, right: 0, height: topHeight + (SEPARATOR_HEIGHT / 2) }}
+                pointerEvents="none"
+              >
+                <Image
+                  source={{ uri: event.image }}
+                  style={StyleSheet.absoluteFill}
+                  resizeMode="cover"
+                  blurRadius={1.5} />
+                {/* Uniform dim */}
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(18, 22, 32, 0.85)' }]} />
+                {/* Vignette edges — fade from ticket bg color → transparent
+                    Adjust the height/width values (48) to make edges wider/narrower */}
+                <LinearGradient
+                  colors={['rgba(18,22,32,0.95)', 'transparent']}
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 68 }}
+                  pointerEvents="none"
+                />
+                <LinearGradient
+                  colors={['rgba(18,22,32,0.85)', 'transparent']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 68 }}
+                  pointerEvents="none"
+                />
+                <LinearGradient
+                  colors={['rgba(18,22,32,0.85)', 'transparent']}
+                  start={{ x: 1, y: 0 }} end={{ x: 0, y: 0 }}
+                  style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: 68 }}
+                  pointerEvents="none"
+                />
+                <LinearGradient
+                  colors={['rgba(18,22,32,0.95)', 'transparent']}
+                  start={{ x: 0, y: 1 }} end={{ x: 0, y: 0 }}
+                  style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 68 }}
+                  pointerEvents="none"
+                />
+              </View>
+
+            )}
           </View>
 
           {/* TOP — measure height so we can place notches */}
@@ -395,22 +438,29 @@ function SportsTop({
 
   return (
     <View style={styles.topContent}>
-      <SeasonBadge season={event.season} />
-      <TimeAgoBadge timeAgo={event.timeAgo} />
-      {displayStatus && (
-        <View style={[styles.statusPill, isLiveNow && styles.statusPillLive]}>
-          {isFetching
-            ? <ActivityIndicator size="small" color={Colors.textMuted} style={{ marginRight: 4 }} />
-            : isLiveNow && <View style={styles.liveDot} />}
-          <Text style={[styles.statusText, isLiveNow && styles.statusTextLive]}>{displayStatus}</Text>
-        </View>
-      )}
+      {/* Single top row: season | status | timeago — all horizontally aligned */}
+      <View style={styles.pillsRow}>
+        <SeasonBadge season={event.season} />
+        {displayStatus ? (
+          <View style={[styles.statusPill, isLiveNow && styles.statusPillLive]}>
+            {isFetching
+              ? <ActivityIndicator size="small" color={Colors.textMuted} style={{ marginRight: 4 }} />
+              : isLiveNow && <View style={styles.liveDot} />}
+            <Text style={[styles.statusText, isLiveNow && styles.statusTextLive]}>{displayStatus}</Text>
+          </View>
+        ) : <View />}
+        <TimeAgoBadge timeAgo={event.timeAgo} />
+      </View>
 
+      {/* Teams + Score */}
       <View style={styles.teamsRow}>
         <View style={styles.teamBlock}>
           {event.homeTeamLogo ? (
             <Image source={{ uri: event.homeTeamLogo }} style={styles.teamLogo} resizeMode="contain" />
           ) : <LogoFallback eventType={event.eventType} />}
+          <Text style={[styles.teamName, { textAlign: 'center' }]} numberOfLines={2}>
+            {event.homeTeamName}
+          </Text>
         </View>
 
         <View style={styles.scoreBlock}>
@@ -423,20 +473,14 @@ function SportsTop({
           </Text>
         </View>
 
-        <View style={styles.teamBlock}>
+        <View style={[styles.teamBlock, { alignItems: 'center' }]}>
           {event.awayTeamLogo ? (
             <Image source={{ uri: event.awayTeamLogo }} style={styles.teamLogo} resizeMode="contain" />
           ) : <LogoFallback eventType={event.eventType} />}
+          <Text style={[styles.teamName, { textAlign: 'center' }]} numberOfLines={2}>
+            {event.awayTeamName}
+          </Text>
         </View>
-      </View>
-
-      <View style={styles.teamNamesRow}>
-        <Text style={[styles.teamName, { textAlign: 'left' }]} numberOfLines={1}>
-          {event.homeTeamName}
-        </Text>
-        <Text style={[styles.teamName, { textAlign: 'right' }]} numberOfLines={1}>
-          {event.awayTeamName}
-        </Text>
       </View>
 
       <VenueDateGrid event={event} />
@@ -808,7 +852,7 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
       {/* ── Rating (all types) ── */}
       <Text style={styles.miniLabel}>YOUR RATING</Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-      <View style={styles.starsRow}>
+        <View style={styles.starsRow}>
           {Array.from({ length: 5 }).map((_, i) => {
             const threshold = i + 1;
             const iconName = event.rating >= threshold
@@ -914,8 +958,8 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
           <Ionicons name="create-outline" size={18} color={Colors.text} />
           <Text style={styles.editButtonText}>Edit Log</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.deleteButton} 
+        <TouchableOpacity
+          style={styles.deleteButton}
           activeOpacity={0.8}
           onPress={() => {
             Alert.alert(
@@ -1115,7 +1159,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
   ticketTop: {
-    // transparent — background comes from parent
+    // no overflow:hidden — rounded corners handled by ticketBgClip
   },
   separator: {
     height: SEPARATOR_HEIGHT,
@@ -1174,13 +1218,12 @@ const styles = StyleSheet.create({
   },
   statusPill: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderWidth: 1,
-    borderColor: TICKET_BORDER,
+    backgroundColor: 'rgba(18, 22, 32, 0.78)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.22)',
     paddingHorizontal: 14,
-    paddingVertical: 4,
-    borderRadius: 999,
-    marginBottom: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -1207,15 +1250,20 @@ const styles = StyleSheet.create({
   },
   teamsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 18,
   },
+  // Team block — logo + name stacked, ~25% from each edge
   teamBlock: {
-    width: 52,
+    width: '33%',
     alignItems: 'center',
   },
-  teamLogo: { width: 42, height: 42 },
+  teamLogo: {
+    width: 52,
+    height: 52,
+    marginBottom: 5,
+  },
   teamLogoFallback: {
     width: 42,
     height: 42,
@@ -1233,30 +1281,38 @@ const styles = StyleSheet.create({
   },
   scoreNum: {
     fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 38,
-    lineHeight: 42,
+    fontSize: 46,
+    lineHeight: 50,
     letterSpacing: -2,
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   scoreWin: { color: Colors.text },
-  scoreDim: { color: 'rgba(255,255,255,0.28)' },
+  scoreDim: { color: 'rgba(255,255,255,0.55)' },
   scoreDivider: {
     fontFamily: FontFamily.headlineBold,
     fontSize: 18,
     color: 'rgba(255,255,255,0.15)',
     marginBottom: 2,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   teamNamesRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
-    paddingHorizontal: 2,
   },
   teamName: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 10,
-    letterSpacing: 0.5,
-    color: Colors.textMuted,
-    width: 52,
+    fontSize: 12,
+    letterSpacing: 0.2,
+    color: Colors.text,
+    width: '100%',
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   metaGrid: {
     flexDirection: 'row',
@@ -1264,12 +1320,12 @@ const styles = StyleSheet.create({
   },
   metaCell: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: 12,
-    padding: 9,
+    backgroundColor: 'rgba(18, 22, 32, 0.78)',
+    borderRadius: 10,
+    padding: 7,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    gap: 3,
+    borderColor: 'rgba(255,255,255,0.13)',
+    gap: 2,
   },
   metaLabel: {
     fontFamily: FontFamily.bodySemiBold,
@@ -1298,18 +1354,23 @@ const styles = StyleSheet.create({
   },
 
   // ── Bottom content ───────────────────────
+  // Pills row — inline, aligns with grid outer edges
+  pillsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
   timeAgoPill: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(18, 22, 32, 0.78)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    zIndex: 10,
   },
   timeAgoPillText: {
     fontFamily: FontFamily.bodyMedium,
@@ -1318,19 +1379,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   seasonPill: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255, 138, 61, 0.12)',
+    backgroundColor: 'rgba(18, 22, 32, 0.78)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 138, 61, 0.25)',
+    borderColor: 'rgba(255, 138, 61, 0.35)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    zIndex: 10,
   },
   seasonPillText: {
     fontFamily: FontFamily.bodySemiBold,
@@ -1649,5 +1706,25 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
     color: Colors.textSecondary,
+  },
+  // Venue atmosphere background (top half of ticket)
+  venueAtmosphereContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '55%', // covers top portion only
+    overflow: 'hidden',
+  },
+  venueAtmosphereDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(5, 8, 18, 0.82)',
+  },
+  venueAtmosphereFade: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
   },
 });
