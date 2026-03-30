@@ -452,33 +452,35 @@ function SportsTop({
         <TimeAgoBadge timeAgo={event.timeAgo} />
       </View>
 
-      {/* Teams + Score */}
+      {/* Teams + Score — away (left) vs home (right), per sports convention */}
       <View style={styles.teamsRow}>
+        {/* Away team on the LEFT */}
         <View style={styles.teamBlock}>
-          {event.homeTeamLogo ? (
-            <Image source={{ uri: event.homeTeamLogo }} style={styles.teamLogo} resizeMode="contain" />
-          ) : <LogoFallback eventType={event.eventType} />}
-          <Text style={[styles.teamName, { textAlign: 'center' }]} numberOfLines={2}>
-            {event.homeTeamName}
-          </Text>
-        </View>
-
-        <View style={styles.scoreBlock}>
-          <Text style={[styles.scoreNum, homeWon ? styles.scoreWin : styles.scoreDim]}>
-            {displayHome ?? '–'}
-          </Text>
-          <Text style={styles.scoreDivider}>–</Text>
-          <Text style={[styles.scoreNum, awayWon ? styles.scoreWin : styles.scoreDim]}>
-            {displayAway ?? '–'}
-          </Text>
-        </View>
-
-        <View style={[styles.teamBlock, { alignItems: 'center' }]}>
           {event.awayTeamLogo ? (
             <Image source={{ uri: event.awayTeamLogo }} style={styles.teamLogo} resizeMode="contain" />
           ) : <LogoFallback eventType={event.eventType} />}
           <Text style={[styles.teamName, { textAlign: 'center' }]} numberOfLines={2}>
             {event.awayTeamName}
+          </Text>
+        </View>
+
+        <View style={styles.scoreBlock}>
+          <Text style={[styles.scoreNum, awayWon ? styles.scoreWin : styles.scoreDim]}>
+            {displayAway ?? '–'}
+          </Text>
+          <Text style={styles.scoreDivider}>–</Text>
+          <Text style={[styles.scoreNum, homeWon ? styles.scoreWin : styles.scoreDim]}>
+            {displayHome ?? '–'}
+          </Text>
+        </View>
+
+        {/* Home team on the RIGHT */}
+        <View style={[styles.teamBlock, { alignItems: 'center' }]}>
+          {event.homeTeamLogo ? (
+            <Image source={{ uri: event.homeTeamLogo }} style={styles.teamLogo} resizeMode="contain" />
+          ) : <LogoFallback eventType={event.eventType} />}
+          <Text style={[styles.teamName, { textAlign: 'center' }]} numberOfLines={2}>
+            {event.homeTeamName}
           </Text>
         </View>
       </View>

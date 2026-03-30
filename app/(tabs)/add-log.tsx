@@ -581,16 +581,8 @@ export default function AddLogScreen() {
                           )}
 
                           <View style={styles.apiResultInfo}>
-                            {/* Team logos row */}
+                            {/* Team logos row: away (left) vs home (right) */}
                             <View style={styles.teamsLogoRow}>
-                              {meta?.home_team_logo ? (
-                                <Image source={{ uri: meta.home_team_logo }} style={styles.searchTeamLogo} resizeMode="contain" />
-                              ) : (
-                                <View style={[styles.searchTeamLogo, styles.logoFallback]}>
-                                  <Text style={styles.logoFallbackText}>{meta?.home_team_name?.charAt(0) || '?'}</Text>
-                                </View>
-                              )}
-                              <Text style={styles.vsText}>vs</Text>
                               {meta?.away_team_logo ? (
                                 <Image source={{ uri: meta.away_team_logo }} style={styles.searchTeamLogo} resizeMode="contain" />
                               ) : (
@@ -598,18 +590,26 @@ export default function AddLogScreen() {
                                   <Text style={styles.logoFallbackText}>{meta?.away_team_name?.charAt(0) || '?'}</Text>
                                 </View>
                               )}
-                              {/* Score pill */}
+                              <Text style={styles.vsText}>vs</Text>
+                              {meta?.home_team_logo ? (
+                                <Image source={{ uri: meta.home_team_logo }} style={styles.searchTeamLogo} resizeMode="contain" />
+                              ) : (
+                                <View style={[styles.searchTeamLogo, styles.logoFallback]}>
+                                  <Text style={styles.logoFallbackText}>{meta?.home_team_name?.charAt(0) || '?'}</Text>
+                                </View>
+                              )}
+                              {/* Score pill: away - home */}
                               {meta?.home_score != null && event.status !== 'upcoming' && (
                                 <View style={styles.searchScorePill}>
                                   <Text style={styles.searchScoreText}>
-                                    {meta.home_score} - {meta.away_score}
+                                    {meta.away_score} - {meta.home_score}
                                   </Text>
                                 </View>
                               )}
                             </View>
-                            {/* Team names */}
+                            {/* Team names: away vs home */}
                             <Text style={styles.teamNamesText} numberOfLines={1}>
-                              {meta?.home_team_name} vs {meta?.away_team_name}
+                              {meta?.away_team_name} vs {meta?.home_team_name}
                             </Text>
                             {/* Date · venue · league */}
                             <Text style={styles.apiResultSub} numberOfLines={1}>

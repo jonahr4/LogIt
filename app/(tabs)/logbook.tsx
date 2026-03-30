@@ -448,7 +448,7 @@ export default function LogbookScreen() {
       return (
         <View style={styles.sportsRight}>
           <View style={styles.scoreBug}>
-            <Text style={styles.scoreText}>{entry.homeScore} - {entry.awayScore}</Text>
+            <Text style={styles.scoreText}>{entry.awayScore} - {entry.homeScore}</Text>
           </View>
           <Text style={[styles.entryResult, isWin ? styles.entryResultWin : styles.entryResultLoss]}>
             {isWin ? 'W' : 'L'}

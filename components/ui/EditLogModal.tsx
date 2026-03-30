@@ -858,19 +858,19 @@ function SportsEditSection(props: any) {
 
       <View style={styles.inputRow}>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="HOME TEAM" value={props.homeTeamName} onChangeText={props.setHomeTeamName} placeholder="Team name" editable={props.canEditCanonical} />
+          <LabeledInput label="AWAY TEAM" value={props.awayTeamName} onChangeText={props.setAwayTeamName} placeholder="Team name" editable={props.canEditCanonical} />
         </View>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="AWAY TEAM" value={props.awayTeamName} onChangeText={props.setAwayTeamName} placeholder="Team name" editable={props.canEditCanonical} />
+          <LabeledInput label="HOME TEAM" value={props.homeTeamName} onChangeText={props.setHomeTeamName} placeholder="Team name" editable={props.canEditCanonical} />
         </View>
       </View>
 
       <View style={styles.inputRow}>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="HOME SCORE" value={props.homeScore} onChangeText={props.setHomeScore} placeholder="0" keyboardType="numeric" editable={props.canEditCanonical} />
+          <LabeledInput label="AWAY SCORE" value={props.awayScore} onChangeText={props.setAwayScore} placeholder="0" keyboardType="numeric" editable={props.canEditCanonical} />
         </View>
         <View style={{ flex: 1 }}>
-          <LabeledInput label="AWAY SCORE" value={props.awayScore} onChangeText={props.setAwayScore} placeholder="0" keyboardType="numeric" editable={props.canEditCanonical} />
+          <LabeledInput label="HOME SCORE" value={props.homeScore} onChangeText={props.setHomeScore} placeholder="0" keyboardType="numeric" editable={props.canEditCanonical} />
         </View>
       </View>
 
