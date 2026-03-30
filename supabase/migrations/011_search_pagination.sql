@@ -131,19 +131,24 @@ BEGIN
       OR se.home_team_name ILIKE pattern
       OR se.away_team_name ILIKE pattern
       OR se.league ILIKE pattern
-      OR se.sport ILIKE pattern
+      OR se.sport::text ILIKE pattern
       -- Trigram similarity (handles one-letter typos, uses index)
       OR e.title % search_term
       OR COALESCE(v.name, '') % search_term
       OR COALESCE(se.home_team_name, '') % search_term
       OR COALESCE(se.away_team_name, '') % search_term
       -- Levenshtein: catches transposition typos ("celitcs" → "Celtics")
+      -- Splits team name into individual words and checks each word separately.
+      -- e.g. "Boston Celtics" → checks "boston" and "celtics" independently.
       -- Only fires for terms >= 4 chars; edit distance <= 2
-      -- Runs on ~1,230 rows max (one NBA season) — negligible perf cost
-      OR (term_len >= 4 AND se.home_team_name IS NOT NULL
-          AND levenshtein(lower(search_term), lower(se.home_team_name)) <= 2)
-      OR (term_len >= 4 AND se.away_team_name IS NOT NULL
-          AND levenshtein(lower(search_term), lower(se.away_team_name)) <= 2)
+      OR (term_len >= 4 AND se.home_team_name IS NOT NULL AND EXISTS (
+          SELECT 1 FROM unnest(regexp_split_to_array(lower(se.home_team_name), '\s+')) w
+          WHERE levenshtein(lower(search_term), w) <= 2
+      ))
+      OR (term_len >= 4 AND se.away_team_name IS NOT NULL AND EXISTS (
+          SELECT 1 FROM unnest(regexp_split_to_array(lower(se.away_team_name), '\s+')) w
+          WHERE levenshtein(lower(search_term), w) <= 2
+      ))
     )
     AND (event_type_filter IS NULL OR e.event_type = event_type_filter)
     AND (date_from_filter IS NULL OR e.event_date >= date_from_filter)

@@ -38,10 +38,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const offset = Math.max(parseInt(String(req.query.offset)) || 0, 0);
   const supabase = getSupabaseAdmin();
 
+  // Split multi-word queries into tokens. Search DB with primary token (longest meaningful word),
+  // then post-filter results to require all other tokens appear somewhere in the event data.
+  // e.g. "celtics golden state" → primary="celtics", secondary=["golden","state"]
+  const tokens = searchQuery.toLowerCase().split(/\s+/).filter(t => t.length >= 2);
+  const primaryToken = tokens.reduce((a, b) => b.length > a.length ? b : a, tokens[0] || searchQuery);
+  const secondaryTokens = tokens.filter(t => t !== primaryToken);
+
+  // Helper: check if a result row contains all secondary tokens in any of its key fields
+  function matchesAllTokens(row: any): boolean {
+    if (secondaryTokens.length === 0) return true;
+    const haystack = [
+      row.title, row.home_team_name, row.away_team_name,
+      row.venue_name, row.v_name, row.venue_city, row.v_city, row.league,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return secondaryTokens.every(t => haystack.includes(t));
+  }
+
   try {
-    // Call the multi-field search Postgres function
+    // Call the multi-field search Postgres function using the primary token
     const { data: rows, error } = await supabase.rpc('search_events', {
-      search_term: searchQuery,
+      search_term: primaryToken,
       event_type_filter: (event_type && typeof event_type === 'string') ? event_type : null,
       date_from_filter: (date_from && typeof date_from === 'string') ? date_from : null,
       date_to_filter: (date_to && typeof date_to === 'string') ? date_to : null,
@@ -52,46 +69,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (error) {
       console.error('RPC search error, falling back to ILIKE:', error);
 
-      // Fallback: simple ILIKE on title if RPC not available yet
-      const { data: fallbackEvents, error: fallbackError } = await supabase
+      // Fallback: per-token ILIKE on title (works for multi-word queries)
+      let query = supabase
         .from('events')
         .select(`
-          id,
-          event_type,
-          title,
-          status,
-          event_date,
-          venue_name,
-          venue_city,
-          venue_state,
-          image_url,
-          external_id,
-          venues (
-            name,
-            city,
-            state,
-            lat,
-            lng,
-            image_url
-          ),
+          id, event_type, title, status, event_date,
+          venue_name, venue_city, venue_state, image_url, external_id,
+          venues ( name, city, state, lat, lng, image_url ),
           sports_events (
-            sport,
-            league,
-            season,
-            home_team_id,
-            away_team_id,
-            home_team_name,
-            away_team_name,
-            home_team_logo,
-            away_team_logo,
-            home_score,
-            away_score
+            sport, league, season,
+            home_team_id, away_team_id,
+            home_team_name, away_team_name,
+            home_team_logo, away_team_logo,
+            home_score, away_score
           )
         `)
-        .ilike('title', `%${searchQuery}%`)
         .order('event_date', { ascending: false })
-        .range(offset, offset + limit); // +1 to detect has_more
+        .range(offset, offset + limit);
 
+      // Apply ILIKE for each token (all must match somewhere in title)
+      for (const token of tokens) {
+        query = query.ilike('title', `%${token}%`);
+      }
+
+      const { data: fallbackEvents, error: fallbackError } = await query;
       if (fallbackError) throw fallbackError;
 
       const hasMore = (fallbackEvents?.length || 0) > limit;
@@ -102,9 +103,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Format RPC results — fetch one extra, use it only to detect has_more
-    const hasMore = (rows || []).length > limit;
-    const formatted = (rows || []).slice(0, limit).map(formatRpcRow);
+    // Post-filter RPC results to require all secondary tokens match
+    const filtered = (rows || []).filter(matchesAllTokens);
+    const hasMore = filtered.length > limit;
+    const formatted = filtered.slice(0, limit).map(formatRpcRow);
 
     return res.status(200).json({
       data: formatted,
