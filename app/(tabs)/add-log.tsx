@@ -559,7 +559,23 @@ export default function AddLogScreen() {
                 const dateStr = event.event_date
                   ? new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                   : '';
-                const statusLabel = event.status === 'completed' ? 'Final' : event.status === 'in_progress' ? 'Live' : 'Upcoming';
+                // Days until — matches logbook getDaysUntil exactly
+                const daysUntilLabel = (() => {
+                  if (event.status !== 'upcoming' || !event.event_date) return null;
+                  const target = new Date(event.event_date).setHours(0, 0, 0, 0);
+                  const now = new Date().setHours(0, 0, 0, 0);
+                  const diffTime = target - now;
+                  if (diffTime <= 0) return 'TODAY';
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  if (diffDays === 1) return 'TOMORROW';
+                  return `IN ${diffDays} DAYS`;
+                })();
+                const scoreLabel = meta?.home_score != null && event.status !== 'upcoming'
+                  ? `${meta.away_score} – ${meta.home_score}` : null;
+                const shortAway = meta?.away_team_name?.trim().split(' ').slice(-1)[0] || meta?.away_team_name || '';
+                const shortHome = meta?.home_team_name?.trim().split(' ').slice(-1)[0] || meta?.home_team_name || '';
+                const displayTitle = isSports && shortAway && shortHome
+                  ? `${shortAway} vs ${shortHome}` : event.title;
 
                 return (
                   <TouchableOpacity
@@ -569,60 +585,39 @@ export default function AddLogScreen() {
                   >
                     <GlassCard borderRadius={16} style={styles.apiResultCard}>
                       {isSports ? (
-                        /* ── Sports card: logo vs logo layout ── */
+                        /* ── Sports card ── */
                         <>
-                          {/* Venue thumbnail */}
-                          {event.image_url ? (
-                            <Image source={{ uri: event.image_url }} style={styles.venueThumbnail} />
-                          ) : (
-                            <View style={[styles.venueThumbnail, styles.venueThumbnailFallback]}>
-                              <Ionicons name="business-outline" size={18} color={Colors.textMuted} />
-                            </View>
-                          )}
-
-                          <View style={styles.apiResultInfo}>
-                            {/* Team logos row: away (left) vs home (right) */}
-                            <View style={styles.teamsLogoRow}>
-                              {meta?.away_team_logo ? (
-                                <Image source={{ uri: meta.away_team_logo }} style={styles.searchTeamLogo} resizeMode="contain" />
-                              ) : (
-                                <View style={[styles.searchTeamLogo, styles.logoFallback]}>
-                                  <Text style={styles.logoFallbackText}>{meta?.away_team_name?.charAt(0) || '?'}</Text>
-                                </View>
-                              )}
-                              <Text style={styles.vsText}>vs</Text>
-                              {meta?.home_team_logo ? (
-                                <Image source={{ uri: meta.home_team_logo }} style={styles.searchTeamLogo} resizeMode="contain" />
-                              ) : (
-                                <View style={[styles.searchTeamLogo, styles.logoFallback]}>
-                                  <Text style={styles.logoFallbackText}>{meta?.home_team_name?.charAt(0) || '?'}</Text>
-                                </View>
-                              )}
-                              {/* Score pill: away - home */}
-                              {meta?.home_score != null && event.status !== 'upcoming' && (
-                                <View style={styles.searchScorePill}>
-                                  <Text style={styles.searchScoreText}>
-                                    {meta.away_score} - {meta.home_score}
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                            {/* Team names: away vs home */}
-                            <Text style={styles.teamNamesText} numberOfLines={1}>
-                              {meta?.away_team_name} vs {meta?.home_team_name}
-                            </Text>
-                            {/* Date · venue · league */}
-                            <Text style={styles.apiResultSub} numberOfLines={1}>
-                              {dateStr}{event.venue_city ? ` · ${event.venue_city}` : ''}{meta?.league ? ` · ${meta.league}` : ''}
-                            </Text>
+                          {/* Away team logo on glassy dark bg (matches logbook style) */}
+                          <View style={styles.searchLogoContainer}>
+                            {meta?.home_team_logo ? (
+                              <Image source={{ uri: meta.home_team_logo }} style={{ width: '72%', height: '72%' }} resizeMode="contain" />
+                            ) : (
+                              <Text style={styles.logoFallbackText}>{meta?.home_team_name?.charAt(0) || '?'}</Text>
+                            )}
                           </View>
 
-                          <View style={styles.statusBadge}>
-                            <Text style={styles.statusBadgeText}>{statusLabel}</Text>
+                          <View style={styles.apiResultInfo}>
+                            {/* Title row — name left, pill right (matches logbook) */}
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                              <Text style={[styles.teamNamesText, { flex: 1 }]} numberOfLines={1}>{displayTitle}</Text>
+                              {scoreLabel ? (
+                                <View style={styles.scoreBugAddLog}>
+                                  <Text style={styles.scoreBugText}>{scoreLabel}</Text>
+                                </View>
+                              ) : daysUntilLabel ? (
+                                <View style={styles.daysUntilPill}>
+                                  <Text style={styles.daysUntilText}>{daysUntilLabel}</Text>
+                                </View>
+                              ) : null}
+                            </View>
+                            {/* Date · venue · league */}
+                            <Text style={styles.apiResultSub} numberOfLines={1}>
+                              {dateStr}{event.venue_name ? ` · ${event.venue_name}` : ''}{meta?.league ? ` · ${meta.league}` : ''}
+                            </Text>
                           </View>
                         </>
                       ) : (
-                        /* ── Non-sports card: text layout ── */
+                        /* ── Non-sports card ── */
                         <>
                           <Ionicons name="checkmark-circle-outline" size={24} color={Colors.primaryContainer} />
                           <View style={styles.apiResultInfo}>
@@ -630,7 +625,7 @@ export default function AddLogScreen() {
                             <Text style={styles.apiResultSub}>{getResultSubtitle(event)}</Text>
                           </View>
                           <View style={styles.statusBadge}>
-                            <Text style={styles.statusBadgeText}>{statusLabel}</Text>
+                            <Text style={styles.statusBadgeText}>{event.status === 'completed' ? 'Final' : event.status === 'in_progress' ? 'Live' : 'Upcoming'}</Text>
                           </View>
                         </>
                       )}
@@ -852,15 +847,46 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   // Sports search card
-  venueThumbnail: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-  },
-  venueThumbnailFallback: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+  searchLogoContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: 'rgba(10, 14, 23, 0.9)',
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
+  },
+  scoreBugAddLog: {
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 138, 61, 0.45)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flexShrink: 0,
+  },
+  scoreBugText: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 12,
+    color: '#FF8A3D',
+    letterSpacing: 0.4,
+  },
+  daysUntilPill: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 194, 0.4)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flexShrink: 0,
+  },
+  daysUntilText: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 12,
+    color: Colors.primaryContainer,
+    letterSpacing: 0.4,
   },
   teamsLogoRow: {
     flexDirection: 'row',

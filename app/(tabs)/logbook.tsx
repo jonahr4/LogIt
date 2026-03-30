@@ -110,6 +110,21 @@ function getTimeAgo(dateStr: string): string {
 
 const SORT_OPTIONS = ['Date Attended', 'Date Logged', 'Highest Rated'] as const;
 
+/** Extract last word of team name for compact display: 'Boston Celtics' → 'Celtics' */
+function shortTeamName(fullName?: string): string {
+  if (!fullName) return '';
+  const parts = fullName.trim().split(' ');
+  return parts[parts.length - 1];
+}
+
+/** Build compact matchup title for sports: 'Celtics vs Thunder' */
+function shortSportsTitle(entry: EventDetail): string {
+  if (entry.awayTeamName && entry.homeTeamName) {
+    return `${shortTeamName(entry.awayTeamName)} vs ${shortTeamName(entry.homeTeamName)}`;
+  }
+  return entry.title;
+}
+
 /** Map API log response to EventDetail for the UI */
 function mapLogToEventDetail(log: any): EventDetail {
   const event = log.event;
@@ -360,62 +375,65 @@ export default function LogbookScreen() {
   }, [filteredAndSortedEntries, activeSort, isUpcoming]);
 
   const renderEntryCard = (entry: EventDetail) => {
+    const isSports = !!(entry.homeTeamName || entry.awayTeamName);
+    const displayTitle = isSports ? shortSportsTitle(entry) : entry.title;
+    const hasScore = isSports && entry.homeScore !== undefined && entry.awayScore !== undefined && !isUpcoming(entry);
+    const isWin = hasScore && entry.homeScore! > entry.awayScore!;
+
     return (
       <TouchableOpacity key={entry.id} activeOpacity={0.8} onPress={() => setSelectedEvent(entry)}>
         <GlassCard borderRadius={20} style={styles.entryCard}>
           <View style={styles.entryImageContainer}>
             {entry.homeTeamLogo ? (
-              // Sports: show home team logo centered on a dark background
-              <View style={[styles.entryImage, { backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' }]}>
-                <Image
-                  source={{ uri: entry.homeTeamLogo }}
-                  style={{ width: '70%', height: '70%' }}
-                  resizeMode="contain"
-                />
+              <View style={styles.entryLogoContainer}>
+                <Image source={{ uri: entry.homeTeamLogo }} style={{ width: '72%', height: '72%' }} resizeMode="contain" />
               </View>
             ) : entry.image ? (
               <Image source={{ uri: entry.image }} style={styles.entryImage} />
             ) : (
-              <View style={[styles.entryImage, { backgroundColor: 'rgba(0,255,194,0.1)' }]} />
+              <View style={[styles.entryImage, { backgroundColor: 'rgba(0,255,194,0.08)' }]} />
             )}
-            <View style={styles.entryImageOverlay} />
           </View>
-          
+
           <View style={styles.entryInfo}>
+            {/* Title row — game name on left, score/days pill on right */}
             <View style={styles.titleRow}>
-              <Text style={styles.entryTitle} numberOfLines={1}>{entry.title}</Text>
-              {isUpcoming(entry) && entry.rawDate && (
-                <View style={[styles.upcomingPill, getDaysUntil(entry.rawDate) === 'TODAY' && { backgroundColor: Colors.primaryContainer }]}>
-                  <Text style={[styles.upcomingPillText, getDaysUntil(entry.rawDate) === 'TODAY' && { color: Colors.surface }]}>
+              <Text style={styles.entryTitle} numberOfLines={1}>{displayTitle}</Text>
+              {hasScore ? (
+                <View style={styles.scoreBug}>
+                  <Text style={styles.scoreText}>{entry.awayScore} – {entry.homeScore}</Text>
+                </View>
+              ) : isUpcoming(entry) && entry.rawDate ? (
+                <View style={[
+                  styles.scoreBug,
+                  styles.scoreBugGreen,
+                  getDaysUntil(entry.rawDate) === 'TODAY' && { backgroundColor: 'rgba(0,255,194,0.18)' }
+                ]}>
+                  <Text style={[styles.scoreText, styles.scoreTextGreen]}>
                     {getDaysUntil(entry.rawDate)}
                   </Text>
                 </View>
-              )}
+              ) : null}
             </View>
-            <Text style={styles.entryMeta} numberOfLines={1}>
-              {entry.venue ? entry.venue.toUpperCase() + ' • ' : ''}{entry.date.toUpperCase()}
+
+            {/* Date first, then venue */}
+            <Text style={styles.entryMeta} numberOfLines={2}>
+              {entry.date.toUpperCase()}{entry.venue ? ' • ' + entry.venue.toUpperCase() : ''}
             </Text>
-            
+
             {/* Unified Metadata Row */}
             <View style={styles.bottomMetaRow}>
+              {isSports && entry.eventType && (
+                <View style={styles.leagueTag}>
+                  <Text style={styles.leagueTagText}>{entry.eventType}</Text>
+                </View>
+              )}
               {entry.rating !== undefined && (
                 <View style={{ flexDirection: 'row', gap: 2, alignItems: 'center' }}>
                   {Array.from({ length: 5 }).map((_, i) => {
-                    const threshold = i + 1;
                     const r = entry.rating || 0;
-                    const iconName = r >= threshold
-                      ? 'star' as const
-                      : r >= threshold - 0.5
-                        ? 'star-half' as const
-                        : 'star-outline' as const;
-                    return (
-                      <Ionicons
-                        key={`star-${i}`}
-                        name={iconName}
-                        size={12}
-                        color={r > i ? '#FFD700' : Colors.textMuted}
-                      />
-                    );
+                    const iconName = r >= i + 1 ? 'star' as const : r >= i + 0.5 ? 'star-half' as const : 'star-outline' as const;
+                    return <Ionicons key={`star-${i}`} name={iconName} size={12} color={r > i ? '#FFD700' : Colors.textMuted} />;
                   })}
                 </View>
               )}
@@ -425,39 +443,26 @@ export default function LogbookScreen() {
                   <Text style={styles.metaText}>{entry.companions.length}</Text>
                 </View>
               )}
-              <Ionicons 
-                name={entry.privacy === 'private' ? 'lock-closed' : entry.privacy === 'friends' ? 'people' : 'globe-outline'} 
-                size={12} 
-                color={Colors.textMuted} 
+              <Ionicons
+                name={entry.privacy === 'private' ? 'lock-closed' : entry.privacy === 'friends' ? 'people' : 'globe-outline'}
+                size={12}
+                color={Colors.textMuted}
               />
+              {/* W/L result at the end */}
+              {hasScore && (
+                <Text style={[styles.entryResult, isWin ? styles.entryResultWin : styles.entryResultLoss]}>
+                  {isWin ? 'W' : 'L'}
+                </Text>
+              )}
             </View>
           </View>
-
-          {renderRightSide(entry)}
         </GlassCard>
       </TouchableOpacity>
     );
   };
 
   const renderRightSide = (entry: EventDetail) => {
-    const isSports = ['NBA', 'NFL', 'MLB', 'NHL'].includes(entry.eventType);
-    
-    if (isSports && entry.homeScore !== undefined && entry.awayScore !== undefined && !isUpcoming(entry)) {
-      // Logic for W/L: Did Home Win? Wait, we don't know who user supports. We'll derive W from result string if we had it, but let's mock W/L by random or just W for demo
-      const isWin = entry.homeScore > entry.awayScore; // Assuming home team for now
-      return (
-        <View style={styles.sportsRight}>
-          <View style={styles.scoreBug}>
-            <Text style={styles.scoreText}>{entry.awayScore} - {entry.homeScore}</Text>
-          </View>
-          <Text style={[styles.entryResult, isWin ? styles.entryResultWin : styles.entryResultLoss]}>
-            {isWin ? 'W' : 'L'}
-          </Text>
-        </View>
-      );
-    }
-    
-    // For non-sports, let's just show Price level if they have it
+    // Only used for non-sports price level now
     if (entry.priceLevel) {
       return (
         <View style={styles.nonSportsRight}>
@@ -465,7 +470,6 @@ export default function LogbookScreen() {
         </View>
       );
     }
-
     return null;
   };
 
@@ -890,9 +894,19 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
+  entryLogoContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(10, 14, 23, 0.9)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   entryImageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+    backgroundColor: 'transparent',
   },
   entryInfo: {
     flex: 1,
@@ -906,9 +920,9 @@ const styles = StyleSheet.create({
   },
   entryTitle: {
     fontFamily: FontFamily.headlineBold,
-    fontSize: 17,
+    fontSize: 15,
     color: Colors.text,
-    flexShrink: 1,
+    flex: 1,
   },
   upcomingPill: {
     backgroundColor: 'rgba(0, 255, 194, 0.15)',
@@ -925,9 +939,24 @@ const styles = StyleSheet.create({
   entryMeta: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 10,
-    letterSpacing: 1,
+    letterSpacing: 0.8,
     color: Colors.textMuted,
-    marginBottom: 6,
+    marginBottom: 5,
+    flexShrink: 1,
+  },
+  leagueTag: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  leagueTagText: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 9,
+    color: Colors.textMuted,
+    letterSpacing: 0.6,
   },
   bottomMetaRow: {
     flexDirection: 'row',
@@ -951,23 +980,35 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   scoreBug: {
-    backgroundColor: '#FF8A3D',
-    paddingHorizontal: 8,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 138, 61, 0.45)',
+    paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 8,
+    flexShrink: 0,
+  },
+  scoreBugGreen: {
+    borderColor: 'rgba(0, 255, 194, 0.4)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   scoreText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 11,
-    color: '#000',
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 12,
+    color: '#FF8A3D',
+    letterSpacing: 0.4,
+  },
+  scoreTextGreen: {
+    color: Colors.primaryContainer,
   },
   entryResult: {
     fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 22,
+    fontSize: 15,
     color: Colors.primaryContainer,
     textShadowColor: 'rgba(0, 255, 194, 0.4)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
+    textShadowRadius: 6,
+    marginLeft: 'auto' as any,
   },
   entryResultWin: {
     color: Colors.primaryContainer,
