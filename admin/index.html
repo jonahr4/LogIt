@@ -159,6 +159,76 @@
       object-fit: cover;
       border-radius: 4px;
       border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .img-preview:hover { opacity: 0.75; }
+    .img-cell { display: flex; align-items: center; gap: 6px; }
+    .img-edit-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #7a8aaa;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .img-edit-btn:hover { background: rgba(0,255,194,0.1); color: #00FFC2; border-color: rgba(0,255,194,0.25); }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.85);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 8px;
+      cursor: default;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    }
+    .lightbox-close {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      font-size: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      z-index: 10000;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,0.2); }
+    .lightbox-caption {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #aab;
+      font-size: 12px;
+      background: rgba(0,0,0,0.6);
+      padding: 6px 16px;
+      border-radius: 6px;
+      max-width: 80vw;
+      text-align: center;
+      word-break: break-all;
     }
     .status-pill {
       display: inline-block;
@@ -257,6 +327,10 @@
 <script src="config.js"></script>
 <script>
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // Write client uses service role key (bypasses RLS for admin edits)
+  const sbWrite = (typeof SUPABASE_SERVICE_KEY !== 'undefined' && SUPABASE_SERVICE_KEY)
+    ? supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    : sb;
   let currentTab = 'venues';
   let allData = [];
   let filteredData = [];
@@ -300,10 +374,23 @@
       // Source filter
       const sources = [...new Set(allData.map(v => v.external_source || 'none'))].sort();
       addFilterGroup(row, 'Source', 'source', ['All', ...sources]);
-    } else {
-      // Status filter
-      addFilterGroup(row, 'Status', 'status', ['All', 'upcoming', 'in_progress', 'completed']);
       addDivider(row);
+      // Type filter (arena, stadium, etc.)
+      const types = [...new Set(allData.map(v => v.venue_type).filter(Boolean))].sort();
+      if (types.length > 0) {
+        addFilterGroup(row, 'Type', 'venueType', ['All', ...types]);
+      }
+    } else {
+      // Sport filter
+      const sports = new Set();
+      allData.forEach(g => {
+        const se = Array.isArray(g.sports_events) ? g.sports_events[0] : g.sports_events;
+        if (se?.sport) sports.add(se.sport);
+      });
+      if (sports.size > 0) {
+        addFilterGroup(row, 'Sport', 'sport', ['All', ...Array.from(sports).sort()]);
+        addDivider(row);
+      }
       // League filter
       const leagues = new Set();
       allData.forEach(g => {
@@ -312,9 +399,22 @@
       });
       addFilterGroup(row, 'League', 'league', ['All', ...Array.from(leagues).sort()]);
       addDivider(row);
+      // Status filter
+      addFilterGroup(row, 'Status', 'status', ['All', 'upcoming', 'in_progress', 'completed']);
+      addDivider(row);
       // Has Score filter
       addFilterGroup(row, 'Score', 'hasScore', ['All', 'Has Score', 'No Score']);
       addDivider(row);
+      // Season filter
+      const seasons = new Set();
+      allData.forEach(g => {
+        const se = Array.isArray(g.sports_events) ? g.sports_events[0] : g.sports_events;
+        if (se?.season) seasons.add(se.season);
+      });
+      if (seasons.size > 0) {
+        addFilterGroup(row, 'Season', 'season', ['All', ...Array.from(seasons).sort().reverse()]);
+        addDivider(row);
+      }
       // City filter (top cities)
       const cityCounts = {};
       allData.forEach(g => { if (g.venue_city) cityCounts[g.venue_city] = (cityCounts[g.venue_city] || 0) + 1; });
@@ -377,13 +477,27 @@
           const src = row.external_source || 'none';
           if (src !== filters.source) return false;
         }
+        // Venue type filter
+        if (filters.venueType && filters.venueType !== 'All') {
+          if ((row.venue_type || '') !== filters.venueType) return false;
+        }
       } else {
+        // Sport filter
+        if (filters.sport && filters.sport !== 'All') {
+          const se = Array.isArray(row.sports_events) ? row.sports_events[0] : row.sports_events;
+          if (se?.sport !== filters.sport) return false;
+        }
         // Status filter
         if (filters.status && filters.status !== 'All' && row.status !== filters.status) return false;
         // League filter
         if (filters.league && filters.league !== 'All') {
           const se = Array.isArray(row.sports_events) ? row.sports_events[0] : row.sports_events;
           if (se?.league !== filters.league) return false;
+        }
+        // Season filter
+        if (filters.season && filters.season !== 'All') {
+          const se = Array.isArray(row.sports_events) ? row.sports_events[0] : row.sports_events;
+          if (se?.season !== filters.season) return false;
         }
         // Has Score filter
         if (filters.hasScore && filters.hasScore !== 'All') {
@@ -504,7 +618,10 @@
         <td>${esc(v.state || '—')}</td>
         <td class="${v.lat != null ? 'ok-cell' : 'null-cell'}">${v.lat != null ? v.lat.toFixed(4) : 'null'}</td>
         <td class="${v.lng != null ? 'ok-cell' : 'null-cell'}">${v.lng != null ? v.lng.toFixed(4) : 'null'}</td>
-        <td>${hasImg ? `<img class="img-preview" src="${esc(v.image_url)}" alt="" loading="lazy">` : '<span class="null-cell">null</span>'}</td>
+        <td><div class="img-cell">
+          ${hasImg ? `<img class="img-preview" src="${esc(v.image_url)}" alt="" loading="lazy" onclick="openLightbox('${esc(v.image_url).replace(/'/g, "\\'")}',' ${esc(v.name)}')">` : '<span class="null-cell">null</span>'}
+          <button class="img-edit-btn" onclick="editVenueImage('${v.id}','${esc(v.name)}','${hasImg ? esc(v.image_url).replace(/'/g, "\\'") : ''}')">✏️</button>
+        </div></td>
         <td>${esc(v.venue_type || '—')}</td>
         <td>${esc(v.external_source || '—')}</td>
         <td><span class="enrichment-status enrichment-${status}"></span></td>
@@ -523,8 +640,9 @@
       <th onclick="sortBy('venue_city')"${thClass('venue_city')}>City</th>
       <th onclick="sortBy('status')"${thClass('status')}>Status</th>
       <th>Score</th>
-      <th>League</th>
-      <th>Season</th>
+      <th onclick="sortBy('_league')"${thClass('_league')}>League</th>
+      <th onclick="sortBy('_season')"${thClass('_season')}>Season</th>
+      <th onclick="sortBy('_sport')"${thClass('_sport')}>Sport</th>
       <th onclick="sortBy('external_id')"${thClass('external_id')}>Ext. ID</th>
     </tr></thead><tbody>`;
     for (const g of data) {
@@ -532,6 +650,11 @@
       const score = se && se.home_score != null ? `${se.away_score} – ${se.home_score}` : '—';
       const league = se?.league || '—';
       const season = se?.season || '—';
+      const sport = se?.sport || '—';
+      // Stash computed fields for sorting
+      g._league = league;
+      g._season = season;
+      g._sport = sport;
       const dateStr = g.event_date
         ? new Date(g.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
         : '—';
@@ -544,6 +667,7 @@
         <td>${score}</td>
         <td>${esc(league)}</td>
         <td style="font-size:11px;color:#7a8aaa">${esc(season)}</td>
+        <td style="font-size:11px;color:#7a8aaa">${esc(sport)}</td>
         <td style="font-size:10px;color:#556">${esc(g.external_id || '—')}</td>
       </tr>`;
     }
@@ -586,6 +710,41 @@
 
   // Initial load
   loadData();
-</script>
+  // ── Lightbox ───────────────────────────────────────────────────
+  function openLightbox(src, caption) {
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox-caption').textContent = caption || '';
+    lb.classList.add('open');
+    document.addEventListener('keydown', closeLightboxOnEsc);
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lightbox-img').src = '';
+    document.removeEventListener('keydown', closeLightboxOnEsc);
+  }
+  function closeLightboxOnEsc(e) { if (e.key === 'Escape') closeLightbox(); }
+
+  // ── Edit venue image URL ──────────────────────────────────────
+  async function editVenueImage(venueId, venueName, currentUrl) {
+    const newUrl = prompt(`Update image URL for ${venueName}:`, currentUrl || '');
+    if (newUrl === null) return; // cancelled
+    const value = newUrl.trim() || null;
+    const { error } = await sb.from('venues').update({ image_url: value }).eq('id', venueId);
+    if (error) {
+      alert('Failed to update: ' + error.message);
+    } else {
+      alert('Updated!');
+      loadData();
+    }
+  }
+  </script>
+
+  <!-- Lightbox modal -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
+    <div id="lightbox-caption" class="lightbox-caption"></div>
+  </div>
 </body>
 </html>

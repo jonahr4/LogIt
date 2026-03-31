@@ -1,12 +1,26 @@
 /**
  * Log It — GET /api/events/box-score
- * On-demand box score fetcher — calls ESPN API
+ * Sport-agnostic box score fetcher — calls ESPN summary API.
  *
  * Query params:
  *   external_id - ESPN game ID (stored on our events table)
+ *   league      - optional, e.g. "NBA" or "NFL". If not provided,
+ *                 we look it up from sports_events via Supabase.
+ *
+ * Returns a generic structure that works for any sport:
+ *   { available, teams: [{ abbreviation, full_name, categories: [{ name, labels, players }] }] }
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
+
+const LEAGUE_PATHS: Record<string, string> = {
+  NBA: 'basketball/nba',
+  NFL: 'football/nfl',
+  MLB: 'baseball/mlb',
+  NHL: 'hockey/nhl',
+  MLS: 'soccer/usa.1',
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -15,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const { external_id } = req.query;
+  const { external_id, league: leagueParam } = req.query;
 
   if (!external_id || typeof external_id !== 'string') {
     return res.status(422).json({
@@ -23,12 +37,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
+  // Determine the ESPN sport path
+  let leagueStr = typeof leagueParam === 'string' ? leagueParam.toUpperCase() : '';
+
+  // If no league passed, look it up from the DB
+  if (!leagueStr) {
+    try {
+      const supabase = getSupabaseAdmin();
+      const { data } = await supabase
+        .from('events')
+        .select('sports_events(league)')
+        .eq('external_id', external_id)
+        .eq('external_source', 'espn')
+        .maybeSingle();
+
+      const se = data?.sports_events;
+      const seRecord = Array.isArray(se) ? se[0] : se;
+      leagueStr = (seRecord?.league || 'NBA').toUpperCase();
+    } catch {
+      leagueStr = 'NBA';
+    }
+  }
+
+  const espnPath = LEAGUE_PATHS[leagueStr] || 'basketball/nba';
+
   try {
-    const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${external_id}`;
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${espnPath}/summary?event=${external_id}`;
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`ESPN stats error: ${response.status}`);
+      console.error(`ESPN summary error: ${response.status} for ${leagueStr} game ${external_id}`);
       return res.status(502).json({
         error: { code: 'UPSTREAM_ERROR', message: 'Failed to fetch box score', status: 502 },
       });
@@ -40,39 +78,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ available: false });
     }
 
+    // Generic parser — works for any sport's boxscore.players structure
     const formattedTeams = data.boxscore.players.map((teamData: any) => {
-      const statsBlock = teamData.statistics[0];
-      if (!statsBlock) return null;
+      if (!teamData.statistics || teamData.statistics.length === 0) return null;
 
-      const keys = statsBlock.names;
-      const idxMin = keys.indexOf('MIN');
-      const idxPts = keys.indexOf('PTS');
-      const idxReb = keys.indexOf('REB');
-      const idxAst = keys.indexOf('AST');
+      // Each sport has different stat categories:
+      // NBA: one category with names [MIN, PTS, REB, AST, ...]
+      // NFL: multiple categories [passing, rushing, receiving, ...]
+      const categories = teamData.statistics.map((statGroup: any) => {
+        const labels = statGroup.labels || statGroup.names || [];
+        const players = (statGroup.athletes || []).map((ath: any) => ({
+          name: ath.athlete?.displayName || 'Unknown',
+          position: ath.athlete?.position?.abbreviation || '',
+          stats: ath.stats || [],
+        }));
 
-      const players = statsBlock.athletes.map((ath: any) => {
-        const stats = ath.stats;
         return {
-          player: { name: ath.athlete.displayName },
-          minutes: idxMin >= 0 ? stats[idxMin] : '-',
-          points: idxPts >= 0 ? parseInt(stats[idxPts], 10) || 0 : 0,
-          rebounds: idxReb >= 0 ? parseInt(stats[idxReb], 10) || 0 : 0,
-          assists: idxAst >= 0 ? parseInt(stats[idxAst], 10) || 0 : 0,
+          name: statGroup.name || statGroup.type || 'stats',
+          labels,
+          players,
         };
       });
 
-      // Sort players by points descendings
-      players.sort((a: any, b: any) => b.points - a.points);
-
       return {
-        abbreviation: teamData.team.abbreviation,
-        full_name: teamData.team.displayName,
-        players,
+        abbreviation: teamData.team?.abbreviation || '',
+        full_name: teamData.team?.displayName || '',
+        categories,
       };
     }).filter(Boolean);
 
     return res.status(200).json({
-      available: true,
+      available: formattedTeams.length > 0,
+      league: leagueStr,
       teams: formattedTeams,
     });
   } catch (error: any) {

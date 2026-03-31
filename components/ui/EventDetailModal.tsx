@@ -1014,7 +1014,8 @@ function BoxScoreSection({ event }: { event: EventDetail }) {
     setIsLoadingBS(true);
     setBsError(null);
     try {
-      const data = await api.get<any>(`/api/events/box-score?external_id=${extId}`);
+      const league = (event as any).league || 'NBA';
+      const data = await api.get<any>(`/api/events/box-score?external_id=${extId}&league=${league}`);
       if (!data.available) {
         setBsError('Box score not available yet');
       } else {
@@ -1030,7 +1031,11 @@ function BoxScoreSection({ event }: { event: EventDetail }) {
 
   return (
     <>
-      <TouchableOpacity style={styles.boxScoreTab} activeOpacity={0.7} onPress={handleToggle}>
+      <TouchableOpacity
+        style={styles.boxScoreTab}
+        onPress={handleToggle}
+        activeOpacity={0.7}
+      >
         <Ionicons name="stats-chart-outline" size={16} color={Colors.primaryContainer} />
         <Text style={styles.boxScoreTabText}>Box Score</Text>
         <Ionicons name={isExpanded ? 'chevron-down' : 'chevron-forward'} size={14} color={Colors.textMuted} />
@@ -1053,26 +1058,39 @@ function BoxScoreSection({ event }: { event: EventDetail }) {
               <Text style={{ fontFamily: FontFamily.headlineBold, fontSize: 14, color: Colors.primaryContainer, marginBottom: 6 }}>
                 {team.full_name}
               </Text>
-              {/* Header */}
-              <View style={{ flexDirection: 'row', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}>
-                <Text style={{ flex: 2, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, letterSpacing: 1 }}>PLAYER</Text>
-                <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 1 }}>PTS</Text>
-                <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 1 }}>REB</Text>
-                <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 1 }}>AST</Text>
-                <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 1 }}>MIN</Text>
-              </View>
-              {/* Players */}
-              {team.players.slice(0, 8).map((p: any, i: number) => (
-                <View key={i} style={{ flexDirection: 'row', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' }}>
-                  <Text numberOfLines={1} style={{ flex: 2, fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.text }}>
-                    {p.player.name}
-                  </Text>
-                  <Text style={{ width: 28, fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.text, textAlign: 'center' }}>{p.points}</Text>
-                  <Text style={{ width: 28, fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.textMuted, textAlign: 'center' }}>{p.rebounds}</Text>
-                  <Text style={{ width: 28, fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.textMuted, textAlign: 'center' }}>{p.assists}</Text>
-                  <Text style={{ width: 28, fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.textMuted, textAlign: 'center' }}>{p.minutes || '-'}</Text>
-                </View>
-              ))}
+              {(team.categories || []).map((cat: any, catIdx: number) => {
+                const displayLabels = (cat.labels || []).slice(0, 4);
+                if (displayLabels.length === 0 || !cat.players?.length) return null;
+                return (
+                  <View key={catIdx} style={{ marginTop: catIdx > 0 ? 10 : 0 }}>
+                    {(team.categories || []).length > 1 && (
+                      <Text style={{ fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: Colors.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>
+                        {cat.name}
+                      </Text>
+                    )}
+                    <View style={{ flexDirection: 'row', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}>
+                      <Text style={{ flex: 2, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, letterSpacing: 1 }}>PLAYER</Text>
+                      {displayLabels.map((label: string, li: number) => (
+                        <Text key={li} style={{ width: 36, fontFamily: FontFamily.bodySemiBold, fontSize: 9, color: Colors.textMuted, textAlign: 'center', letterSpacing: 0.5 }}>
+                          {label}
+                        </Text>
+                      ))}
+                    </View>
+                    {cat.players.slice(0, 6).map((p: any, pi: number) => (
+                      <View key={pi} style={{ flexDirection: 'row', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.03)' }}>
+                        <Text numberOfLines={1} style={{ flex: 2, fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.text }}>
+                          {p.name}
+                        </Text>
+                        {(p.stats || []).slice(0, 4).map((stat: string, si: number) => (
+                          <Text key={si} style={{ width: 36, fontFamily: si === 0 ? FontFamily.bodySemiBold : FontFamily.bodyMedium, fontSize: 12, color: si === 0 ? Colors.text : Colors.textMuted, textAlign: 'center' }}>
+                            {stat || '-'}
+                          </Text>
+                        ))}
+                      </View>
+                    ))}
+                  </View>
+                );
+              })}
             </View>
           ))}
         </View>
