@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-31
 > **Changes:**
+> - 2026-03-31: NFL sync + backfill implemented (shared ESPN integration via `server-lib/espn.ts`). Box score refactored for multi-sport. Season type + playoff round tracking added (migration 015). Team browse redesigned with season-grouped headers, filter bar, and 100-result initial load.
 > - 2026-03-31: Venue auto-enrichment implemented (Nominatim + Wikimedia). Admin Portal v1 shipped (static HTML viewer for venues & games). Moved admin portal to v1.5 with partial completion.
 > - 2026-03-30: Checked off photo upload (Firebase Storage, log_photos table, compression, react-native-image-viewing viewer). Fixed stale Supabase Storage reference in log creation.
 > - 2026-03-29: Checked off levenshtein search, search pagination, and sports team browse flow.
@@ -62,6 +63,7 @@ gantt
 ### 3. Backend: Event Data & Search
 - [x] Implement robust full-text search querying our Supabase `events` table (pre-ingested via cron)
 - [x] Vercel cron function for scheduled ingestion (`api/cron/sync-nba.ts` — daily at 6 AM UTC)
+- [x] NFL sync + backfill via shared ESPN integration (`server-lib/espn.ts`, `api/cron/sync-nfl.ts`)
 - [x] Store canonical `Event` records and `sports_events` child records in Supabase Postgres
 - [x] Deduplication via `external_id` + `external_source` unique index
 - [x] Post-game score/status updates (cron updates existing rows)
@@ -69,8 +71,10 @@ gantt
 - [x] Venue normalization — `venues` table (migration 008) with `venue_id` FK on `events`
 - [x] Fuzzy/typo-tolerant search — `pg_trgm` trigram + `levenshtein` word-level + multi-token API splitting (migrations 009, 011)
 - [x] Search pagination — 40 results/page, `offset` param, `has_more` flag, Load More button
-- [x] Sports browse flow — Sports Hub → 30-team NBA logo grid → pre-filled team games
+- [x] Sports browse flow — Sports Hub → team logo grid → pre-filled team games with season-grouped headers and client-side filter
 - [x] Season backfill endpoint (`api/cron/backfill-nba.ts`) for historical data
+- [x] Season type + playoff round metadata (migration 015) — `season_type` and `round` columns on `sports_events`, searchable via `round ILIKE`
+- [x] Box score API refactored for multi-sport support (`api/events/box-score.ts` — dynamic sport/league lookup)
 - [ ] "Event not found" → manual entry fallback (UI wired, backend pending)
 
 
@@ -135,8 +139,8 @@ gantt
 - [ ] Attendance by city/state
 
 ### 12. Additional Sports
+- [x] Add NFL support (ESPN API — `api/cron/sync-nfl.ts`, `api/cron/backfill-nfl.ts`, `server-lib/nfl-venues.ts`)
 - [ ] Add MLB support (ESPN API)
-- [ ] Add NFL support
 - [ ] Add NHL support
 - [ ] Multi-sport filter in logbook and feed
 

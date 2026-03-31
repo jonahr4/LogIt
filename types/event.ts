@@ -53,6 +53,8 @@ export interface SportsEventMetadata {
   sport: 'basketball' | 'baseball' | 'football' | 'hockey';
   league: string;
   season: string | null;
+  season_type?: number | null;
+  round?: string | null;
   home_team_id: string | null;
   away_team_id: string | null;
   home_team_name: string;

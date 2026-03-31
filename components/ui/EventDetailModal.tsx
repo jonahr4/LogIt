@@ -921,13 +921,18 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
 
       {/* ── Info chips ── */}
       <View style={styles.chipsRow}>
-        <InfoChip icon={getEventIcon(event.eventType)} label={event.eventType} />
-        {event.season && <InfoChip icon="calendar-outline" label={event.season} />}
+        <InfoChip
+          icon={getEventIcon(event.eventType)}
+          label={event.season ? `${event.eventType} • ${event.season}` : event.eventType}
+        />
         {event.season_type === 1 && (
-          <InfoChip icon="flag-outline" label="Preseason" />
+          <InfoChip icon="flag-outline" label="Preseason" color="#4ade80" />
+        )}
+        {(event.season_type === 2 || (!event.season_type && event.league)) && (
+          <InfoChip icon="calendar-outline" label="Regular Season" />
         )}
         {(event.season_type === 3 || event.season_type === 5) && (
-          <InfoChip icon="trophy-outline" label={event.round || 'Playoffs'} />
+          <InfoChip icon="trophy-outline" label={event.round || 'Playoffs'} color="#fb923c" />
         )}
         {event.genre && <InfoChip icon="film-outline" label={event.genre} />}
       </View>
@@ -1118,11 +1123,11 @@ function getEventIcon(eventType?: string): React.ComponentProps<typeof Ionicons>
   return 'calendar-outline';
 }
 
-function InfoChip({ icon, label }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string }) {
+function InfoChip({ icon, label, color }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; color?: string }) {
   return (
-    <View style={styles.chip}>
-      <Ionicons name={icon} size={13} color={Colors.textMuted} />
-      <Text style={styles.chipText}>{label}</Text>
+    <View style={[styles.chip, color ? { borderColor: color + '30' } : undefined]}>
+      <Ionicons name={icon} size={13} color={color || Colors.textMuted} />
+      <Text style={[styles.chipText, color ? { color } : undefined]}>{label}</Text>
     </View>
   );
 }

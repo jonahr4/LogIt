@@ -1,8 +1,9 @@
 # Log It — API Design
 
-> **Last updated:** 2026-03-30
+> **Last updated:** 2026-03-31
 > **Changes:**
-> - 2026-03-30: Added `POST/DELETE /api/logs/photos` for photo metadata management (actual upload goes client→Firebase Storage directly). Removed stale `photo_urls` from log create request body.
+> - 2026-03-31: Added `season_type` and `round` to sports `type_metadata` response. Box score endpoint refactored for multi-sport (dynamic sport/league lookup from DB). Added `round` to search fuzzy ILIKE fields.
+> - 2026-03-30: Added `POST/DELETE /api/logs/photos` for photo metadata management (actual upload goes client->Firebase Storage directly). Removed stale `photo_urls` from log create request body.
 > - 2026-03-29: Updated `/api/events/search` — added `offset` pagination param, `has_more` in response meta, bumped default limit to 40, documented fuzzy search strategy (trigram + levenshtein word-level + multi-token splitting).
 > - 2026-03-29: Added implemented `POST /api/logs/delete` and `GET /api/events/box-score` endpoints.
 
@@ -80,8 +81,8 @@ Events follow a **polymorphic pattern** — all event types share a common base 
 | Endpoint | Method | Auth | Description | Status |
 |---|---|---|---|---|
 | `GET /events` | GET | Optional | Search/browse events across all types | — |
-| `GET /events/search` | GET | No | Full-text search on pre-ingested events | ✅ Implemented |
-| `GET /events/box-score` | GET | No | Fetch on-demand box score from ESPN for a game | ✅ Implemented |
+| `GET /events/search` | GET | No | Full-text search on pre-ingested events | Implemented |
+| `GET /events/box-score` | GET | No | Fetch on-demand box score from ESPN for any sport (dynamic sport/league lookup) | Implemented |
 | `GET /events/:id` | GET | Yes | Get single event with full details + type metadata | — |
 | `GET /events/:id/attendees` | GET | Yes | Get users who logged this event (respects privacy) | — |
 
@@ -97,7 +98,7 @@ Events follow a **polymorphic pattern** — all event types share a common base 
 | `offset` | int | Pagination offset (default 0) |
 
 **Fuzzy search strategy** (implemented in `search_events` RPC):
-- ILIKE substring match on title, team names, venue, league, sport
+- ILIKE substring match on title, team names, venue, league, sport, round
 - `pg_trgm` trigram similarity (minor typos)
 - `levenshtein` word-level distance ≤ 2 (transposition typos e.g. "celitcs" → "Celtics")
 - Multi-word queries tokenized in API: longest token queries DB, shorter tokens post-filtered
@@ -186,6 +187,8 @@ All event responses share a **common base shape** with a `type_metadata` object 
   "sport": "basketball",
   "league": "NBA",
   "season": "2025-26",
+  "season_type": 2,
+  "round": null,
   "home_team_id": "lakers",
   "away_team_id": "celtics",
   "home_team_name": "Los Angeles Lakers",

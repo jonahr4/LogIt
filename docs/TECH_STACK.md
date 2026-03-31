@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-31
 > **Changes:**
+> - 2026-03-31: Added NFL sync/backfill cron jobs and `nfl-venues.ts` to project structure. Updated migrations range to 001-015 (season_type/round tracking). Added `server-lib/espn.ts` shared ESPN utility.
 > - 2026-03-31: Added `admin/` static HTML portal for viewing venues & games data. Added venue auto-enrichment (Nominatim geocoding + Wikimedia Commons images) to `venue-lookup.ts`. Added backfill script. Updated project structure. Added anon RLS policies (migration 013). See `ADMIN_DASHBOARD.md` for full admin docs.
 > - 2026-03-30: Changed Storage layer for user photos to Firebase Storage (free 5GB, already in stack). Added expo-image-picker, expo-image-manipulator, react-native-image-viewing dependencies. Updated architecture diagram. Supabase Storage still used for avatars/logos.
 > - 2026-03-29: Updated project structure to reflect actual repo (added `server-lib/`, `scripts/`, `api/` subdirectories). Removed stale Ball Don't Lie decision note.
@@ -158,7 +159,7 @@ LogIt/
 │   └── _layout.tsx         # Root layout with auth gate
 ├── api/                    # Vercel serverless functions
 │   ├── auth/               # Auth endpoints (signup, me)
-│   ├── cron/               # Scheduled jobs (sync-nba, backfill-nba)
+│   ├── cron/               # Scheduled jobs (sync-nba, sync-nfl, backfill-nba, backfill-nfl)
 │   ├── events/             # Event endpoints (search, box-score)
 │   ├── logs/               # Log endpoints (create, update, delete, mine)
 │   └── users/              # User endpoints (profile, username check)
@@ -166,8 +167,8 @@ LogIt/
 │   ├── index.html          # Main dashboard (open in browser, no build)
 │   ├── config.js           # Supabase credentials (gitignored)
 │   └── config.example.js   # Template for config.js
-├── server-lib/             # Server-side utilities (Supabase admin, auth, venue lookup + enrichment)
-├── scripts/                # One-off scripts (ESPN backfill, arena images)
+├── server-lib/             # Server-side utilities (espn.ts, venue-lookup.ts, nba/nfl-venues.ts)
+├── scripts/                # One-off scripts (ESPN backfill, venue backfill)
 ├── components/             # Reusable UI components
 │   └── ui/                 # EditLogModal, EventDetailModal, GlassCard, etc.
 ├── constants/              # Colors, typography, config, enums, theme
@@ -177,7 +178,7 @@ LogIt/
 ├── types/                  # TypeScript type definitions (event, log, user, api)
 ├── assets/                 # Images, fonts
 ├── supabase/               # Database migrations
-│   └── migrations/         # 001-013 (users, events, sports, logs, venues, search, photos, anon RLS)
+│   └── migrations/         # 001-015 (users, events, sports, logs, venues, search, photos, anon RLS, season metadata)
 └── docs/                   # Planning documentation
 ```
 

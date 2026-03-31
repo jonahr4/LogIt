@@ -1,8 +1,9 @@
 # Log It — UI Design & User Flows
 
-> **Last updated:** 2026-03-29
+> **Last updated:** 2026-03-31
 > **Changes:**
-> - 2026-03-29: Documented sports browse flow (Sports Hub → Teams grid → pre-filled search) in Add Log. Updated search to note pagination/load more and multi-word token search.
+> - 2026-03-31: Redesigned team browse: season-grouped inline headers ("2025-26", "2024-25"), phase sub-dividers (preseason/postseason), client-side filter bar, 100-result initial load with deduped Load More. Documented success checkmark animation.
+> - 2026-03-29: Documented sports browse flow (Sports Hub -> Teams grid -> pre-filled search) in Add Log. Updated search to note pagination/load more and multi-word token search.
 > - 2026-03-29: Fixed stale Ball Don't Lie reference in Add Log search to ESPN.
 
 > - 2026-03-29: Fully documented the implementation of Logbook's dynamic timeline layout, including Upcoming vs Past grouping, monthly dividers, and days-remaining pills.
@@ -130,13 +131,18 @@ graph LR
 **Step 1a — Sports Browse Flow (Sports only):**
 - Selecting Sports shows a **Sports Hub** with two paths:
   1. **Search All Games** — green full-width button, opens the freeform search screen
-  2. **Browse by Sport** — rows for NBA (active), NFL/MLB/NHL (coming soon)
-     - Tapping NBA shows a **3-column team logo grid** (30 NBA teams, ESPN logos)
-     - Tapping a team immediately loads that team's games — no search bar shown, just the team short name as the header (e.g. "Celtics")
+  2. **Browse by Sport** — rows for NBA, NFL (active); MLB/NHL (coming soon)
+     - Tapping a league shows a **team logo grid** (ESPN logos)
+     - Tapping a team:
+       - Shows team name header with logo
+       - **Client-side filter bar** to narrow results by title
+       - Loads 100 results initially, grouped by **season** with inline headers (e.g., "2025-26")
+       - **Phase sub-dividers** for preseason (green) and postseason (orange) within seasons
+       - **Load More** button with deduplication to prevent duplicate keys
 - Back navigation: Games → Teams → Hub → Type grid
 
 **Step 2 — Search/Browse Real Events:**
-- Search queries Supabase via `search_events` RPC (fuzzy: trigram + levenshtein, ILIKE)
+- Search queries Supabase via `search_events` RPC (fuzzy: trigram + levenshtein, ILIKE on title, teams, venue, round)
 - Multi-word queries (e.g. "celtics golden state") are tokenized: longest word sent to DB, secondary tokens post-filtered in API
 - Results paginate at 40/page; **Load More** button appears when `has_more: true`
 - If search yields no results, "Add Manually" fallback appears

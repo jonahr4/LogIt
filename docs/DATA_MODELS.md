@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-31
 > **Changes:**
+> - 2026-03-31: Added `season_type` and `round` columns to `sports_events` (migration 015). Added anon UPDATE policy on `venues` (migration 014). Updated ERD and entity details.
 > - 2026-03-31: Added anon SELECT policies on `events` and `sports_events` (migration 013) for admin portal access. Updated Venue entity to reflect auto-enrichment via Nominatim + Wikimedia Commons.
 > - 2026-03-30: Added `log_photos` table (migration 012). Replaced stale `string[] photos` column on `user_event_logs` with proper FK relationship to `log_photos`. Updated ERD.
 > - 2026-03-29: Added implemented `Venue` entity (migration 008). Added `venue_id` FK on `events`. Added `nightlife` to event_type enum in entity details.
@@ -74,6 +75,8 @@ erDiagram
         enum sport "basketball | baseball | football | hockey"
         string league
         string season
+        int season_type "1=preseason 2=regular 3=postseason 4=offseason 5=allstar"
+        string round "nullable - playoff round name"
         string home_team_id
         string away_team_id
         string home_team_name
@@ -226,6 +229,8 @@ Each child table has a **1:1 relationship** with `events` via `event_id` foreign
 | `sport` | enum | `basketball`, `baseball`, `football`, `hockey` |
 | `league` | string | `NBA`, `MLB`, `NFL`, `NHL` |
 | `season` | string | e.g., `2025-26` |
+| `season_type` | int | ESPN type: `1` (preseason), `2` (regular), `3` (postseason), `4` (offseason), `5` (all-star) |
+| `round` | string (nullable) | Playoff round name (e.g., "NBA Finals", "Super Bowl") |
 | `home_team_id` | string | Reference to team |
 | `away_team_id` | string | Reference to team |
 | `home_team_name` | string | Denormalized for display |
@@ -383,7 +388,7 @@ Normalized venue data. 30 NBA home arenas seeded with full metadata; additional 
 | `created_at` | timestamp | Record creation |
 | `updated_at` | timestamp | Last update |
 
-> **RLS:** Migration 013 adds anon SELECT policies on `events` and `sports_events` so the admin portal can read game data without authentication. Venue data has no RLS (public by default).
+> **RLS:** Migration 013 adds anon SELECT policies on `events` and `sports_events` so the admin portal can read game data without authentication. Migration 014 adds anon UPDATE on `venues` for enrichment scripts. Venue data has no RLS (public by default).
 
 ---
 

@@ -185,6 +185,7 @@ All planning and reference docs live in [`docs/`](./docs/):
 
 | Date | Update |
 |---|---|
+| 2026-03-31 | Season metadata — `season_type` + playoff `round` tracking, multi-sport box score, team browse with season headers |
 | 2026-03-31 | NFL integration — shared ESPN utility, sync + backfill scripts, 32 NFL teams in browse UI |
 | 2026-03-31 | Admin portal — static HTML dashboard for venues & games with filters, pagination, sorting |
 | 2026-03-31 | Venue auto-enrichment — Nominatim geocoding + Wikimedia Commons images |

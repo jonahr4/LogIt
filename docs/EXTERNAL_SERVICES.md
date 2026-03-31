@@ -2,7 +2,7 @@
 
 > **Last updated:** 2026-03-31
 > **Changes:**
-> - 2026-03-31: Venue media strategy updated — replaced static Wikipedia image mappings with dynamic Wikimedia Commons API + Nominatim geocoding. Both are free, no API key, auto-invoked on new venue creation.
+> - 2026-03-31: NFL ingestion implemented via shared ESPN integration (`server-lib/espn.ts`). Updated ingestion map to show NFL as MVP. Added NFL sync section.
 > - 2026-03-29: Added Strategy C — client-side ESPN live score fetch for non-completed sports events.
 > - 2026-03-29: Fixed stale BDL section headers and env var references to match ESPN-only ingestion.
 > - 2026-03-29: Replaced Ball Dont Lie with ESPN API entirely for both NBA game data and high-res sports team logos. Added Wikipedia venue scraping for static photo mappings.
@@ -89,8 +89,9 @@ Nightly cron → Writes final score into DB
 
 | Event Type | Strategy | External API | Status | DB Table |
 |---|---|---|---|---|
-| **Sports (NBA)** | 🅰️ Pre-Ingest | ESPN API | **MVP** | `events` + `sports_events` |
-| **Sports (MLB/NFL/NHL)** | 🅰️ Pre-Ingest | ESPN API | v1.5 | `events` + `sports_events` |
+| **Sports (NBA)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (NFL)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (MLB/NHL)** | A Pre-Ingest | ESPN API | v1.5 | `events` + `sports_events` |
 | **Movies** | 🅰️ Pre-Ingest | TMDB | v2.0 | `events` + `movie_events` |
 | **Concerts** | 🅱️ On-Demand | Ticketmaster Discovery | v2.0 | `events` + `concert_events` |
 | **Restaurants** | 🅱️ On-Demand | Google Places / Foursquare | v2.0 | `events` + `restaurant_events` |
@@ -162,7 +163,33 @@ User types "Celtics" in Add Log
 
 ---
 
-### ⚾🏈🏒 Sports — MLB / NFL / NHL (v1.5)
+### 🏈 Sports — NFL (Implemented)
+
+| Detail | Value |
+|---|---|
+| **API** | ESPN API |
+| **Strategy** | Pre-Ingest via Vercel cron |
+| **Env key** | N/A (unauthenticated) |
+| **Free tier** | Yes — free, undocumented API |
+| **Data volume** | ~272 games/season |
+| **Shared logic** | `server-lib/espn.ts` (same `fetchAndUpsertGames` as NBA) |
+
+#### Cron Job: Daily NFL Sync
+
+| Field | Value |
+|---|---|
+| **Schedule** | Every day at 6:00 AM UTC (`0 6 * * *`) |
+| **Endpoint** | `api/cron/sync-nfl.ts` |
+| **Logic** | Same pattern as NBA — fetch games from ESPN, upsert via shared `espn.ts`. Uses `server-lib/nfl-venues.ts` for 32-team venue mapping. |
+| **Dedup key** | `external_id = ESPN game ID`, `external_source = 'espn'` |
+
+#### Backfill: `api/cron/backfill-nfl.ts`
+
+One-time historical backfill for full NFL season. Run manually via `npx tsx api/cron/backfill-nfl.ts`.
+
+---
+
+### ⚾🏒 Sports — MLB / NHL (v1.5)
 
 | Detail | Value |
 |---|---|
