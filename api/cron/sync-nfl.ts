@@ -1,11 +1,9 @@
 /**
- * Log It — GET /api/cron/sync-nba
- * Vercel Cron Job: Syncs NBA games from ESPN into Supabase
- * Schedule: daily at 6:00 AM UTC (configured in vercel.json)
+ * Log It — GET /api/cron/sync-nfl
+ * Vercel Cron Job: Syncs NFL games from ESPN into Supabase
+ * Schedule: daily at 6:05 AM UTC (configured in vercel.json)
  *
- * Fetches games for today ± 7 days, upserts into events + sports_events
- * Links events to the `venues` table via `venue_id` FK.
- *
+ * Fetches games for today ± 7 days, upserts into events + sports_events.
  * Uses shared ESPN utility — see server-lib/espn.ts
  */
 
@@ -13,23 +11,24 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
 import { fetchESPNScoreboard, upsertESPNGame, type SportConfig } from '../../server-lib/espn';
 
-/** NBA season: Oct+ → year/year+1, Jan-Sep → (year-1)/year */
-function deriveNBASeason(eventDate: string): string {
+/** NFL uses a single year for the season (e.g. '2025') based on when the season starts */
+function deriveNFLSeason(eventDate: string): string {
   const d = new Date(eventDate);
   const year = d.getFullYear();
-  const month = d.getMonth(); // 0-indexed: 0=Jan, 9=Oct
-  if (month >= 9) {
-    return `${year}-${String(year + 1).slice(2)}`;
+  const month = d.getMonth(); // 0-indexed
+  // NFL season starts in September. Games Sep+ belong to that year, games Jan-Aug belong to previous year
+  if (month >= 8) {
+    return String(year);
   }
-  return `${year - 1}-${String(year).slice(2)}`;
+  return String(year - 1);
 }
 
-const NBA_CONFIG: SportConfig = {
-  sport: 'basketball',
-  league: 'NBA',
-  espnPath: 'basketball/nba',
-  venueType: 'arena',
-  deriveSeason: deriveNBASeason,
+const NFL_CONFIG: SportConfig = {
+  sport: 'football',
+  league: 'NFL',
+  espnPath: 'football/nfl',
+  venueType: 'stadium',
+  deriveSeason: deriveNFLSeason,
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -39,7 +38,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  // Verify cron secret
   const cronSecret = req.headers['authorization'];
   const isDev = process.env.NODE_ENV === 'development' || !process.env.CRON_SECRET;
   if (!isDev && cronSecret !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -49,11 +47,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const allGames = await fetchESPNScoreboard(NBA_CONFIG.espnPath);
-    console.log(`Fetched ${allGames.length} NBA games from ESPN API`);
+    const allGames = await fetchESPNScoreboard(NFL_CONFIG.espnPath);
+    console.log(`Fetched ${allGames.length} NFL games from ESPN API`);
 
     if (allGames.length === 0) {
-      return res.status(200).json({ message: 'No games found for date range', synced: 0 });
+      return res.status(200).json({ message: 'No NFL games found for date range', synced: 0 });
     }
 
     const supabase = getSupabaseAdmin();
@@ -62,25 +60,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     for (const game of allGames) {
       try {
-        const result = await upsertESPNGame(supabase, game, NBA_CONFIG);
+        const result = await upsertESPNGame(supabase, game, NFL_CONFIG);
         if (result === 'inserted') synced++;
         else if (result === 'updated') updated++;
       } catch (err) {
-        console.error(`Unexpected error processing game ${game.id}:`, err);
+        console.error(`Unexpected error processing NFL game ${game.id}:`, err);
       }
     }
 
-    console.log(`Synced ${synced} games (${updated} with scores)`);
+    console.log(`Synced ${synced} NFL games (${updated} updated)`);
     return res.status(200).json({
-      message: `Synced ${synced} NBA games`,
+      message: `Synced ${synced} NFL games`,
       synced,
       updated,
       total_fetched: allGames.length,
     });
   } catch (error: any) {
-    console.error('NBA sync error:', error);
+    console.error('NFL sync error:', error);
     return res.status(500).json({
-      error: { code: 'SERVER_ERROR', message: error.message || 'Sync failed', status: 500 },
+      error: { code: 'SERVER_ERROR', message: error.message || 'NFL sync failed', status: 500 },
     });
   }
 }

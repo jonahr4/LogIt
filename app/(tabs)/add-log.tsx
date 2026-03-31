@@ -37,7 +37,7 @@ const EVENT_TYPES = [
 
 const SUPPORTED_SPORTS = [
   { key: 'nba', label: 'NBA', icon: 'basketball-outline' as const, active: true },
-  { key: 'nfl', label: 'NFL', icon: 'american-football-outline' as const, active: false },
+  { key: 'nfl', label: 'NFL', icon: 'american-football-outline' as const, active: true },
   { key: 'mlb', label: 'MLB', icon: 'baseball-outline' as const, active: false },
   { key: 'nhl', label: 'NHL', icon: 'snow-outline' as const, active: false },
 ] as const;
@@ -77,6 +77,50 @@ const NBA_TEAMS = [
   ...t,
   logo: `https://a.espncdn.com/i/teamlogos/nba/500/${t.abbrev}.png`,
 }));
+
+const NFL_TEAMS = [
+  { name: 'Arizona Cardinals',       short: 'Cardinals',    abbrev: 'ari' },
+  { name: 'Atlanta Falcons',         short: 'Falcons',      abbrev: 'atl' },
+  { name: 'Baltimore Ravens',        short: 'Ravens',       abbrev: 'bal' },
+  { name: 'Buffalo Bills',           short: 'Bills',        abbrev: 'buf' },
+  { name: 'Carolina Panthers',       short: 'Panthers',     abbrev: 'car' },
+  { name: 'Chicago Bears',           short: 'Bears',        abbrev: 'chi' },
+  { name: 'Cincinnati Bengals',      short: 'Bengals',      abbrev: 'cin' },
+  { name: 'Cleveland Browns',        short: 'Browns',       abbrev: 'cle' },
+  { name: 'Dallas Cowboys',          short: 'Cowboys',      abbrev: 'dal' },
+  { name: 'Denver Broncos',          short: 'Broncos',      abbrev: 'den' },
+  { name: 'Detroit Lions',           short: 'Lions',        abbrev: 'det' },
+  { name: 'Green Bay Packers',       short: 'Packers',      abbrev: 'gb'  },
+  { name: 'Houston Texans',          short: 'Texans',       abbrev: 'hou' },
+  { name: 'Indianapolis Colts',      short: 'Colts',        abbrev: 'ind' },
+  { name: 'Jacksonville Jaguars',    short: 'Jaguars',      abbrev: 'jax' },
+  { name: 'Kansas City Chiefs',      short: 'Chiefs',       abbrev: 'kc'  },
+  { name: 'Las Vegas Raiders',       short: 'Raiders',      abbrev: 'lv'  },
+  { name: 'Los Angeles Chargers',    short: 'Chargers',     abbrev: 'lac' },
+  { name: 'Los Angeles Rams',        short: 'Rams',         abbrev: 'lar' },
+  { name: 'Miami Dolphins',          short: 'Dolphins',     abbrev: 'mia' },
+  { name: 'Minnesota Vikings',       short: 'Vikings',      abbrev: 'min' },
+  { name: 'New England Patriots',    short: 'Patriots',     abbrev: 'ne'  },
+  { name: 'New Orleans Saints',      short: 'Saints',       abbrev: 'no'  },
+  { name: 'New York Giants',         short: 'Giants',       abbrev: 'nyg' },
+  { name: 'New York Jets',           short: 'Jets',         abbrev: 'nyj' },
+  { name: 'Philadelphia Eagles',     short: 'Eagles',       abbrev: 'phi' },
+  { name: 'Pittsburgh Steelers',     short: 'Steelers',     abbrev: 'pit' },
+  { name: 'San Francisco 49ers',     short: '49ers',        abbrev: 'sf'  },
+  { name: 'Seattle Seahawks',        short: 'Seahawks',     abbrev: 'sea' },
+  { name: 'Tampa Bay Buccaneers',    short: 'Bucs',         abbrev: 'tb'  },
+  { name: 'Tennessee Titans',        short: 'Titans',       abbrev: 'ten' },
+  { name: 'Washington Commanders',   short: 'Commanders',   abbrev: 'wsh' },
+].map(t => ({
+  ...t,
+  logo: `https://a.espncdn.com/i/teamlogos/nfl/500/${t.abbrev}.png`,
+}));
+
+/** Get the team array for the selected sport */
+function getTeamsForSport(sport: string | null) {
+  if (sport === 'nfl') return NFL_TEAMS;
+  return NBA_TEAMS; // default
+}
 
 export default function AddLogScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -433,7 +477,7 @@ export default function AddLogScreen() {
             <Text style={styles.apiSearchSubtitle}>Tap a team to see their games.</Text>
 
             <View style={styles.teamsGrid}>
-              {NBA_TEAMS.map((team) => (
+              {getTeamsForSport(selectedSport).map((team) => (
                 <TouchableOpacity
                   key={team.abbrev}
                   activeOpacity={0.7}
@@ -487,7 +531,7 @@ export default function AddLogScreen() {
             {selectedType === 'sports' && selectedSport && activeSearchQuery ? (
               <View style={styles.teamBrowseHeader}>
                 <Text style={styles.apiSearchTitle}>
-                  {NBA_TEAMS.find(t => t.name === activeSearchQuery)?.short ?? activeSearchQuery}
+                  {getTeamsForSport(selectedSport).find(t => t.name === activeSearchQuery)?.short ?? activeSearchQuery}
                 </Text>
                 {isSearching && (
                   <ActivityIndicator size="small" color={Colors.primaryContainer} />

@@ -44,31 +44,70 @@ async function geocodeVenue(
 
 /**
  * Search Wikimedia Commons for a venue image. Free, no API key.
- * Returns the first image URL found, or null.
+ * Includes city for disambiguation and filters out non-photo results.
  */
-async function findVenueImage(name: string): Promise<string | null> {
-  try {
-    const url =
-      `https://commons.wikimedia.org/w/api.php?action=query` +
-      `&generator=search&gsrsearch=${encodeURIComponent(name + ' arena')}&gsrnamespace=6&gsrlimit=3` +
-      `&prop=imageinfo&iiprop=url&iiurlwidth=1280&format=json`;
-    const resp = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT },
-    });
-    if (!resp.ok) return null;
-    const data = await resp.json();
-    const pages = data?.query?.pages;
-    if (!pages) return null;
-    // Return the thumbnail (resized) or original URL of the first result
-    for (const page of Object.values(pages) as any[]) {
-      const info = page?.imageinfo?.[0];
-      if (info?.thumburl) return info.thumburl;
-      if (info?.url) return info.url;
+async function findVenueImage(
+  name: string,
+  city: string
+): Promise<string | null> {
+  // File extensions to reject (not photos of venues)
+  const BAD_EXTENSIONS = ['.pdf', '.svg', '.ogg', '.ogv', '.webm', '.djvu', '.tif'];
+
+  async function searchWikimedia(query: string): Promise<string | null> {
+    try {
+      const url =
+        `https://commons.wikimedia.org/w/api.php?action=query` +
+        `&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrnamespace=6&gsrlimit=8` +
+        `&prop=imageinfo&iiprop=url&iiurlwidth=1280&format=json`;
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': USER_AGENT },
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      const pages = data?.query?.pages;
+      if (!pages) return null;
+
+      // Score each result by relevance to venue name
+      const nameLower = name.toLowerCase();
+      const nameWords = nameLower.split(/[\s\-_]+/).filter(w => w.length > 2);
+      const candidates: { url: string; score: number }[] = [];
+
+      for (const page of Object.values(pages) as any[]) {
+        const info = page?.imageinfo?.[0];
+        const imageUrl = info?.thumburl || info?.url;
+        if (!imageUrl) continue;
+
+        // Skip non-photo file types
+        const urlLower = imageUrl.toLowerCase();
+        if (BAD_EXTENSIONS.some(ext => urlLower.includes(ext))) continue;
+
+        // Score by how many venue name words appear in the filename
+        const title = (page.title || '').toLowerCase();
+        let score = 0;
+        for (const word of nameWords) {
+          if (title.includes(word)) score++;
+        }
+
+        candidates.push({ url: imageUrl, score });
+      }
+
+      if (candidates.length === 0) return null;
+
+      // Return highest-scoring candidate
+      candidates.sort((a, b) => b.score - a.score);
+      return candidates[0].url;
+    } catch {
+      return null;
     }
-    return null;
-  } catch {
-    return null;
   }
+
+  // Try with city first for better disambiguation
+  let result = await searchWikimedia(`${name} ${city}`);
+  if (result) return result;
+
+  // Fallback: just the venue name
+  result = await searchWikimedia(name);
+  return result;
 }
 
 /**
@@ -82,7 +121,7 @@ export async function enrichVenueMetadata(
 ): Promise<{ lat?: number; lng?: number; image_url?: string }> {
   const [geo, image] = await Promise.all([
     geocodeVenue(name, city, state),
-    findVenueImage(name),
+    findVenueImage(name, city),
   ]);
   const result: { lat?: number; lng?: number; image_url?: string } = {};
   if (geo) {

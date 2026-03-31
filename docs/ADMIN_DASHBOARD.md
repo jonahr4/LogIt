@@ -2,7 +2,8 @@
 
 > **Last updated:** 2026-03-31
 > **Changes:**
-> - 2026-03-31: Initial document. Static HTML admin portal with venues & games data viewer, filtering, pagination, and venue enrichment system.
+> - 2026-03-31: Updated for multi-sport support (NFL). League filters now dynamically include NFL alongside NBA.
+> - 2026-03-31: Initial document.
 
 ## Overview
 
@@ -41,7 +42,7 @@ Displays all venues from the `venues` table.
 
 **Filter chips:**
 - **Enrichment:** All / Complete / Partial / Missing
-- **Source:** All / nba / none
+- **Source:** All / nba / nfl / none (dynamically populated from venue data)
 
 ### Games Tab
 
@@ -61,7 +62,7 @@ Displays all events joined with `sports_events` child data.
 
 **Filter chips:**
 - **Status:** All / upcoming / in_progress / completed
-- **League:** All / NBA / (future leagues)
+- **League:** All / NBA / NFL / (dynamically populated as leagues are added)
 - **Score:** All / Has Score / No Score
 - **City:** Top 8 cities by game count
 
@@ -75,7 +76,7 @@ Displays all events joined with `sports_events` child data.
 
 ## Venue Auto-Enrichment
 
-When any sync script (NBA, future NFL, etc.) discovers a new venue, `findOrCreateVenue()` in `server-lib/venue-lookup.ts` automatically enriches it:
+When any sync script (NBA, NFL, or future sports) discovers a new venue, `findOrCreateVenue()` in `server-lib/venue-lookup.ts` automatically enriches it:
 
 | Data | Source | Method |
 |---|---|---|
@@ -110,6 +111,7 @@ npx tsx api/scripts/backfill-venues.ts
 | `admin/index.html` | Main dashboard UI |
 | `admin/config.js` | Supabase credentials (gitignored) |
 | `admin/config.example.js` | Template for config.js |
+| `server-lib/espn.ts` | Shared ESPN fetch/parse/upsert (used by NBA + NFL sync) |
 | `server-lib/venue-lookup.ts` | `findOrCreateVenue()` + `enrichVenueMetadata()` |
 | `api/scripts/backfill-venues.ts` | One-time venue backfill script |
 | `supabase/migrations/013_anon_events_read.sql` | Anon SELECT policies on events + sports_events |

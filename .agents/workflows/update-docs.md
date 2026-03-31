@@ -61,6 +61,16 @@ Some changes require updating multiple docs:
 | Photo handling changed | `UI_AND_FLOWS.md`, `API_DESIGN.md`, `DATA_MODELS.md` |
 | Admin portal updated | `ADMIN_DASHBOARD.md`, `TECH_STACK.md`, `FEATURE_ROADMAP.md` |
 | Venue enrichment changed | `ADMIN_DASHBOARD.md`, `EXTERNAL_SERVICES.md`, `DATA_MODELS.md` |
+| New sport / event type added | `docs/event-types/sports.md`, `FEATURE_ROADMAP.md`, `EXTERNAL_SERVICES.md`, `README.md` |
+
+### README Updates
+
+The project `README.md` is the **front-facing** presentation of the repo. It should be checked on any major change:
+
+- **When to update:** New sport added, major feature shipped, tech stack changed, new docs created
+- **What to update:** Features table, Tech Stack table, Architecture tree, Documentation table, Status section
+- **Changelog:** Add a row to the Changelog table at the bottom of the README with the date and a one-line summary. This is for presentation purposes — README only.
+- **Keep minimal:** Only update the README for externally visible or structurally significant changes. Internal refactors or doc-only changes do not need a README update.
 
 ### Format Consistency
 - Use tables for structured comparisons
@@ -78,6 +88,18 @@ If the project expands into a new major area not covered by the existing docs, c
 - A dedicated **testing strategy** doc when test infrastructure is set up
 - A **deployment & infrastructure** doc when CI/CD is configured
 - A **content moderation** doc if user-generated content policies are needed
+
+### Event Type Workflows (`docs/event-types/`)
+
+The `docs/event-types/` subfolder contains step-by-step workflow docs for adding new event types. Each event category gets its own file:
+
+| File | Purpose |
+|---|---|
+| [`sports.md`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/docs/event-types/sports.md) | Adding new sports leagues (ESPN sync, venues, team arrays, cron config) |
+| `movies.md` (future) | Adding movie ingestion (TMDB API) |
+| `concerts.md` (future) | Adding concert ingestion (Ticketmaster API) |
+
+These are living documents — update them each time a new event type or league is added. They track which types are implemented and provide the exact file checklist for adding new ones.
 
 ---
 
