@@ -139,6 +139,8 @@ These are **living workflow documents** for adding new event types. Each file is
 7. ESPN API reference table with paths for 10 leagues
 8. Team logo CDN pattern
 9. Tracker of which sports are implemented
+10. **ESPN playoff/season metadata** — what fields exist, planned `season_type` + `round` DB columns, planned UI pill changes
+11. **Comprehensive testing strategy** — required test matrix (preseason/regular/postseason for all sports), date ranges, spot-check SQL, box score validation
 
 **Update after:** Every new sport is added — check it off and add any new learnings.
 

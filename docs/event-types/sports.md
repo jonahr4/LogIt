@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-03-31
 > **Changes:**
+> - 2026-03-31: Added ESPN playoff/season metadata reference, planned `season_type` + `round` fields, and comprehensive testing strategy.
 > - 2026-03-31: Initial document. Documents the pattern for adding NFL as the second sport, establishing the reusable workflow for future leagues.
 
 ## Overview
@@ -97,9 +98,13 @@ Offset cron times by 5 minutes per sport to avoid parallel runs.
 
 ### 6. Test
 
-1. **Sync first:** `curl http://localhost:3000/api/cron/sync-{sport}` — verify games appear in admin portal
-2. **App browse:** Sports → tap league → team grid → tap team → games load
-3. **Backfill:** Only after sync is confirmed working
+See the **Testing Strategy** section below. At minimum:
+
+1. **Sync first:** Run the sync script and verify games appear in admin portal
+2. **Season types:** Verify preseason, regular season, and postseason games all sync correctly
+3. **App browse:** Sports → tap league → team grid → tap team → games load
+4. **Box score:** Open a completed game detail → expand box score → verify stats render
+5. **Backfill:** Only after sync is confirmed working across all season types
 
 ---
 
@@ -146,3 +151,133 @@ https://a.espncdn.com/i/teamlogos/{sport}/500/{abbrev}.png
 - [ ] NHL
 - [ ] MLS
 - [ ] Premier League
+
+---
+
+## ESPN Playoff & Season Metadata
+
+> **Status:** Documented, not yet implemented. When implemented, add `season_type` and `round` columns to `sports_events` and update the sync/backfill scripts.
+
+ESPN provides consistent season metadata across all sports via these fields on each scoreboard event:
+
+### Available Fields
+
+| Field | Regular Season | Postseason | Available In |
+|---|---|---|---|
+| `season.type` | `2` | `3` | ✅ All sports |
+| `season.slug` | `"regular-season"` | `"post-season"` | ✅ All sports |
+| `competitions[0].notes[0].headline` | `[]` (empty) | Round name (see below) | ✅ All sports |
+| `competitions[0].type.abbreviation` | `"STD"` | `"QTR"`, `"SEMI"`, etc. | ✅ All sports |
+| `competitions[0].series` | `undefined` | Series data (wins, total) | ✅ Series sports only (MLB, NBA, NHL) |
+| `week` | Week number | Playoff week | ⚠️ NFL only |
+
+### Season Type Values
+
+| `season.type` | Meaning |
+|---|---|
+| `1` | Preseason |
+| `2` | Regular Season |
+| `3` | Postseason |
+| `4` | Offseason |
+| `5` | Play-In (NBA-specific) |
+
+### Notes Headline Examples (Postseason)
+
+The `competitions[0].notes[0].headline` field contains the specific round/game name:
+
+| Sport | Example Headlines |
+|---|---|
+| NFL | `"Wild Card"`, `"Divisional"`, `"NFC Championship"`, `"Super Bowl LX"` |
+| NBA | `"Western Conf Semis - Game 3"`, `"NBA Finals - Game 7"` |
+| MLB | `"ALDS - Game 5"`, `"World Series - Game 1"` |
+| NHL | `"Stanley Cup Final - Game 4"` |
+
+### Planned Schema Changes
+
+Two new columns on `sports_events`:
+
+```sql
+ALTER TABLE sports_events
+  ADD COLUMN season_type INTEGER,  -- 1=preseason, 2=regular, 3=postseason
+  ADD COLUMN round TEXT;           -- from notes headline, e.g. "Super Bowl LX"
+```
+
+### Planned UI Changes
+
+On the Event Detail Modal, replace the existing league/status info pills with a **season type pill**:
+
+- Regular season games: no extra pill (default)
+- Preseason: show `Preseason` pill
+- Postseason: show the round name, e.g. `Super Bowl LX`, `NBA Finals - Game 3`, `ALDS - Game 5`
+
+The league name ("NFL", "NBA") and final status are already visible from the score bug and team logos, so those pills can be removed to reduce redundancy.
+
+### Sync/Backfill Changes
+
+In `server-lib/espn.ts`, update `upsertESPNGame()` to extract and store:
+```ts
+const seasonType = game.season?.type || 2;
+const round = game.competitions?.[0]?.notes?.[0]?.headline || null;
+```
+
+This is sport-agnostic — no per-sport parsing needed.
+
+---
+
+## Testing Strategy
+
+When adding a new sport **or modifying sync/display logic**, test across all three season types. ESPN structures its data differently per season type and edge cases vary.
+
+### Required Test Matrix
+
+For each sport, verify all three season types work end-to-end:
+
+| Test | Preseason | Regular Season | Postseason |
+|---|---|---|---|
+| ESPN API returns data | ✅ | ✅ | ✅ |
+| Games sync to Supabase correctly | ✅ | ✅ | ✅ |
+| Venue auto-enrichment works | ✅ | ✅ | ✅ |
+| Box score loads and renders | ⚠️ (scores may be partial) | ✅ | ✅ |
+| Event detail modal displays correctly | ✅ | ✅ | ✅ |
+| International/neutral venue handling | — | ✅ (London, Mexico City) | ✅ (Super Bowl, etc.) |
+
+### How to Test Season Types
+
+**Sync script (daily ±7 days):** Depends on time of year. If the sport is in offseason, sync will return 0 games — this is expected.
+
+**Backfill script:** Use date ranges that cover each season type:
+
+| Sport | Preseason Dates | Regular Season Dates | Postseason Dates |
+|---|---|---|---|
+| NFL | Aug 1 – Sep 5 | Sep 5 – Jan 5 | Jan 5 – Feb 20 |
+| NBA | Oct 1 – Oct 20 | Oct 20 – Apr 15 | Apr 15 – Jun 25 |
+| MLB | Feb 20 – Mar 25 | Mar 25 – Oct 1 | Oct 1 – Nov 5 |
+| NHL | Sep 15 – Oct 10 | Oct 10 – Apr 15 | Apr 15 – Jun 25 |
+
+### Spot-Check Queries
+
+After backfill, verify data in admin portal or Supabase:
+
+```sql
+-- Count games by season type (once season_type column is added)
+SELECT season_type, COUNT(*) FROM sports_events WHERE league = 'NFL' GROUP BY season_type;
+
+-- Check for playoff games with round names (once round column is added)
+SELECT e.title, se.round FROM events e JOIN sports_events se ON se.event_id = e.id
+WHERE se.league = 'NFL' AND se.season_type = 3 LIMIT 10;
+
+-- Until those columns exist, verify by date range in admin portal
+```
+
+### Box Score Validation
+
+The box score API (`/api/events/box-score`) returns sport-specific stat categories:
+
+| Sport | Categories | Key Labels |
+|---|---|---|
+| NBA | 1 category | MIN, PTS, REB, AST, STL, BLK |
+| NFL | 10 categories | passing (C/ATT, YDS, TD), rushing (CAR, YDS, TD), receiving (REC, YDS, TD), etc. |
+| MLB | TBD | batting (AB, R, H, RBI), pitching (IP, H, R, ER, K) |
+| NHL | TBD | skating (G, A, PTS, +/-), goaltending (SA, SV, SV%) |
+
+When adding a new sport, expand a box score for at least one completed game and verify the stat table renders correctly with the generic category renderer.

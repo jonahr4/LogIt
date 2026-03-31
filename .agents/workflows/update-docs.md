@@ -62,6 +62,7 @@ Some changes require updating multiple docs:
 | Admin portal updated | `ADMIN_DASHBOARD.md`, `TECH_STACK.md`, `FEATURE_ROADMAP.md` |
 | Venue enrichment changed | `ADMIN_DASHBOARD.md`, `EXTERNAL_SERVICES.md`, `DATA_MODELS.md` |
 | New sport / event type added | `docs/event-types/sports.md`, `FEATURE_ROADMAP.md`, `EXTERNAL_SERVICES.md`, `README.md` |
+| Sync/display logic changed | Run the testing strategy in `docs/event-types/sports.md` (preseason, regular, postseason) |
 
 ### README Updates
 

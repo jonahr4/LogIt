@@ -53,6 +53,8 @@ export type EventDetail = {
   status?: string;
   league?: string;
   season?: string;
+  season_type?: number;  // 1=preseason, 2=regular, 3=postseason
+  round?: string;        // playoff round name, e.g. "Super Bowl LX"
   sport?: string;
   // Movie-specific
   director?: string;
@@ -920,12 +922,12 @@ function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose
       {/* ── Info chips ── */}
       <View style={styles.chipsRow}>
         <InfoChip icon={getEventIcon(event.eventType)} label={event.eventType} />
-        {event.status && <InfoChip icon="checkmark-circle-outline" label={event.status} />}
-        {event.league && (
-          <InfoChip
-            icon="trophy-outline"
-            label={event.season ? `${event.league} • ${event.season}` : event.league}
-          />
+        {event.season && <InfoChip icon="calendar-outline" label={event.season} />}
+        {event.season_type === 1 && (
+          <InfoChip icon="flag-outline" label="Preseason" />
+        )}
+        {(event.season_type === 3 || event.season_type === 5) && (
+          <InfoChip icon="trophy-outline" label={event.round || 'Playoffs'} />
         )}
         {event.genre && <InfoChip icon="film-outline" label={event.genre} />}
       </View>

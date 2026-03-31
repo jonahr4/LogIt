@@ -182,6 +182,8 @@ function mapLogToEventDetail(log: any): EventDetail {
     season: event.season,
     league: event.league,
     sport: event.sport,
+    season_type: event.season_type,
+    round: event.round,
     privacy: log.privacy || 'public',
     rating: log.rating,
     companions: log.companions,

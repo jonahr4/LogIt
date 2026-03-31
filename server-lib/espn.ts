@@ -153,6 +153,10 @@ export async function upsertESPNGame(
   const homeScore = homeTeam.score ? parseInt(homeTeam.score, 10) : null;
   const awayScore = awayTeam.score ? parseInt(awayTeam.score, 10) : null;
 
+  // Season metadata (works for all sports)
+  const seasonType = game.season?.type ?? 2; // 1=preseason, 2=regular, 3=postseason
+  const round = comp.notes?.[0]?.headline || null; // e.g. "Super Bowl LX", "NBA Finals - Game 7"
+
   const { error: sportsError } = await supabase
     .from('sports_events')
     .upsert({
@@ -160,6 +164,8 @@ export async function upsertESPNGame(
       sport: config.sport,
       league: config.league,
       season: config.deriveSeason(eventDate),
+      season_type: seasonType,
+      round: round,
       home_team_id: homeTeam.team.id,
       away_team_id: awayTeam.team.id,
       home_team_name: homeTeam.team.displayName,

@@ -88,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (eventIds.length > 0) {
       const { data: sportsData } = await supabase
         .from('sports_events')
-        .select('event_id, sport, league, season, home_team_name, away_team_name, home_team_logo, away_team_logo, home_score, away_score')
+        .select('event_id, sport, league, season, season_type, round, home_team_name, away_team_name, home_team_logo, away_team_logo, home_score, away_score')
         .in('event_id', eventIds);
 
       if (sportsData) {
@@ -171,6 +171,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             away_team_logo: sports.away_team_logo,
             home_score: sports.home_score,
             away_score: sports.away_score,
+            season_type: sports.season_type,
+            round: sports.round,
           } : {}),
         } : null,
       };
