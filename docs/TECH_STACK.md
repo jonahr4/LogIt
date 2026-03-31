@@ -1,7 +1,8 @@
 # Log It — Tech Stack & Architecture
 
-> **Last updated:** 2026-03-30
+> **Last updated:** 2026-03-31
 > **Changes:**
+> - 2026-03-31: Added `admin/` static HTML portal for viewing venues & games data. Added venue auto-enrichment (Nominatim geocoding + Wikimedia Commons images) to `venue-lookup.ts`. Added backfill script. Updated project structure. Added anon RLS policies (migration 013). See `ADMIN_DASHBOARD.md` for full admin docs.
 > - 2026-03-30: Changed Storage layer for user photos to Firebase Storage (free 5GB, already in stack). Added expo-image-picker, expo-image-manipulator, react-native-image-viewing dependencies. Updated architecture diagram. Supabase Storage still used for avatars/logos.
 > - 2026-03-29: Updated project structure to reflect actual repo (added `server-lib/`, `scripts/`, `api/` subdirectories). Removed stale Ball Don't Lie decision note.
 > - 2026-03-29: Replaced Ball Dont Lie with ESPN API for primary sports ingestion and media. Added Wikipedia scraper strategy for NBA generic venue imagery.
@@ -119,22 +120,23 @@ graph TB
 | Category | API | Strategy |
 |---|---|---|
 | **Sports team logos** | ESPN API | Fetched directly dynamically (no storage costs) |
-| **Sports venues** | Wikipedia Images | Local static mapping holding Wikipedia CDN links |
+| **Sports venues** | Wikimedia Commons API + Nominatim | Auto-enriched on venue creation (see `venue-lookup.ts`). Nominatim geocodes lat/lng; Wikimedia finds venue photos. Both free, no API key. |
 | **Movie posters** | TMDB | Fetch on-demand via `https://image.tmdb.org/t/p/w500/{path}` |
 | **Artist/concert photos** | Muzooka, Ticketmaster | Fetch on-demand |
 | **Restaurant photos** | Google Places, Foursquare | Fetch on-demand |
 | **Fallback/generic images** | Unsplash API (50 req/hr free) | Default event imagery |
 
-> **Decision:** Start with ESPN API for NBA (free, unauthenticated). Team logos are fetched dynamically from ESPN CDN (no storage costs). Movie and concert API integrations come when those event types launch.
+> **Decision:** Start with ESPN API for NBA (free, unauthenticated). Team logos are fetched dynamically from ESPN CDN (no storage costs). Venue metadata (lat/lng, images) is auto-enriched via Nominatim + Wikimedia Commons when new venues are discovered by any sync script.
 
 ---
 
 ## Admin & Internal Tools
 
-| Phase | Approach |
+| Tool | Purpose |
 |---|---|
-| **MVP** | Supabase dashboard — inspect users, logs, events, photos |
-| **Later** | Custom admin portal (Next.js on Vercel) or tools like Retool/Appsmith |
+| **`admin/index.html`** | Static HTML/JS dashboard — view venues (enrichment status) and games (filter by status/league/score). No build tools, just open in browser. See [`ADMIN_DASHBOARD.md`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/docs/ADMIN_DASHBOARD.md). |
+| **Supabase Dashboard** | Direct DB inspection — users, logs, events, photos |
+| **Later** | Extended admin portal with user management, moderation, analytics |
 
 ---
 
@@ -160,7 +162,11 @@ LogIt/
 │   ├── events/             # Event endpoints (search, box-score)
 │   ├── logs/               # Log endpoints (create, update, delete, mine)
 │   └── users/              # User endpoints (profile, username check)
-├── server-lib/             # Server-side utilities (Supabase admin, auth, NBA venues)
+├── admin/                  # Static HTML admin portal (venues & games viewer)
+│   ├── index.html          # Main dashboard (open in browser, no build)
+│   ├── config.js           # Supabase credentials (gitignored)
+│   └── config.example.js   # Template for config.js
+├── server-lib/             # Server-side utilities (Supabase admin, auth, venue lookup + enrichment)
 ├── scripts/                # One-off scripts (ESPN backfill, arena images)
 ├── components/             # Reusable UI components
 │   └── ui/                 # EditLogModal, EventDetailModal, GlassCard, etc.
@@ -171,7 +177,7 @@ LogIt/
 ├── types/                  # TypeScript type definitions (event, log, user, api)
 ├── assets/                 # Images, fonts
 ├── supabase/               # Database migrations
-│   └── migrations/         # 001-012 (users, events, sports, logs, venues, search, photos)
+│   └── migrations/         # 001-013 (users, events, sports, logs, venues, search, photos, anon RLS)
 └── docs/                   # Planning documentation
 ```
 

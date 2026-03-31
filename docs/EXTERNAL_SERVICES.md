@@ -1,7 +1,8 @@
 # Log It — External Services & Data Ingestion
 
-> **Last updated:** 2026-03-29
+> **Last updated:** 2026-03-31
 > **Changes:**
+> - 2026-03-31: Venue media strategy updated — replaced static Wikipedia image mappings with dynamic Wikimedia Commons API + Nominatim geocoding. Both are free, no API key, auto-invoked on new venue creation.
 > - 2026-03-29: Added Strategy C — client-side ESPN live score fetch for non-completed sports events.
 > - 2026-03-29: Fixed stale BDL section headers and env var references to match ESPN-only ingestion.
 > - 2026-03-29: Replaced Ball Dont Lie with ESPN API entirely for both NBA game data and high-res sports team logos. Added Wikipedia venue scraping for static photo mappings.

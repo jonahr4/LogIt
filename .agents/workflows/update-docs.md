@@ -23,6 +23,8 @@ This is the single source of truth for what we're building and how.
 | [`API_DESIGN.md`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/docs/API_DESIGN.md) | API endpoints, request/response contracts, errors | New endpoint, field changes, auth changes, error codes added |
 | [`FEATURE_ROADMAP.md`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/docs/FEATURE_ROADMAP.md) | Phased feature breakdown, priority matrix, checklists | Feature completed, reprioritized, new feature added, moved between phases |
 | [`SOCIAL_FEATURES.md`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/docs/SOCIAL_FEATURES.md) | Social layer design, privacy model, friend system | Privacy rules change, social features added/scoped, notification behavior changes |
+| [`EXTERNAL_SERVICES.md`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/docs/EXTERNAL_SERVICES.md) | External APIs, data ingestion strategies per event type | New external API added, ingestion strategy changes, media source changes |
+| [`ADMIN_DASHBOARD.md`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/docs/ADMIN_DASHBOARD.md) | Admin portal features, venue enrichment, RLS policies | Admin UI changes, new data tabs, enrichment logic changes |
 
 ---
 
@@ -57,7 +59,8 @@ Some changes require updating multiple docs:
 | New social feature | `SOCIAL_FEATURES.md`, `FEATURE_ROADMAP.md`, `UI_AND_FLOWS.md`, `API_DESIGN.md` |
 | Notification behavior changed | `SOCIAL_FEATURES.md`, `API_DESIGN.md`, `DATA_MODELS.md` |
 | Photo handling changed | `UI_AND_FLOWS.md`, `API_DESIGN.md`, `DATA_MODELS.md` |
-| Admin portal updated | `TECH_STACK.md`, `PRODUCT_OVERVIEW.md` |
+| Admin portal updated | `ADMIN_DASHBOARD.md`, `TECH_STACK.md`, `FEATURE_ROADMAP.md` |
+| Venue enrichment changed | `ADMIN_DASHBOARD.md`, `EXTERNAL_SERVICES.md`, `DATA_MODELS.md` |
 
 ### Format Consistency
 - Use tables for structured comparisons

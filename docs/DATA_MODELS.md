@@ -1,7 +1,8 @@
 # Log It — Data Models
 
-> **Last updated:** 2026-03-30
+> **Last updated:** 2026-03-31
 > **Changes:**
+> - 2026-03-31: Added anon SELECT policies on `events` and `sports_events` (migration 013) for admin portal access. Updated Venue entity to reflect auto-enrichment via Nominatim + Wikimedia Commons.
 > - 2026-03-30: Added `log_photos` table (migration 012). Replaced stale `string[] photos` column on `user_event_logs` with proper FK relationship to `log_photos`. Updated ERD.
 > - 2026-03-29: Added implemented `Venue` entity (migration 008). Added `venue_id` FK on `events`. Added `nightlife` to event_type enum in entity details.
 > - 2026-03-29: Added `home_team_logo` and `away_team_logo` columns to `sports_events` for ESPN API caching compliance.
@@ -361,7 +362,9 @@ Bidirectional friend relationship.
 
 ### `Venue` (Migration 008)
 
-Normalized venue data, currently seeded with all 30 NBA arenas.
+Normalized venue data. 30 NBA home arenas seeded with full metadata; additional venues auto-created when sync scripts encounter new locations (preseason sites, international venues, etc.).
+
+**Auto-enrichment:** When `findOrCreateVenue()` inserts a new venue, it automatically enriches it via Nominatim (lat/lng) and Wikimedia Commons (image). Existing venues with null metadata can be backfilled via `api/scripts/backfill-venues.ts`.
 
 | Field | Type | Description |
 |---|---|---|
@@ -370,17 +373,17 @@ Normalized venue data, currently seeded with all 30 NBA arenas.
 | `city` | string | City |
 | `state` | string | State |
 | `country` | string | Country (default: `US`) |
-| `lat` | float | Latitude |
-| `lng` | float | Longitude |
-| `image_url` | string | Venue photo (Wikipedia CDN) |
+| `lat` | float | Latitude (auto-enriched via Nominatim) |
+| `lng` | float | Longitude (auto-enriched via Nominatim) |
+| `image_url` | string | Venue photo (auto-enriched via Wikimedia Commons) |
 | `venue_type` | string | `arena`, `stadium`, `theater`, `restaurant`, `bar`, `club`, `other` |
 | `capacity` | int | Venue capacity |
 | `external_id` | string | External reference ID |
-| `external_source` | string | Source of external ID |
+| `external_source` | string | Source of external ID (`nba` for seeded arenas, null for auto-created) |
 | `created_at` | timestamp | Record creation |
 | `updated_at` | timestamp | Last update |
 
-> **Backfill:** Events are linked to venues via `venue_id` FK, backfilled by matching `venue_name` + `venue_city`.
+> **RLS:** Migration 013 adds anon SELECT policies on `events` and `sports_events` so the admin portal can read game data without authentication. Venue data has no RLS (public by default).
 
 ---
 

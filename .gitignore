@@ -44,3 +44,4 @@ app-example
 the-logit-app-firebase-adminsdk-fbsvc-7538e8cf92.json
 GoogleService-Info.plist
 .vercel
+admin/config.js

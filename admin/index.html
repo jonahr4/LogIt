@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogIt Admin — Venues & Games</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0e17;
+      color: #e8eaf6;
+      min-height: 100vh;
+    }
+    header {
+      background: rgba(0,0,0,0.5);
+      border-bottom: 1px solid rgba(0,255,194,0.15);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    header h1 { font-size: 20px; font-weight: 700; color: #00FFC2; }
+    header span { font-size: 13px; color: #7a8aaa; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 16px 24px 0;
+    }
+    .tab {
+      padding: 8px 20px;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-bottom: none;
+      background: rgba(255,255,255,0.03);
+      color: #7a8aaa;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .tab:hover { background: rgba(255,255,255,0.06); }
+    .tab.active {
+      background: rgba(0,255,194,0.08);
+      color: #00FFC2;
+      border-color: rgba(0,255,194,0.2);
+    }
+
+    .controls {
+      padding: 12px 24px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      max-width: 320px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: #e8eaf6;
+      font-size: 13px;
+      outline: none;
+    }
+    .search-box:focus { border-color: rgba(0,255,194,0.3); }
+
+    .filter-row {
+      padding: 0 24px 8px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #556;
+      margin-right: 2px;
+      font-weight: 600;
+    }
+    .chip {
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: #7a8aaa;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .chip:hover { background: rgba(255,255,255,0.06); color: #c0c8e0; }
+    .chip.active {
+      background: rgba(0,255,194,0.1);
+      color: #00FFC2;
+      border-color: rgba(0,255,194,0.25);
+    }
+    .chip-divider {
+      width: 1px;
+      height: 16px;
+      background: rgba(255,255,255,0.08);
+      margin: 0 4px;
+    }
+
+    .count-label {
+      font-size: 12px;
+      color: #7a8aaa;
+      letter-spacing: 0.5px;
+      margin-left: auto;
+    }
+
+    .table-wrap {
+      padding: 0 24px 16px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      background: #0d1220;
+      text-align: left;
+      padding: 8px 10px;
+      color: #7a8aaa;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      font-size: 11px;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    th:hover { color: #00FFC2; }
+    th.sorted { color: #00FFC2; }
+    th.sorted::after { content: ' ▲'; font-size: 9px; }
+    th.sorted.desc::after { content: ' ▼'; }
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: middle;
+    }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .null-cell { color: #ff6b6b; font-style: italic; font-size: 11px; }
+    .ok-cell { color: #51cf66; }
+    .img-preview {
+      width: 60px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .status-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .status-upcoming { background: rgba(0,255,194,0.12); color: #00FFC2; }
+    .status-completed { background: rgba(255,138,61,0.15); color: #FF8A3D; }
+    .status-in_progress { background: rgba(255,69,69,0.15); color: #ff4545; }
+
+    .loading {
+      text-align: center;
+      padding: 60px;
+      color: #7a8aaa;
+      font-size: 14px;
+    }
+    .error-msg {
+      text-align: center;
+      padding: 40px;
+      color: #ff6b6b;
+      font-size: 14px;
+    }
+    .enrichment-status {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .enrichment-ok { background: #51cf66; }
+    .enrichment-partial { background: #ffd43b; }
+    .enrichment-missing { background: #ff6b6b; }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 24px 40px;
+    }
+    .page-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      color: #7a8aaa;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .page-btn:hover { background: rgba(255,255,255,0.06); color: #e8eaf6; }
+    .page-btn.active {
+      background: rgba(0,255,194,0.1);
+      color: #00FFC2;
+      border-color: rgba(0,255,194,0.25);
+    }
+    .page-btn:disabled { opacity: 0.3; cursor: default; }
+    .page-info {
+      font-size: 11px;
+      color: #556;
+      padding: 0 8px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>LogIt Admin</h1>
+  <span>Venues & Games Data Viewer</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('venues')">Venues</div>
+  <div class="tab" onclick="switchTab('games')">Games</div>
+</div>
+
+<div class="controls">
+  <input type="text" class="search-box" id="searchInput" placeholder="Search..." oninput="applyFilters()">
+  <span class="count-label" id="countLabel"></span>
+</div>
+
+<div class="filter-row" id="filterRow"></div>
+
+<div class="table-wrap">
+  <div id="content" class="loading">Loading...</div>
+</div>
+
+<div class="pagination" id="pagination"></div>
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let currentTab = 'venues';
+  let allData = [];
+  let filteredData = [];
+  let sortCol = null;
+  let sortAsc = true;
+  let currentPage = 1;
+  const PAGE_SIZE = 50;
+
+  // Active filters
+  let filters = {};
+
+  // ── Data Loading ──────────────────────────────
+
+  async function loadVenues() {
+    const { data, error } = await sb.from('venues').select('*').order('name');
+    if (error) throw error;
+    return data || [];
+  }
+
+  async function loadGames() {
+    const { data, error } = await sb
+      .from('events')
+      .select('id, external_id, title, event_date, status, venue_name, venue_city, venue_state, image_url, sports_events(*)')
+      .order('event_date', { ascending: false })
+      .limit(2000);
+    if (error) throw error;
+    return data || [];
+  }
+
+  // ── Filter Chips ──────────────────────────────
+
+  function buildFilterChips() {
+    const row = document.getElementById('filterRow');
+    row.innerHTML = '';
+    filters = {};
+
+    if (currentTab === 'venues') {
+      // Enrichment filter
+      addFilterGroup(row, 'Enrichment', 'enrichment', ['All', 'Complete', 'Partial', 'Missing']);
+      addDivider(row);
+      // Source filter
+      const sources = [...new Set(allData.map(v => v.external_source || 'none'))].sort();
+      addFilterGroup(row, 'Source', 'source', ['All', ...sources]);
+    } else {
+      // Status filter
+      addFilterGroup(row, 'Status', 'status', ['All', 'upcoming', 'in_progress', 'completed']);
+      addDivider(row);
+      // League filter
+      const leagues = new Set();
+      allData.forEach(g => {
+        const se = Array.isArray(g.sports_events) ? g.sports_events[0] : g.sports_events;
+        if (se?.league) leagues.add(se.league);
+      });
+      addFilterGroup(row, 'League', 'league', ['All', ...Array.from(leagues).sort()]);
+      addDivider(row);
+      // Has Score filter
+      addFilterGroup(row, 'Score', 'hasScore', ['All', 'Has Score', 'No Score']);
+      addDivider(row);
+      // City filter (top cities)
+      const cityCounts = {};
+      allData.forEach(g => { if (g.venue_city) cityCounts[g.venue_city] = (cityCounts[g.venue_city] || 0) + 1; });
+      const topCities = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]).slice(0, 8).map(e => e[0]);
+      if (topCities.length > 0) {
+        addFilterGroup(row, 'City', 'city', ['All', ...topCities]);
+      }
+    }
+  }
+
+  function addFilterGroup(container, label, key, options) {
+    const lbl = document.createElement('span');
+    lbl.className = 'filter-label';
+    lbl.textContent = label;
+    container.appendChild(lbl);
+
+    filters[key] = 'All';
+    options.forEach(opt => {
+      const chip = document.createElement('span');
+      chip.className = 'chip' + (opt === 'All' ? ' active' : '');
+      chip.textContent = opt;
+      chip.dataset.filterKey = key;
+      chip.dataset.filterVal = opt;
+      chip.onclick = () => {
+        filters[key] = opt;
+        container.querySelectorAll(`[data-filter-key="${key}"]`).forEach(c => c.classList.toggle('active', c.dataset.filterVal === opt));
+        currentPage = 1;
+        applyFilters();
+      };
+      container.appendChild(chip);
+    });
+  }
+
+  function addDivider(container) {
+    const d = document.createElement('span');
+    d.className = 'chip-divider';
+    container.appendChild(d);
+  }
+
+  // ── Filtering Logic ───────────────────────────
+
+  function applyFilters() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+
+    filteredData = allData.filter(row => {
+      // Text search
+      if (q && !Object.values(row).some(v => v != null && String(v).toLowerCase().includes(q))) return false;
+
+      if (currentTab === 'venues') {
+        // Enrichment filter
+        if (filters.enrichment && filters.enrichment !== 'All') {
+          const hasGeo = row.lat != null && row.lng != null;
+          const hasImg = row.image_url != null;
+          if (filters.enrichment === 'Complete' && !(hasGeo && hasImg)) return false;
+          if (filters.enrichment === 'Partial' && ((!hasGeo && !hasImg) || (hasGeo && hasImg))) return false;
+          if (filters.enrichment === 'Missing' && (hasGeo || hasImg)) return false;
+        }
+        // Source filter
+        if (filters.source && filters.source !== 'All') {
+          const src = row.external_source || 'none';
+          if (src !== filters.source) return false;
+        }
+      } else {
+        // Status filter
+        if (filters.status && filters.status !== 'All' && row.status !== filters.status) return false;
+        // League filter
+        if (filters.league && filters.league !== 'All') {
+          const se = Array.isArray(row.sports_events) ? row.sports_events[0] : row.sports_events;
+          if (se?.league !== filters.league) return false;
+        }
+        // Has Score filter
+        if (filters.hasScore && filters.hasScore !== 'All') {
+          const se = Array.isArray(row.sports_events) ? row.sports_events[0] : row.sports_events;
+          const has = se && se.home_score != null;
+          if (filters.hasScore === 'Has Score' && !has) return false;
+          if (filters.hasScore === 'No Score' && has) return false;
+        }
+        // City filter
+        if (filters.city && filters.city !== 'All' && row.venue_city !== filters.city) return false;
+      }
+      return true;
+    });
+
+    // Apply sort
+    if (sortCol) doSort();
+
+    renderPage();
+  }
+
+  // ── Sorting ───────────────────────────────────
+
+  function sortBy(col) {
+    if (sortCol === col) { sortAsc = !sortAsc; } else { sortCol = col; sortAsc = true; }
+    doSort();
+    currentPage = 1;
+    renderPage();
+  }
+
+  function doSort() {
+    if (!sortCol) return;
+    filteredData.sort((a, b) => {
+      const va = a[sortCol], vb = b[sortCol];
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (typeof va === 'number') return sortAsc ? va - vb : vb - va;
+      return sortAsc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+    });
+  }
+
+  // ── Pagination ────────────────────────────────
+
+  function renderPage() {
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = filteredData.slice(start, start + PAGE_SIZE);
+
+    document.getElementById('countLabel').textContent =
+      `${filteredData.length} results${filteredData.length !== allData.length ? ` (of ${allData.length})` : ''}`;
+
+    document.getElementById('content').innerHTML =
+      currentTab === 'venues' ? renderVenuesTable(pageData) : renderGamesTable(pageData);
+
+    renderPagination(totalPages);
+  }
+
+  function renderPagination(totalPages) {
+    const el = document.getElementById('pagination');
+    if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+    let html = `<button class="page-btn" onclick="goPage(1)" ${currentPage === 1 ? 'disabled' : ''}>«</button>`;
+    html += `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+
+    // Show pages around current
+    const range = 2;
+    let startP = Math.max(1, currentPage - range);
+    let endP = Math.min(totalPages, currentPage + range);
+
+    if (startP > 1) html += `<span class="page-info">...</span>`;
+    for (let p = startP; p <= endP; p++) {
+      html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+    }
+    if (endP < totalPages) html += `<span class="page-info">...</span>`;
+
+    html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+    html += `<button class="page-btn" onclick="goPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>»</button>`;
+    html += `<span class="page-info">Page ${currentPage} of ${totalPages}</span>`;
+
+    el.innerHTML = html;
+  }
+
+  function goPage(p) {
+    currentPage = p;
+    renderPage();
+    document.querySelector('.table-wrap').scrollTo(0, 0);
+  }
+
+  // ── Table Renderers ───────────────────────────
+
+  function thClass(col) {
+    if (sortCol !== col) return '';
+    return ` class="sorted${sortAsc ? '' : ' desc'}"`;
+  }
+
+  function renderVenuesTable(data) {
+    if (data.length === 0) return '<div class="loading">No venues match filters</div>';
+    let html = `<table><thead><tr>
+      <th onclick="sortBy('name')"${thClass('name')}>Name</th>
+      <th onclick="sortBy('city')"${thClass('city')}>City</th>
+      <th onclick="sortBy('state')"${thClass('state')}>State</th>
+      <th onclick="sortBy('lat')"${thClass('lat')}>Lat</th>
+      <th onclick="sortBy('lng')"${thClass('lng')}>Lng</th>
+      <th>Image</th>
+      <th onclick="sortBy('venue_type')"${thClass('venue_type')}>Type</th>
+      <th onclick="sortBy('external_source')"${thClass('external_source')}>Source</th>
+      <th>Enriched</th>
+    </tr></thead><tbody>`;
+    for (const v of data) {
+      const hasGeo = v.lat != null && v.lng != null;
+      const hasImg = v.image_url != null;
+      const status = (hasGeo && hasImg) ? 'ok' : (!hasGeo && !hasImg) ? 'missing' : 'partial';
+      html += `<tr>
+        <td>${esc(v.name)}</td>
+        <td>${esc(v.city)}</td>
+        <td>${esc(v.state || '—')}</td>
+        <td class="${v.lat != null ? 'ok-cell' : 'null-cell'}">${v.lat != null ? v.lat.toFixed(4) : 'null'}</td>
+        <td class="${v.lng != null ? 'ok-cell' : 'null-cell'}">${v.lng != null ? v.lng.toFixed(4) : 'null'}</td>
+        <td>${hasImg ? `<img class="img-preview" src="${esc(v.image_url)}" alt="" loading="lazy">` : '<span class="null-cell">null</span>'}</td>
+        <td>${esc(v.venue_type || '—')}</td>
+        <td>${esc(v.external_source || '—')}</td>
+        <td><span class="enrichment-status enrichment-${status}"></span></td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function renderGamesTable(data) {
+    if (data.length === 0) return '<div class="loading">No games match filters</div>';
+    let html = `<table><thead><tr>
+      <th onclick="sortBy('title')"${thClass('title')}>Title</th>
+      <th onclick="sortBy('event_date')"${thClass('event_date')}>Date</th>
+      <th onclick="sortBy('venue_name')"${thClass('venue_name')}>Venue</th>
+      <th onclick="sortBy('venue_city')"${thClass('venue_city')}>City</th>
+      <th onclick="sortBy('status')"${thClass('status')}>Status</th>
+      <th>Score</th>
+      <th>League</th>
+      <th>Season</th>
+      <th onclick="sortBy('external_id')"${thClass('external_id')}>Ext. ID</th>
+    </tr></thead><tbody>`;
+    for (const g of data) {
+      const se = Array.isArray(g.sports_events) ? g.sports_events[0] : g.sports_events;
+      const score = se && se.home_score != null ? `${se.away_score} – ${se.home_score}` : '—';
+      const league = se?.league || '—';
+      const season = se?.season || '—';
+      const dateStr = g.event_date
+        ? new Date(g.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+        : '—';
+      html += `<tr>
+        <td>${esc(g.title || '—')}</td>
+        <td style="white-space:nowrap">${dateStr}</td>
+        <td>${esc(g.venue_name || '—')}</td>
+        <td>${esc(g.venue_city || '—')}</td>
+        <td><span class="status-pill status-${g.status || ''}">${esc(g.status || '—')}</span></td>
+        <td>${score}</td>
+        <td>${esc(league)}</td>
+        <td style="font-size:11px;color:#7a8aaa">${esc(season)}</td>
+        <td style="font-size:10px;color:#556">${esc(g.external_id || '—')}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Tab Switching ─────────────────────────────
+
+  async function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'venues') || (i === 1 && tab === 'games'));
+    });
+    document.getElementById('searchInput').value = '';
+    sortCol = null;
+    currentPage = 1;
+    await loadData();
+  }
+
+  async function loadData() {
+    const content = document.getElementById('content');
+    content.innerHTML = '<div class="loading">Loading...</div>';
+    document.getElementById('pagination').innerHTML = '';
+    document.getElementById('filterRow').innerHTML = '';
+    try {
+      allData = currentTab === 'venues' ? await loadVenues() : await loadGames();
+      buildFilterChips();
+      filteredData = [...allData];
+      renderPage();
+    } catch (err) {
+      content.innerHTML = `<div class="error-msg">Error: ${esc(err.message)}</div>`;
+    }
+  }
+
+  // Initial load
+  loadData();
+</script>
+</body>
+</html>

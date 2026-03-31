@@ -1,7 +1,8 @@
 # Log It — Feature Roadmap
 
-> **Last updated:** 2026-03-30
+> **Last updated:** 2026-03-31
 > **Changes:**
+> - 2026-03-31: Venue auto-enrichment implemented (Nominatim + Wikimedia). Admin Portal v1 shipped (static HTML viewer for venues & games). Moved admin portal to v1.5 with partial completion.
 > - 2026-03-30: Checked off photo upload (Firebase Storage, log_photos table, compression, react-native-image-viewing viewer). Fixed stale Supabase Storage reference in log creation.
 > - 2026-03-29: Checked off levenshtein search, search pagination, and sports team browse flow.
 > - 2026-03-29: Added venue normalization and improved search (migrations 008–009) to Event Data & Search phase. Noted log deletion endpoint as implemented.
@@ -64,7 +65,7 @@ gantt
 - [x] Store canonical `Event` records and `sports_events` child records in Supabase Postgres
 - [x] Deduplication via `external_id` + `external_source` unique index
 - [x] Post-game score/status updates (cron updates existing rows)
-- [x] Venue enrichment — static NBA arena mapping with name, city, state, lat/lng
+- [x] Venue enrichment — static NBA arena mapping + auto-enrichment via Nominatim geocoding and Wikimedia Commons images on new venue creation
 - [x] Venue normalization — `venues` table (migration 008) with `venue_id` FK on `events`
 - [x] Fuzzy/typo-tolerant search — `pg_trgm` trigram + `levenshtein` word-level + multi-token API splitting (migrations 009, 011)
 - [x] Search pagination — 40 results/page, `offset` param, `has_more` flag, Load More button
@@ -179,7 +180,7 @@ gantt
 - [ ] Profile customization (banner, theme)
 
 ### 18. Admin Portal
-- [ ] Custom admin dashboard (Next.js)
+- [x] Static HTML data viewer (`admin/index.html`) — venues & games tables with filtering, pagination, search
 - [ ] User management and moderation
 - [ ] Content review tools (photos, comments)
 - [ ] Growth and activity analytics
