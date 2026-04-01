@@ -272,38 +272,43 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
     });
     if (result.canceled || !result.assets?.length) return;
 
-    const userId = firebaseAuth.currentUser?.uid;
-    if (!userId || !event?.id) {
-      Alert.alert('Error', 'Cannot upload photos without a saved log.');
-      return;
+    if (isEdit) {
+      // Edit mode: upload immediately to Firebase + DB
+      const userId = firebaseAuth.currentUser?.uid;
+      if (!userId || !event?.id) {
+        Alert.alert('Error', 'Cannot upload photos without a saved log.');
+        return;
+      }
+
+      const startIndex = photos.length;
+      const tempEntries: PhotoEntry[] = result.assets.map(a => ({ localUri: a.uri, uploading: true }));
+      setPhotos(prev => [...prev, ...tempEntries]);
+
+      await Promise.all(
+        result.assets.map(async (asset, offset) => {
+          const index = startIndex + offset;
+          try {
+            const { url, firebasePath } = await uploadPhoto(asset.uri, userId, event.id);
+            const response = await api.post<{ photo: { id: string; url: string; firebase_path: string; display_order: number } }>(
+              '/api/logs/photos',
+              { log_id: event.id, firebase_path: firebasePath, url, display_order: index }
+            );
+            setPhotos(prev => {
+              const updated = [...prev];
+              updated[index] = { id: response.photo.id, url: response.photo.url, firebase_path: response.photo.firebase_path };
+              return updated;
+            });
+          } catch (err: any) {
+            setPhotos(prev => prev.map((p, i) => i === index ? {} : p).filter(p => Object.keys(p).length > 0));
+            Alert.alert('Upload failed', `Photo ${offset + 1}: ${err?.message || 'Could not upload.'}`);
+          }
+        })
+      );
+    } else {
+      // Create mode: store local URIs only (will upload after log is created)
+      const newEntries: PhotoEntry[] = result.assets.map(a => ({ localUri: a.uri }));
+      setPhotos(prev => [...prev, ...newEntries]);
     }
-
-    // Add all selected photos as uploading placeholders
-    const startIndex = photos.length;
-    const tempEntries: PhotoEntry[] = result.assets.map(a => ({ localUri: a.uri, uploading: true }));
-    setPhotos(prev => [...prev, ...tempEntries]);
-
-    // Upload each photo in parallel
-    await Promise.all(
-      result.assets.map(async (asset, offset) => {
-        const index = startIndex + offset;
-        try {
-          const { url, firebasePath } = await uploadPhoto(asset.uri, userId, event.id);
-          const response = await api.post<{ photo: { id: string; url: string; firebase_path: string; display_order: number } }>(
-            '/api/logs/photos',
-            { log_id: event.id, firebase_path: firebasePath, url, display_order: index }
-          );
-          setPhotos(prev => {
-            const updated = [...prev];
-            updated[index] = { id: response.photo.id, url: response.photo.url, firebase_path: response.photo.firebase_path };
-            return updated;
-          });
-        } catch (err: any) {
-          setPhotos(prev => prev.map((p, i) => i === index ? {} : p).filter(p => Object.keys(p).length > 0));
-          Alert.alert('Upload failed', `Photo ${offset + 1}: ${err?.message || 'Could not upload.'}`);
-        }
-      })
-    );
   };
 
   const handleRemovePhoto = async (index: number) => {
@@ -343,6 +348,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       privacy,
       eventType: effectiveType,
       companions: companions.map(c => ({ name: c.name })),
+      pendingPhotos: photos.filter(p => p.localUri && !p.id).map(p => p.localUri!),
     };
 
     const t = effectiveType.toLowerCase();
@@ -448,36 +454,80 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
             <View style={[StyleSheet.absoluteFill, styles.ticketBgClip]}>
               <BlurView intensity={BLUR_INTENSITY} tint="dark" style={StyleSheet.absoluteFill} />
               <View style={[StyleSheet.absoluteFill, styles.ticketTint]} />
+
+              {/* Venue background image — dimmed + vignetted */}
+              {event?.image && topHeight > 0 && (
+                <View
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, height: topHeight + (SEPARATOR_HEIGHT / 2) }}
+                  pointerEvents="none"
+                >
+                  <Image
+                    source={{ uri: event.image }}
+                    style={StyleSheet.absoluteFill}
+                    resizeMode="cover"
+                    blurRadius={1.5}
+                  />
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(18, 22, 32, 0.85)' }]} />
+                  <LinearGradient
+                    colors={['rgba(18,22,32,0.95)', 'transparent']}
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 68 }}
+                    pointerEvents="none"
+                  />
+                  <LinearGradient
+                    colors={['rgba(18,22,32,0.85)', 'transparent']}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 68 }}
+                    pointerEvents="none"
+                  />
+                  <LinearGradient
+                    colors={['rgba(18,22,32,0.85)', 'transparent']}
+                    start={{ x: 1, y: 0 }} end={{ x: 0, y: 0 }}
+                    style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: 68 }}
+                    pointerEvents="none"
+                  />
+                  <LinearGradient
+                    colors={['rgba(18,22,32,0.95)', 'transparent']}
+                    start={{ x: 0, y: 1 }} end={{ x: 0, y: 0 }}
+                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 68 }}
+                    pointerEvents="none"
+                  />
+                </View>
+              )}
             </View>
 
-            {/* TOP — badge + title only */}
+            {/* TOP — polymorphic event info, entire area is draggable */}
             <View
               style={styles.ticketTop}
               onLayout={(e) => setTopHeight(e.nativeEvent.layout.height)}
+              {...panResponder.panHandlers}
             >
-              {/* Draggable zone: handle bar + header badge */}
-              <View {...panResponder.panHandlers}>
-                <View style={styles.ticketDragStrip}>
-                  <View style={styles.handleBar} />
-                </View>
+              <View style={styles.ticketDragStrip}>
+                <View style={styles.handleBar} />
+              </View>
 
-                {/* Header badge */}
-                <View style={styles.editHeader}>
-                  <View style={styles.editBadge}>
-                    <Ionicons name={getEventIcon(effectiveType)} size={16} color={Colors.primaryContainer} />
-                    <Text style={styles.editBadgeText}>
-                      {isEdit ? 'Edit' : 'New'} {typeLabel}
-                    </Text>
-                  </View>
+              {/* Header badge */}
+              <View style={styles.editHeader}>
+                <View style={styles.editBadge}>
+                  <Ionicons name={getEventIcon(effectiveType)} size={16} color={Colors.primaryContainer} />
+                  <Text style={styles.editBadgeText}>
+                    {isEdit ? 'Edit' : 'New'} {typeLabel}
+                  </Text>
                 </View>
               </View>
 
-              {/* Title + Rating */}
+              {/* Polymorphic top content */}
               <View style={styles.topContent}>
-                <LabeledInput label="TITLE" value={title} onChangeText={setTitle} placeholder={`e.g. ${getPlaceholder(effectiveType, 'title')}`} editable={canEditCanonical} />
-
-                <Text style={styles.miniLabel}>YOUR RATING</Text>
-                <HalfStarRating value={rating} onChange={setRating} size={30} />
+                <EditTopSection
+                  effectiveType={effectiveType}
+                  event={event}
+                  title={title}
+                  setTitle={setTitle}
+                  canEditCanonical={canEditCanonical}
+                  venue={venue}
+                  venueCity={venueCity}
+                  venueState={venueState}
+                  date={date}
+                />
               </View>
             </View>
 
@@ -497,26 +547,94 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
               >
                 <View style={styles.bottomContent}>
 
-                  {/* Venue / Location / Date */}
-                  <Text style={styles.miniLabel}>LOCATION & DATE</Text>
-                  <LabeledInput label="VENUE" value={venue} onChangeText={setVenue} placeholder="Venue name" editable={canEditCanonical} />
-                  <View style={styles.inputRow}>
-                    <View style={{ flex: 1 }}>
-                      <LabeledInput label="CITY" value={venueCity} onChangeText={setVenueCity} placeholder="City" editable={canEditCanonical} />
-                    </View>
-                    <View style={{ flex: 0.6 }}>
-                      <LabeledInput label="STATE" value={venueState} onChangeText={setVenueState} placeholder="ST" editable={canEditCanonical} />
+                  {/* ── Rating + Privacy (same row) ── */}
+                  <Text style={styles.miniLabel}>YOUR RATING</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <HalfStarRating value={rating} onChange={setRating} size={26} />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      {PRIVACY_OPTIONS.map((opt) => (
+                        <TouchableOpacity
+                          key={opt}
+                          onPress={() => setPrivacy(opt)}
+                          style={[styles.privacyPill, privacy === opt && styles.privacyPillActive]}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons
+                            name={opt === 'public' ? 'globe-outline' : opt === 'friends' ? 'people-outline' : 'lock-closed-outline'}
+                            size={13}
+                            color={privacy === opt ? Colors.primaryContainer : Colors.textMuted}
+                          />
+                        </TouchableOpacity>
+                      ))}
                     </View>
                   </View>
-                  <LabeledInput label="DATE" value={date} onChangeText={setDate} placeholder="Mar 15, 2026" editable={canEditCanonical} />
 
                   <View style={styles.divider} />
 
-                  {/* Type-specific fields */}
+                  {/* ── Notes ── */}
+                  <View style={styles.sectionHeader}>
+                    <Ionicons name="document-text-outline" size={14} color={Colors.primaryContainer} />
+                    <Text style={styles.sectionTitle}>Personal Notes</Text>
+                  </View>
+                  <TextInput
+                    style={styles.notesInput}
+                    value={note}
+                    onChangeText={setNote}
+                    placeholder="How was the experience?"
+                    placeholderTextColor={Colors.textMuted}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+
+                  <View style={styles.divider} />
+
+                  {/* ── Photos ── */}
+                  <Text style={styles.miniLabel}>PHOTOS</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.photoRow}
+                  >
+                    {photos.length < MAX_PHOTOS && (
+                      <TouchableOpacity
+                        style={styles.photoAddBtn}
+                        activeOpacity={0.7}
+                        onPress={handlePickPhoto}
+                      >
+                        <Ionicons name="camera-outline" size={22} color={Colors.textMuted} />
+                        <Text style={styles.photoAddText}>Add</Text>
+                      </TouchableOpacity>
+                    )}
+                    {photos.map((photo, index) => (
+                      <View key={index} style={styles.photoThumb}>
+                        <Image
+                          source={{ uri: photo.url || photo.localUri }}
+                          style={styles.photoThumbImage}
+                          resizeMode="cover"
+                        />
+                        {photo.uploading ? (
+                          <View style={styles.photoUploadingOverlay}>
+                            <ActivityIndicator size="small" color="#fff" />
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={styles.photoRemoveBtn}
+                            onPress={() => handleRemovePhoto(index)}
+                          >
+                            <Ionicons name="close" size={12} color="#fff" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ))}
+                  </ScrollView>
+
+                  <View style={styles.divider} />
+
+                  {/* ── Type-specific editable fields ── */}
                   <TypeSpecificInputs
                     type={effectiveType}
                     canEditCanonical={canEditCanonical}
-                    // Sports
                     sport={sport} setSport={setSport}
                     league={league} setLeague={setLeague}
                     season={season} setSeason={setSeason}
@@ -525,14 +643,12 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
                     homeScore={homeScore} setHomeScore={setHomeScore}
                     awayScore={awayScore} setAwayScore={setAwayScore}
                     status={status} setStatus={setStatus}
-                    // Movie
                     director={director} setDirector={setDirector}
                     genre={genre} setGenre={setGenre}
                     runtime={runtime} setRuntime={setRuntime}
                     castInput={castInput} setCastInput={setCastInput}
                     watchedAt={watchedAt} setWatchedAt={setWatchedAt}
                     theaterName={theaterName} setTheaterName={setTheaterName}
-                    // Concert
                     artist={artist} setArtist={setArtist}
                     tourName={tourName} setTourName={setTourName}
                     opener={opener} setOpener={setOpener}
@@ -541,10 +657,8 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
                     setSetlistInput={setSetlistInput}
                     addSetlistItem={addSetlistItem}
                     removeSetlistItem={removeSetlistItem}
-                    // Restaurant
                     cuisine={cuisine} setCuisine={setCuisine}
                     priceLevel={priceLevel} setPriceLevel={setPriceLevel}
-                    // Nightlife
                     venueType={venueType} setVenueType={setVenueType}
                     vibe={vibe} setVibe={setVibe}
                     dressCode={dressCode} setDressCode={setDressCode}
@@ -554,98 +668,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
 
                   <View style={styles.divider} />
 
-
-
-                  {/* Notes */}
-                  <Text style={styles.miniLabel}>PERSONAL NOTES</Text>
-                  <TextInput
-                    style={styles.notesInput}
-                    value={note}
-                    onChangeText={setNote}
-                    placeholder="How was the experience?"
-                    placeholderTextColor={Colors.textMuted}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                  />
-
-                  <View style={styles.divider} />
-
-                  {/* Photos — below notes, edit mode only (requires saved log_id) */}
-                  <Text style={styles.miniLabel}>PHOTOS</Text>
-                  {isEdit ? (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.photoRow}
-                    >
-                      {/* Add button is first */}
-                      {photos.length < MAX_PHOTOS && (
-                        <TouchableOpacity
-                          style={styles.photoAddBtn}
-                          activeOpacity={0.7}
-                          onPress={handlePickPhoto}
-                        >
-                          <Ionicons name="camera-outline" size={22} color={Colors.textMuted} />
-                          <Text style={styles.photoAddText}>Add</Text>
-                        </TouchableOpacity>
-                      )}
-                      {photos.map((photo, index) => (
-                        <View key={index} style={styles.photoThumb}>
-                          <Image
-                            source={{ uri: photo.url || photo.localUri }}
-                            style={styles.photoThumbImage}
-                            resizeMode="cover"
-                          />
-                          {photo.uploading ? (
-                            <View style={styles.photoUploadingOverlay}>
-                              <ActivityIndicator size="small" color="#fff" />
-                            </View>
-                          ) : (
-                            <TouchableOpacity
-                              style={styles.photoRemoveBtn}
-                              onPress={() => handleRemovePhoto(index)}
-                            >
-                              <Ionicons name="close" size={12} color="#fff" />
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      ))}
-                    </ScrollView>
-                  ) : (
-                    <Text style={[styles.photoAddText, { color: Colors.textMuted, paddingVertical: 8 }]}>
-                      Save this log first to add photos.
-                    </Text>
-                  )}
-
-
-                  <View style={styles.divider} />
-
-                  {/* Privacy */}
-                  <Text style={styles.miniLabel}>PRIVACY</Text>
-                  <View style={styles.segmentedRow}>
-                    {PRIVACY_OPTIONS.map((opt) => (
-                      <TouchableOpacity
-                        key={opt}
-                        onPress={() => setPrivacy(opt)}
-                        style={[styles.segmentButton, privacy === opt && styles.segmentButtonActive]}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons
-                          name={opt === 'public' ? 'globe-outline' : opt === 'friends' ? 'people-outline' : 'lock-closed-outline'}
-                          size={14}
-                          color={privacy === opt ? Colors.primaryContainer : Colors.textMuted}
-                        />
-                        <Text style={[styles.segmentText, privacy === opt && styles.segmentTextActive]}>
-                          {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-
-                  <View style={styles.divider} />
-
-                  {/* Companions */}
+                  {/* ── Companions ── */}
                   <Text style={styles.miniLabel}>WHO&apos;D YOU GO WITH?</Text>
                   <View style={styles.companionInputRow}>
                     <TextInput
@@ -674,7 +697,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
 
                   <View style={styles.divider} />
 
-                  {/* Action buttons */}
+                  {/* ── Action buttons ── */}
                   <View style={styles.actionsRow}>
                     <TouchableOpacity style={styles.saveButton} onPress={handleSave} activeOpacity={0.8}>
                       <Ionicons name="checkmark" size={20} color={Colors.background} />
@@ -802,6 +825,277 @@ function HalfStarRating({
     </View>
   );
 }
+
+// ─── POLYMORPHIC TOP SECTIONS ─────────────────────────────────────────────────
+
+function EditTopSection({ effectiveType, event, title, setTitle, canEditCanonical, venue, venueCity, venueState, date }: any) {
+  const t = effectiveType?.toLowerCase() || '';
+  if (['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t) && event?.homeTeamName) {
+    return <SportsEditTop event={event} venue={venue} venueCity={venueCity} venueState={venueState} date={date} />;
+  }
+  return (
+    <GenericEditTop
+      event={event}
+      title={title}
+      setTitle={setTitle}
+      canEditCanonical={canEditCanonical}
+      venue={venue}
+      venueCity={venueCity}
+      venueState={venueState}
+      date={date}
+      effectiveType={effectiveType}
+    />
+  );
+}
+
+function SportsEditTop({ event, venue, venueCity, venueState, date }: any) {
+  const homeWon = event.homeScore != null && event.awayScore != null && event.homeScore > event.awayScore;
+  const awayWon = event.homeScore != null && event.awayScore != null && event.awayScore > event.homeScore;
+
+  return (
+    <>
+      {/* Teams + Score */}
+      <View style={editTopStyles.teamsRow}>
+        <View style={editTopStyles.teamBlock}>
+          {event.awayTeamLogo ? (
+            <Image source={{ uri: event.awayTeamLogo }} style={editTopStyles.teamLogo} resizeMode="contain" />
+          ) : (
+            <View style={editTopStyles.teamLogoFallback}>
+              <Ionicons name={getEventIcon(event.eventType)} size={24} color={Colors.textMuted} />
+            </View>
+          )}
+          <Text style={editTopStyles.teamName} numberOfLines={2}>{event.awayTeamName}</Text>
+        </View>
+
+        <View style={editTopStyles.scoreBlock}>
+          <Text style={[editTopStyles.scoreNum, awayWon ? editTopStyles.scoreWin : editTopStyles.scoreDim]}>
+            {event.awayScore ?? '–'}
+          </Text>
+          <Text style={editTopStyles.scoreDivider}>–</Text>
+          <Text style={[editTopStyles.scoreNum, homeWon ? editTopStyles.scoreWin : editTopStyles.scoreDim]}>
+            {event.homeScore ?? '–'}
+          </Text>
+        </View>
+
+        <View style={editTopStyles.teamBlock}>
+          {event.homeTeamLogo ? (
+            <Image source={{ uri: event.homeTeamLogo }} style={editTopStyles.teamLogo} resizeMode="contain" />
+          ) : (
+            <View style={editTopStyles.teamLogoFallback}>
+              <Ionicons name={getEventIcon(event.eventType)} size={24} color={Colors.textMuted} />
+            </View>
+          )}
+          <Text style={editTopStyles.teamName} numberOfLines={2}>{event.homeTeamName}</Text>
+        </View>
+      </View>
+
+      {/* Venue + Date compact grid */}
+      <EditMetaGrid venue={venue} venueCity={venueCity} venueState={venueState} date={date} />
+    </>
+  );
+}
+
+function GenericEditTop({ event, title, setTitle, canEditCanonical, venue, venueCity, venueState, date, effectiveType }: any) {
+  return (
+    <>
+      {/* Hero title — editable for manual, read-only display for API events */}
+      {canEditCanonical ? (
+        <LabeledInput label="TITLE" value={title} onChangeText={setTitle} placeholder={`e.g. ${getPlaceholder(effectiveType, 'title')}`} editable />
+      ) : (
+        <Text style={editTopStyles.heroTitle}>{title}</Text>
+      )}
+
+      {/* Type-specific meta pills (read-only) */}
+      {event && (
+        <View style={editTopStyles.metaPillRow}>
+          {event.director && (
+            <View style={editTopStyles.metaPill}>
+              <Ionicons name="videocam-outline" size={11} color={Colors.textMuted} />
+              <Text style={editTopStyles.metaPillText}>{event.director}</Text>
+            </View>
+          )}
+          {event.artist && (
+            <View style={editTopStyles.metaPill}>
+              <Ionicons name="mic-outline" size={11} color={Colors.textMuted} />
+              <Text style={editTopStyles.metaPillText}>{event.artist}</Text>
+            </View>
+          )}
+          {event.tourName && (
+            <View style={editTopStyles.metaPill}>
+              <Ionicons name="musical-notes-outline" size={11} color={Colors.primaryContainer} />
+              <Text style={[editTopStyles.metaPillText, { color: Colors.primaryContainer }]}>{event.tourName}</Text>
+            </View>
+          )}
+          {event.genre && (
+            <View style={editTopStyles.metaPill}>
+              <Ionicons name="film-outline" size={11} color={Colors.textMuted} />
+              <Text style={editTopStyles.metaPillText}>{event.genre}</Text>
+            </View>
+          )}
+          {event.cuisine && (
+            <View style={editTopStyles.metaPill}>
+              <Ionicons name="restaurant-outline" size={11} color={Colors.textMuted} />
+              <Text style={editTopStyles.metaPillText}>{event.cuisine}</Text>
+            </View>
+          )}
+          {event.venueType && (
+            <View style={editTopStyles.metaPill}>
+              <Ionicons name="wine-outline" size={11} color={Colors.textMuted} />
+              <Text style={editTopStyles.metaPillText}>{event.venueType}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      <EditMetaGrid venue={venue} venueCity={venueCity} venueState={venueState} date={date} />
+    </>
+  );
+}
+
+function EditMetaGrid({ venue, venueCity, venueState, date }: { venue: string; venueCity: string; venueState: string; date: string }) {
+  const locationStr = venueCity && venueState ? `${venueCity}, ${venueState}` : '';
+  return (
+    <View style={editTopStyles.metaGrid}>
+      <View style={editTopStyles.metaCell}>
+        <Ionicons name="calendar-outline" size={13} color={Colors.textMuted} />
+        <Text style={editTopStyles.metaLabel}>DATE</Text>
+        <Text style={editTopStyles.metaValue} numberOfLines={1}>{date || '—'}</Text>
+      </View>
+      <View style={editTopStyles.metaCell}>
+        <Ionicons name="location-outline" size={13} color={Colors.textMuted} />
+        <Text style={editTopStyles.metaLabel}>VENUE</Text>
+        <Text style={editTopStyles.metaValue} numberOfLines={1}>{venue || '—'}</Text>
+        {locationStr ? <Text style={editTopStyles.metaSub}>{locationStr}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+const editTopStyles = StyleSheet.create({
+  teamsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  teamBlock: {
+    width: '33%' as any,
+    alignItems: 'center',
+  },
+  teamLogo: {
+    width: 52,
+    height: 52,
+    marginBottom: 5,
+  },
+  teamLogoFallback: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  teamName: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    letterSpacing: 0.2,
+    color: Colors.text,
+    width: '100%' as any,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  scoreBlock: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  scoreNum: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 46,
+    lineHeight: 50,
+    letterSpacing: -2,
+    textShadowColor: 'rgba(0,0,0,0.9)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  scoreWin: { color: Colors.text },
+  scoreDim: { color: 'rgba(255,255,255,0.55)' },
+  scoreDivider: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.15)',
+    marginBottom: 2,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  heroTitle: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 22,
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: 12,
+    letterSpacing: -0.3,
+  },
+  metaPillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  metaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  metaPillText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    color: Colors.textMuted,
+  },
+  metaGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  metaCell: {
+    flex: 1,
+    backgroundColor: 'rgba(18, 22, 32, 0.78)',
+    borderRadius: 10,
+    padding: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.13)',
+    gap: 2,
+    alignItems: 'center',
+  },
+  metaLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 8,
+    letterSpacing: 2,
+    color: Colors.textMuted,
+  },
+  metaValue: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 12,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  metaSub: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 11,
+    color: Colors.textMuted,
+  },
+});
 
 // ─── TYPE-SPECIFIC INPUT SECTIONS ─────────────────────────────────────────────
 
@@ -1375,6 +1669,32 @@ const styles = StyleSheet.create({
     color: '#facc15',
     marginLeft: 10,
     minWidth: 28,
+  },
+  privacyPill: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  privacyPillActive: {
+    backgroundColor: 'rgba(0, 255, 194, 0.1)',
+    borderColor: 'rgba(0, 255, 194, 0.3)',
+  },
+  sectionHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 14,
+    color: Colors.text,
+    letterSpacing: 0.3,
   },
   divider: {
     height: 1,

@@ -87,6 +87,7 @@ export type EventDetail = {
   venueCity?: string;
   venueState?: string;
   external_id?: string;
+  pendingPhotos?: string[];  // local URIs for photos selected during create mode
 };
 
 interface Props {
@@ -325,7 +326,7 @@ export function EventDetailModal({ event, onClose, onEdit, onDelete }: Props) {
               showsVerticalScrollIndicator={false}
               bounces
             >
-              <BottomContent event={event} onClose={dismiss} onEdit={onEdit} />
+              <BottomContent event={event} onClose={dismiss} onEdit={onEdit} onDelete={onDelete} />
             </ScrollView>
             {/* Soft fade at the top to blend the clip edge into the separator */}
             <LinearGradient
@@ -692,7 +693,7 @@ function MetaCell({
 
 // ─── BOTTOM CONTENT ───────────────────────────────────────────────────────────
 
-function BottomContent({ event, onClose, onEdit }: { event: EventDetail; onClose: () => void; onEdit?: (event: EventDetail) => void }) {
+function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetail; onClose: () => void; onEdit?: (event: EventDetail) => void; onDelete?: (event: EventDetail) => void }) {
   // Photo viewer state — viewerOpen drives visibility, viewerInitialIndex sets starting photo
   // currentIndexRef tracks swipe position WITHOUT causing re-renders (prevents flicker)
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -1277,7 +1278,7 @@ const styles = StyleSheet.create({
   },
   teamsRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 18,
   },
@@ -1353,6 +1354,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.13)',
     gap: 2,
+    alignItems: 'center',
   },
   metaLabel: {
     fontFamily: FontFamily.bodySemiBold,
@@ -1364,6 +1366,7 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.headlineBold,
     fontSize: 12,
     color: Colors.text,
+    textAlign: 'center',
   },
   metaSub: {
     fontFamily: FontFamily.bodyRegular,

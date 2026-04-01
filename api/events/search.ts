@@ -51,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const haystack = [
       row.title, row.home_team_name, row.away_team_name,
       row.venue_name, row.v_name, row.venue_city, row.v_city, row.league,
+      row.round, row.sport,
     ].filter(Boolean).join(' ').toLowerCase();
     return secondaryTokens.every(t => haystack.includes(t));
   }

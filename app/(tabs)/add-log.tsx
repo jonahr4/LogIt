@@ -28,6 +28,9 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { EditLogModal } from '@/components/ui/EditLogModal';
 import { api } from '@/lib/api';
 import type { EventSearchResult } from '@/types/event';
+import { LinearGradient } from 'expo-linear-gradient';
+import { uploadPhoto } from '@/lib/firebaseStorage';
+import { firebaseAuth } from '@/lib/firebase';
 
 const EVENT_TYPES = [
   { key: 'sports', icon: 'basketball-outline' as const, label: 'Sports' },
@@ -46,74 +49,74 @@ const SUPPORTED_SPORTS = [
 ] as const;
 
 const NBA_TEAMS = [
-  { name: 'Atlanta Hawks',           short: 'Hawks',       abbrev: 'atl' },
-  { name: 'Boston Celtics',          short: 'Celtics',     abbrev: 'bos' },
-  { name: 'Brooklyn Nets',           short: 'Nets',        abbrev: 'bkn' },
-  { name: 'Charlotte Hornets',       short: 'Hornets',     abbrev: 'cha' },
-  { name: 'Chicago Bulls',           short: 'Bulls',       abbrev: 'chi' },
-  { name: 'Cleveland Cavaliers',     short: 'Cavs',        abbrev: 'cle' },
-  { name: 'Dallas Mavericks',        short: 'Mavs',        abbrev: 'dal' },
-  { name: 'Denver Nuggets',          short: 'Nuggets',     abbrev: 'den' },
-  { name: 'Detroit Pistons',         short: 'Pistons',     abbrev: 'det' },
-  { name: 'Golden State Warriors',   short: 'Warriors',    abbrev: 'gs'  },
-  { name: 'Houston Rockets',         short: 'Rockets',     abbrev: 'hou' },
-  { name: 'Indiana Pacers',          short: 'Pacers',      abbrev: 'ind' },
-  { name: 'Los Angeles Clippers',    short: 'Clippers',    abbrev: 'lac' },
-  { name: 'Los Angeles Lakers',      short: 'Lakers',      abbrev: 'lal' },
-  { name: 'Memphis Grizzlies',       short: 'Grizzlies',   abbrev: 'mem' },
-  { name: 'Miami Heat',              short: 'Heat',        abbrev: 'mia' },
-  { name: 'Milwaukee Bucks',         short: 'Bucks',       abbrev: 'mil' },
-  { name: 'Minnesota Timberwolves',  short: 'Wolves',      abbrev: 'min' },
-  { name: 'New Orleans Pelicans',    short: 'Pelicans',    abbrev: 'no'  },
-  { name: 'New York Knicks',         short: 'Knicks',      abbrev: 'ny'  },
-  { name: 'Oklahoma City Thunder',   short: 'Thunder',     abbrev: 'okc' },
-  { name: 'Orlando Magic',           short: 'Magic',       abbrev: 'orl' },
-  { name: 'Philadelphia 76ers',      short: '76ers',       abbrev: 'phi' },
-  { name: 'Phoenix Suns',            short: 'Suns',        abbrev: 'phx' },
-  { name: 'Portland Trail Blazers',  short: 'Blazers',     abbrev: 'por' },
-  { name: 'Sacramento Kings',        short: 'Kings',       abbrev: 'sac' },
-  { name: 'San Antonio Spurs',       short: 'Spurs',       abbrev: 'sa'  },
-  { name: 'Toronto Raptors',         short: 'Raptors',     abbrev: 'tor' },
-  { name: 'Utah Jazz',               short: 'Jazz',        abbrev: 'utah'},
-  { name: 'Washington Wizards',      short: 'Wizards',     abbrev: 'wsh' },
+  { name: 'Atlanta Hawks', short: 'Hawks', abbrev: 'atl' },
+  { name: 'Boston Celtics', short: 'Celtics', abbrev: 'bos' },
+  { name: 'Brooklyn Nets', short: 'Nets', abbrev: 'bkn' },
+  { name: 'Charlotte Hornets', short: 'Hornets', abbrev: 'cha' },
+  { name: 'Chicago Bulls', short: 'Bulls', abbrev: 'chi' },
+  { name: 'Cleveland Cavaliers', short: 'Cavs', abbrev: 'cle' },
+  { name: 'Dallas Mavericks', short: 'Mavs', abbrev: 'dal' },
+  { name: 'Denver Nuggets', short: 'Nuggets', abbrev: 'den' },
+  { name: 'Detroit Pistons', short: 'Pistons', abbrev: 'det' },
+  { name: 'Golden State Warriors', short: 'Warriors', abbrev: 'gs' },
+  { name: 'Houston Rockets', short: 'Rockets', abbrev: 'hou' },
+  { name: 'Indiana Pacers', short: 'Pacers', abbrev: 'ind' },
+  { name: 'Los Angeles Clippers', short: 'Clippers', abbrev: 'lac' },
+  { name: 'Los Angeles Lakers', short: 'Lakers', abbrev: 'lal' },
+  { name: 'Memphis Grizzlies', short: 'Grizzlies', abbrev: 'mem' },
+  { name: 'Miami Heat', short: 'Heat', abbrev: 'mia' },
+  { name: 'Milwaukee Bucks', short: 'Bucks', abbrev: 'mil' },
+  { name: 'Minnesota Timberwolves', short: 'Wolves', abbrev: 'min' },
+  { name: 'New Orleans Pelicans', short: 'Pelicans', abbrev: 'no' },
+  { name: 'New York Knicks', short: 'Knicks', abbrev: 'ny' },
+  { name: 'Oklahoma City Thunder', short: 'Thunder', abbrev: 'okc' },
+  { name: 'Orlando Magic', short: 'Magic', abbrev: 'orl' },
+  { name: 'Philadelphia 76ers', short: '76ers', abbrev: 'phi' },
+  { name: 'Phoenix Suns', short: 'Suns', abbrev: 'phx' },
+  { name: 'Portland Trail Blazers', short: 'Blazers', abbrev: 'por' },
+  { name: 'Sacramento Kings', short: 'Kings', abbrev: 'sac' },
+  { name: 'San Antonio Spurs', short: 'Spurs', abbrev: 'sa' },
+  { name: 'Toronto Raptors', short: 'Raptors', abbrev: 'tor' },
+  { name: 'Utah Jazz', short: 'Jazz', abbrev: 'utah' },
+  { name: 'Washington Wizards', short: 'Wizards', abbrev: 'wsh' },
 ].map(t => ({
   ...t,
   logo: `https://a.espncdn.com/i/teamlogos/nba/500/${t.abbrev}.png`,
 }));
 
 const NFL_TEAMS = [
-  { name: 'Arizona Cardinals',       short: 'Cardinals',    abbrev: 'ari' },
-  { name: 'Atlanta Falcons',         short: 'Falcons',      abbrev: 'atl' },
-  { name: 'Baltimore Ravens',        short: 'Ravens',       abbrev: 'bal' },
-  { name: 'Buffalo Bills',           short: 'Bills',        abbrev: 'buf' },
-  { name: 'Carolina Panthers',       short: 'Panthers',     abbrev: 'car' },
-  { name: 'Chicago Bears',           short: 'Bears',        abbrev: 'chi' },
-  { name: 'Cincinnati Bengals',      short: 'Bengals',      abbrev: 'cin' },
-  { name: 'Cleveland Browns',        short: 'Browns',       abbrev: 'cle' },
-  { name: 'Dallas Cowboys',          short: 'Cowboys',      abbrev: 'dal' },
-  { name: 'Denver Broncos',          short: 'Broncos',      abbrev: 'den' },
-  { name: 'Detroit Lions',           short: 'Lions',        abbrev: 'det' },
-  { name: 'Green Bay Packers',       short: 'Packers',      abbrev: 'gb'  },
-  { name: 'Houston Texans',          short: 'Texans',       abbrev: 'hou' },
-  { name: 'Indianapolis Colts',      short: 'Colts',        abbrev: 'ind' },
-  { name: 'Jacksonville Jaguars',    short: 'Jaguars',      abbrev: 'jax' },
-  { name: 'Kansas City Chiefs',      short: 'Chiefs',       abbrev: 'kc'  },
-  { name: 'Las Vegas Raiders',       short: 'Raiders',      abbrev: 'lv'  },
-  { name: 'Los Angeles Chargers',    short: 'Chargers',     abbrev: 'lac' },
-  { name: 'Los Angeles Rams',        short: 'Rams',         abbrev: 'lar' },
-  { name: 'Miami Dolphins',          short: 'Dolphins',     abbrev: 'mia' },
-  { name: 'Minnesota Vikings',       short: 'Vikings',      abbrev: 'min' },
-  { name: 'New England Patriots',    short: 'Patriots',     abbrev: 'ne'  },
-  { name: 'New Orleans Saints',      short: 'Saints',       abbrev: 'no'  },
-  { name: 'New York Giants',         short: 'Giants',       abbrev: 'nyg' },
-  { name: 'New York Jets',           short: 'Jets',         abbrev: 'nyj' },
-  { name: 'Philadelphia Eagles',     short: 'Eagles',       abbrev: 'phi' },
-  { name: 'Pittsburgh Steelers',     short: 'Steelers',     abbrev: 'pit' },
-  { name: 'San Francisco 49ers',     short: '49ers',        abbrev: 'sf'  },
-  { name: 'Seattle Seahawks',        short: 'Seahawks',     abbrev: 'sea' },
-  { name: 'Tampa Bay Buccaneers',    short: 'Bucs',         abbrev: 'tb'  },
-  { name: 'Tennessee Titans',        short: 'Titans',       abbrev: 'ten' },
-  { name: 'Washington Commanders',   short: 'Commanders',   abbrev: 'wsh' },
+  { name: 'Arizona Cardinals', short: 'Cardinals', abbrev: 'ari' },
+  { name: 'Atlanta Falcons', short: 'Falcons', abbrev: 'atl' },
+  { name: 'Baltimore Ravens', short: 'Ravens', abbrev: 'bal' },
+  { name: 'Buffalo Bills', short: 'Bills', abbrev: 'buf' },
+  { name: 'Carolina Panthers', short: 'Panthers', abbrev: 'car' },
+  { name: 'Chicago Bears', short: 'Bears', abbrev: 'chi' },
+  { name: 'Cincinnati Bengals', short: 'Bengals', abbrev: 'cin' },
+  { name: 'Cleveland Browns', short: 'Browns', abbrev: 'cle' },
+  { name: 'Dallas Cowboys', short: 'Cowboys', abbrev: 'dal' },
+  { name: 'Denver Broncos', short: 'Broncos', abbrev: 'den' },
+  { name: 'Detroit Lions', short: 'Lions', abbrev: 'det' },
+  { name: 'Green Bay Packers', short: 'Packers', abbrev: 'gb' },
+  { name: 'Houston Texans', short: 'Texans', abbrev: 'hou' },
+  { name: 'Indianapolis Colts', short: 'Colts', abbrev: 'ind' },
+  { name: 'Jacksonville Jaguars', short: 'Jaguars', abbrev: 'jax' },
+  { name: 'Kansas City Chiefs', short: 'Chiefs', abbrev: 'kc' },
+  { name: 'Las Vegas Raiders', short: 'Raiders', abbrev: 'lv' },
+  { name: 'Los Angeles Chargers', short: 'Chargers', abbrev: 'lac' },
+  { name: 'Los Angeles Rams', short: 'Rams', abbrev: 'lar' },
+  { name: 'Miami Dolphins', short: 'Dolphins', abbrev: 'mia' },
+  { name: 'Minnesota Vikings', short: 'Vikings', abbrev: 'min' },
+  { name: 'New England Patriots', short: 'Patriots', abbrev: 'ne' },
+  { name: 'New Orleans Saints', short: 'Saints', abbrev: 'no' },
+  { name: 'New York Giants', short: 'Giants', abbrev: 'nyg' },
+  { name: 'New York Jets', short: 'Jets', abbrev: 'nyj' },
+  { name: 'Philadelphia Eagles', short: 'Eagles', abbrev: 'phi' },
+  { name: 'Pittsburgh Steelers', short: 'Steelers', abbrev: 'pit' },
+  { name: 'San Francisco 49ers', short: '49ers', abbrev: 'sf' },
+  { name: 'Seattle Seahawks', short: 'Seahawks', abbrev: 'sea' },
+  { name: 'Tampa Bay Buccaneers', short: 'Bucs', abbrev: 'tb' },
+  { name: 'Tennessee Titans', short: 'Titans', abbrev: 'ten' },
+  { name: 'Washington Commanders', short: 'Commanders', abbrev: 'wsh' },
 ].map(t => ({
   ...t,
   logo: `https://a.espncdn.com/i/teamlogos/nfl/500/${t.abbrev}.png`,
@@ -260,12 +263,13 @@ export default function AddLogScreen() {
       venue: event.venue_name || '',
       venueCity: event.venue_city || '',
       venueState: event.venue_state || '',
+      image: event.image_url || '',
       date: event.event_date
         ? new Date(event.event_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
         : '',
       status: event.status,
     };
@@ -277,6 +281,8 @@ export default function AddLogScreen() {
       mapped.season = event.type_metadata.season;
       mapped.homeTeamName = event.type_metadata.home_team_name;
       mapped.awayTeamName = event.type_metadata.away_team_name;
+      mapped.homeTeamLogo = event.type_metadata.home_team_logo;
+      mapped.awayTeamLogo = event.type_metadata.away_team_logo;
       mapped.homeScore = event.type_metadata.home_score;
       mapped.awayScore = event.type_metadata.away_score;
     }
@@ -297,13 +303,37 @@ export default function AddLogScreen() {
 
     setIsSaving(true);
     try {
-      await api.post('/api/logs/create', {
+      const response = await api.post<{ id: string }>('/api/logs/create', {
         event_id: selectedEventToLog.id,
         notes: data.note || null,
         privacy: data.privacy || 'public',
         rating: data.rating || null,
         companions: data.companions || [],
       });
+      const newLogId = response.id;
+
+      // Upload any pending photos (selected during create)
+      if (data.pendingPhotos?.length && newLogId) {
+        const userId = firebaseAuth.currentUser?.uid;
+        if (userId) {
+          await Promise.all(
+            data.pendingPhotos.map(async (localUri: string, index: number) => {
+              try {
+                const { url, firebasePath } = await uploadPhoto(localUri, userId, newLogId);
+                await api.post('/api/logs/photos', {
+                  log_id: newLogId,
+                  firebase_path: firebasePath,
+                  url,
+                  display_order: index,
+                });
+              } catch (photoErr) {
+                console.error('Photo upload error:', photoErr);
+              }
+            })
+          );
+        }
+      }
+
       console.log('Log created successfully!');
       // Trigger success animation + haptic
       setSelectedEventToLog(null);
@@ -334,7 +364,7 @@ export default function AddLogScreen() {
       } else {
         Alert.alert('Error', 'Failed to save your log. Please try again.');
       }
-      console.error('Save log error:', err);
+      console.warn('Save log error:', err);
     } finally {
       setIsSaving(false);
       // Don't reset selectedType, selectedSport, or search — user stays where they were
@@ -389,15 +419,277 @@ export default function AddLogScreen() {
       setIsSearching(false);
     }
   }, [PAGE_SIZE]);
+  // Helper: whether we're in team browse mode
+  const isTeamBrowsing = !!(selectedType === 'sports' && selectedSport && activeSearchQuery);
 
+  // ─── TEAM BROWSE: split layout (fixed header + scrollable games) ────
+  if (isTeamBrowsing) {
+    const teamInfo = getTeamsForSport(selectedSport).find(t => t.name === activeSearchQuery);
+
+    // Client-side filter
+    const filterLower = teamFilterText.toLowerCase();
+    const filtered = teamFilterText
+      ? searchResults.filter(e => {
+        const meta = e.type_metadata;
+        return (
+          e.title?.toLowerCase().includes(filterLower) ||
+          meta?.home_team_name?.toLowerCase().includes(filterLower) ||
+          meta?.away_team_name?.toLowerCase().includes(filterLower) ||
+          meta?.round?.toLowerCase().includes(filterLower) ||
+          e.venue_name?.toLowerCase().includes(filterLower)
+        );
+      })
+      : searchResults;
+
+    // Group by season
+    const seasonsMap = new Map<string, EventSearchResult[]>();
+    for (const evt of filtered) {
+      const season = evt.type_metadata?.season || 'Unknown';
+      if (!seasonsMap.has(season)) seasonsMap.set(season, []);
+      seasonsMap.get(season)!.push(evt);
+    }
+    const sortedSeasons = [...seasonsMap.entries()].sort(([a], [b]) => b.localeCompare(a));
+
+    const getPhaseLabel = (type?: number, round?: string) => {
+      if (type === 1) return { label: 'Preseason', color: '#4ade80' };
+      if (type === 3 || type === 5) return { label: round || 'Postseason', color: '#fb923c' };
+      if (type === 4) return { label: 'Offseason', color: Colors.textMuted };
+      return null;
+    };
+
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* ── Fixed header section ────────────────────────────────── */}
+        <View style={styles.teamBrowseFixedHeader}>
+          <TouchableOpacity
+            onPress={() => {
+              setSportsStep('teams');
+              setActiveSearchQuery('');
+              setSearchResults([]);
+              setTeamFilterText('');
+            }}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={20} color={Colors.text} />
+            <Text style={styles.backButtonText}>Back to teams</Text>
+          </TouchableOpacity>
+
+          <View style={styles.teamBrowseHeader}>
+            {teamInfo?.logo && (
+              <Image source={{ uri: teamInfo.logo }} style={{ width: 36, height: 36 }} resizeMode="contain" />
+            )}
+            <Text style={styles.apiSearchTitle}>
+              {teamInfo?.name ?? activeSearchQuery}
+            </Text>
+            {isSearching && (
+              <ActivityIndicator size="small" color={Colors.primaryContainer} />
+            )}
+          </View>
+
+          <GlassCard borderRadius={16} style={[styles.searchBar, { marginTop: 8, marginBottom: 0 }]}>
+            <TextInput
+              style={[styles.searchInput, { fontSize: 14 }]}
+              placeholder="Filter games..."
+              placeholderTextColor={Colors.textMuted}
+              value={teamFilterText}
+              onChangeText={setTeamFilterText}
+            />
+            <Ionicons name="filter-outline" size={18} color={Colors.textMuted} />
+          </GlassCard>
+        </View>
+
+        {/* ── Scrollable game list ────────────────────────────────── */}
+        {(() => {
+          // Build children array and track sticky season header indices
+          const scrollChildren: React.ReactNode[] = [];
+          const stickyIndices: number[] = [];
+
+          // Error / empty states
+          if (searchError) {
+            scrollChildren.push(
+              <GlassCard key="error" borderRadius={16} style={[styles.errorCard, { marginTop: 4 }]}>
+                <Ionicons name="alert-circle-outline" size={20} color="#ff6b6b" />
+                <Text style={styles.errorText}>{searchError}</Text>
+              </GlassCard>
+            );
+          }
+          if (!isSearching && searchResults.length === 0 && !searchError) {
+            scrollChildren.push(
+              <GlassCard key="empty" borderRadius={16} style={[styles.noResultsCard, { marginTop: 4 }]}>
+                <Ionicons name="search-outline" size={24} color={Colors.textMuted} />
+                <Text style={styles.noResultsText}>No games found</Text>
+              </GlassCard>
+            );
+          }
+
+          // Flatten season groups: each season header + game cards block = 2 direct children
+          for (const [season, events] of sortedSeasons) {
+            events.sort((a, b) => {
+              const da = a.event_date ? new Date(a.event_date).getTime() : 0;
+              const db = b.event_date ? new Date(b.event_date).getTime() : 0;
+              return db - da;
+            });
+
+            // Season header — mark as sticky
+            stickyIndices.push(scrollChildren.length);
+            scrollChildren.push(
+              <View key={`header-${season}`} style={styles.stickySeasonHeader}>
+                <View style={styles.stickySeasonPill}>
+                  <Text style={styles.stickySeasonText}>
+                    {season.includes('-')
+                      ? `${season.split('-')[0]}-20${season.split('-')[1]} Season`
+                      : season}
+                  </Text>
+                </View>
+              </View>
+            );
+
+            // Game cards for this season
+            let lastPhaseType: number | undefined;
+            scrollChildren.push(
+              <View key={`games-${season}`} style={{ gap: 12, marginBottom: 8 }}>
+                {events.map((event) => {
+                  const meta = event.type_metadata;
+
+                  const dateStr = event.event_date
+                    ? new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '';
+                  const daysUntilLabel = (() => {
+                    if (event.status !== 'upcoming' || !event.event_date) return null;
+                    const target = new Date(event.event_date).setHours(0, 0, 0, 0);
+                    const now = new Date().setHours(0, 0, 0, 0);
+                    const diffTime = target - now;
+                    if (diffTime <= 0) return 'TODAY';
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays === 1) return 'TOMORROW';
+                    return `IN ${diffDays} DAYS`;
+                  })();
+                  const scoreLabel = meta?.home_score != null && event.status !== 'upcoming'
+                    ? `${meta.away_score} \u2013 ${meta.home_score}` : null;
+                  const shortAway = meta?.away_team_name?.trim().split(' ').slice(-1)[0] || '';
+                  const shortHome = meta?.home_team_name?.trim().split(' ').slice(-1)[0] || '';
+                  const displayTitle = shortAway && shortHome ? `${shortAway} vs ${shortHome}` : event.title;
+
+                  return (
+                    <View key={event.id}>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => setSelectedEventToLog(mapEventForModal(event))}
+                      >
+                        <GlassCard borderRadius={16} style={styles.apiResultCard}>
+                          <View style={styles.searchLogoContainer}>
+                            {meta?.home_team_logo ? (
+                              <Image source={{ uri: meta.home_team_logo }} style={{ width: '72%', height: '72%' }} resizeMode="contain" />
+                            ) : (
+                              <Text style={styles.logoFallbackText}>{meta?.home_team_name?.charAt(0) || '?'}</Text>
+                            )}
+                          </View>
+                          <View style={styles.apiResultInfo}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                              <Text style={[styles.teamNamesText, { flex: 1 }]} numberOfLines={1}>{displayTitle}</Text>
+                              {scoreLabel ? (
+                                <View style={styles.scoreBugAddLog}>
+                                  <Text style={styles.scoreBugText}>{scoreLabel}</Text>
+                                </View>
+                              ) : daysUntilLabel ? (
+                                <View style={styles.daysUntilPill}>
+                                  <Text style={styles.daysUntilText}>{daysUntilLabel}</Text>
+                                </View>
+                              ) : null}
+                            </View>
+                            <Text style={styles.apiResultSub} numberOfLines={1}>
+                              {dateStr}{event.venue_name ? ` \u00b7 ${event.venue_name}` : ''}
+                            </Text>
+                          </View>
+                        </GlassCard>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            );
+          }
+
+          // Load more
+          if (hasMore && !isSearching) {
+            scrollChildren.push(
+              <TouchableOpacity
+                key="load-more"
+                style={styles.loadMoreButton}
+                activeOpacity={0.7}
+                onPress={handleLoadMore}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore
+                  ? <ActivityIndicator size="small" color={Colors.primaryContainer} />
+                  : <Text style={styles.loadMoreText}>Load More Results</Text>}
+              </TouchableOpacity>
+            );
+          }
+
+          return (
+            <ScrollView
+              contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 0, paddingBottom: 140 }}
+              showsVerticalScrollIndicator={true}
+              stickyHeaderIndices={stickyIndices}
+              style={{ flex: 1 }}
+            >
+              {scrollChildren}
+            </ScrollView>
+          );
+        })()}
+
+        {/* Edit/Create modal */}
+        <EditLogModal
+          visible={!!selectedEventToLog}
+          eventType={selectedEventToLog?.eventType}
+          mode="create"
+          event={selectedEventToLog?.isManualFallback ? null : selectedEventToLog}
+          onClose={() => setSelectedEventToLog(null)}
+          onSave={handleSaveLog}
+        />
+
+        {/* Success animation */}
+        {showSuccess && (
+          <Animated.View
+            pointerEvents="none"
+            style={{
+              ...StyleSheet.absoluteFillObject,
+              justifyContent: 'center',
+              alignItems: 'center',
+              opacity: successOpacity,
+              zIndex: 999,
+            }}
+          >
+            <Animated.View
+              style={{
+                width: 72, height: 72, borderRadius: 36,
+                backgroundColor: Colors.primaryContainer,
+                alignItems: 'center', justifyContent: 'center',
+                transform: [{ scale: successScale }],
+                shadowColor: Colors.primaryContainer,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.5, shadowRadius: 20,
+                elevation: 10,
+              }}
+            >
+              <Ionicons name="checkmark" size={36} color={Colors.onPrimary} />
+            </Animated.View>
+          </Animated.View>
+        )}
+      </SafeAreaView>
+    );
+  }
+
+  // ─── DEFAULT LAYOUT (type grid, sports hub, teams, generic search) ──
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
       >
-        {/* Header */}
-        <Text style={styles.title}>Log New</Text>
+        {/* Header — only shown on type selection screen */}
+        {!selectedType && <Text style={styles.title}>Log New</Text>}
 
         {/* ── TYPE GRID ─────────────────────────────────────────────── */}
         {!selectedType ? (
@@ -485,9 +777,9 @@ export default function AddLogScreen() {
                       {sport.label}
                     </Text>
                     {'badge' in sport && sport.active ? null
-                    : !sport.active ? (
-                      <Text style={styles.sportSoonText}>Soon</Text>
-                    ) : null}
+                      : !sport.active ? (
+                        <Text style={styles.sportSoonText}>Soon</Text>
+                      ) : null}
                     {sport.active && (
                       <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} style={{ marginLeft: 'auto' }} />
                     )}
@@ -558,7 +850,7 @@ export default function AddLogScreen() {
               <Text style={styles.backButtonText}>
                 {selectedType === 'sports' && selectedSport ? 'Back to teams'
                   : selectedType === 'sports' ? 'Back to sports'
-                  : 'Back to types'}
+                    : 'Back to types'}
               </Text>
             </TouchableOpacity>
 
@@ -570,15 +862,15 @@ export default function AddLogScreen() {
               const filterLower = teamFilterText.toLowerCase();
               const filtered = teamFilterText
                 ? searchResults.filter(e => {
-                    const meta = e.type_metadata;
-                    return (
-                      e.title?.toLowerCase().includes(filterLower) ||
-                      meta?.home_team_name?.toLowerCase().includes(filterLower) ||
-                      meta?.away_team_name?.toLowerCase().includes(filterLower) ||
-                      meta?.round?.toLowerCase().includes(filterLower) ||
-                      e.venue_name?.toLowerCase().includes(filterLower)
-                    );
-                  })
+                  const meta = e.type_metadata;
+                  return (
+                    e.title?.toLowerCase().includes(filterLower) ||
+                    meta?.home_team_name?.toLowerCase().includes(filterLower) ||
+                    meta?.away_team_name?.toLowerCase().includes(filterLower) ||
+                    meta?.round?.toLowerCase().includes(filterLower) ||
+                    e.venue_name?.toLowerCase().includes(filterLower)
+                  );
+                })
                 : searchResults;
 
               // Group by season
@@ -777,134 +1069,134 @@ export default function AddLogScreen() {
 
             {/* Generic search results (NOT team browse) */}
             {!(selectedSport && activeSearchQuery) && (<>
-            <View style={styles.apiResultsList}>
-              {/* Error state */}
-              {searchError && (
-                <GlassCard borderRadius={16} style={styles.errorCard}>
-                  <Ionicons name="alert-circle-outline" size={20} color="#ff6b6b" />
-                  <Text style={styles.errorText}>{searchError}</Text>
-                </GlassCard>
-              )}
-
-              {/* Results header */}
-              {searchResults.length > 0 && (
-                <Text style={styles.sectionLabel}>
-                  {searchResults.length} RESULT{searchResults.length !== 1 ? 'S' : ''}
-                </Text>
-              )}
-
-              {/* No results state */}
-              {activeSearchQuery.length >= 2 &&
-                !isSearching &&
-                searchResults.length === 0 &&
-                !searchError && (
-                  <GlassCard borderRadius={16} style={styles.noResultsCard}>
-                    <Ionicons name="search-outline" size={24} color={Colors.textMuted} />
-                    <Text style={styles.noResultsText}>
-                      No events found for "{activeSearchQuery}"
-                    </Text>
-                    <Text style={styles.noResultsHint}>
-                      Try a different search or add manually below
-                    </Text>
+              <View style={styles.apiResultsList}>
+                {/* Error state */}
+                {searchError && (
+                  <GlassCard borderRadius={16} style={styles.errorCard}>
+                    <Ionicons name="alert-circle-outline" size={20} color="#ff6b6b" />
+                    <Text style={styles.errorText}>{searchError}</Text>
                   </GlassCard>
                 )}
 
-              {/* Result cards */}
-              {searchResults.map((event) => {
-                const meta = event.type_metadata;
-                const isSports = !!meta?.home_team_name;
-                const dateStr = event.event_date
-                  ? new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                  : '';
-                // Days until — matches logbook getDaysUntil exactly
-                const daysUntilLabel = (() => {
-                  if (event.status !== 'upcoming' || !event.event_date) return null;
-                  const target = new Date(event.event_date).setHours(0, 0, 0, 0);
-                  const now = new Date().setHours(0, 0, 0, 0);
-                  const diffTime = target - now;
-                  if (diffTime <= 0) return 'TODAY';
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                  if (diffDays === 1) return 'TOMORROW';
-                  return `IN ${diffDays} DAYS`;
-                })();
-                const scoreLabel = meta?.home_score != null && event.status !== 'upcoming'
-                  ? `${meta.away_score} – ${meta.home_score}` : null;
-                const shortAway = meta?.away_team_name?.trim().split(' ').slice(-1)[0] || meta?.away_team_name || '';
-                const shortHome = meta?.home_team_name?.trim().split(' ').slice(-1)[0] || meta?.home_team_name || '';
-                const displayTitle = isSports && shortAway && shortHome
-                  ? `${shortAway} vs ${shortHome}` : event.title;
+                {/* Results header */}
+                {searchResults.length > 0 && (
+                  <Text style={styles.sectionLabel}>
+                    {searchResults.length} RESULT{searchResults.length !== 1 ? 'S' : ''}
+                  </Text>
+                )}
 
-                return (
-                  <TouchableOpacity
-                    key={event.id}
-                    activeOpacity={0.7}
-                    onPress={() => setSelectedEventToLog(mapEventForModal(event))}
-                  >
-                    <GlassCard borderRadius={16} style={styles.apiResultCard}>
-                      {isSports ? (
-                        /* ── Sports card ── */
-                        <>
-                          {/* Away team logo on glassy dark bg (matches logbook style) */}
-                          <View style={styles.searchLogoContainer}>
-                            {meta?.home_team_logo ? (
-                              <Image source={{ uri: meta.home_team_logo }} style={{ width: '72%', height: '72%' }} resizeMode="contain" />
-                            ) : (
-                              <Text style={styles.logoFallbackText}>{meta?.home_team_name?.charAt(0) || '?'}</Text>
-                            )}
-                          </View>
-
-                          <View style={styles.apiResultInfo}>
-                            {/* Title row — name left, pill right (matches logbook) */}
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                              <Text style={[styles.teamNamesText, { flex: 1 }]} numberOfLines={1}>{displayTitle}</Text>
-                              {scoreLabel ? (
-                                <View style={styles.scoreBugAddLog}>
-                                  <Text style={styles.scoreBugText}>{scoreLabel}</Text>
-                                </View>
-                              ) : daysUntilLabel ? (
-                                <View style={styles.daysUntilPill}>
-                                  <Text style={styles.daysUntilText}>{daysUntilLabel}</Text>
-                                </View>
-                              ) : null}
-                            </View>
-                            {/* Date · venue · league */}
-                            <Text style={styles.apiResultSub} numberOfLines={1}>
-                              {dateStr}{event.venue_name ? ` · ${event.venue_name}` : ''}{meta?.league ? ` · ${meta.league}` : ''}
-                            </Text>
-                          </View>
-                        </>
-                      ) : (
-                        /* ── Non-sports card ── */
-                        <>
-                          <Ionicons name="checkmark-circle-outline" size={24} color={Colors.primaryContainer} />
-                          <View style={styles.apiResultInfo}>
-                            <Text style={styles.apiResultTitle}>{event.title}</Text>
-                            <Text style={styles.apiResultSub}>{getResultSubtitle(event)}</Text>
-                          </View>
-                          <View style={styles.statusBadge}>
-                            <Text style={styles.statusBadgeText}>{event.status === 'completed' ? 'Final' : event.status === 'in_progress' ? 'Live' : 'Upcoming'}</Text>
-                          </View>
-                        </>
-                      )}
+                {/* No results state */}
+                {activeSearchQuery.length >= 2 &&
+                  !isSearching &&
+                  searchResults.length === 0 &&
+                  !searchError && (
+                    <GlassCard borderRadius={16} style={styles.noResultsCard}>
+                      <Ionicons name="search-outline" size={24} color={Colors.textMuted} />
+                      <Text style={styles.noResultsText}>
+                        No events found for "{activeSearchQuery}"
+                      </Text>
+                      <Text style={styles.noResultsHint}>
+                        Try a different search or add manually below
+                      </Text>
                     </GlassCard>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                  )}
 
-            {/* Load More button */}
-            {hasMore && !isSearching && (
-              <TouchableOpacity
-                style={styles.loadMoreButton}
-                activeOpacity={0.7}
-                onPress={handleLoadMore}
-                disabled={isLoadingMore}
-              >
-                {isLoadingMore
-                  ? <ActivityIndicator size="small" color={Colors.primaryContainer} />
-                  : <Text style={styles.loadMoreText}>Load More Results</Text>}
-              </TouchableOpacity>
-            )}
+                {/* Result cards */}
+                {searchResults.map((event) => {
+                  const meta = event.type_metadata;
+                  const isSports = !!meta?.home_team_name;
+                  const dateStr = event.event_date
+                    ? new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '';
+                  // Days until — matches logbook getDaysUntil exactly
+                  const daysUntilLabel = (() => {
+                    if (event.status !== 'upcoming' || !event.event_date) return null;
+                    const target = new Date(event.event_date).setHours(0, 0, 0, 0);
+                    const now = new Date().setHours(0, 0, 0, 0);
+                    const diffTime = target - now;
+                    if (diffTime <= 0) return 'TODAY';
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays === 1) return 'TOMORROW';
+                    return `IN ${diffDays} DAYS`;
+                  })();
+                  const scoreLabel = meta?.home_score != null && event.status !== 'upcoming'
+                    ? `${meta.away_score} – ${meta.home_score}` : null;
+                  const shortAway = meta?.away_team_name?.trim().split(' ').slice(-1)[0] || meta?.away_team_name || '';
+                  const shortHome = meta?.home_team_name?.trim().split(' ').slice(-1)[0] || meta?.home_team_name || '';
+                  const displayTitle = isSports && shortAway && shortHome
+                    ? `${shortAway} vs ${shortHome}` : event.title;
+
+                  return (
+                    <TouchableOpacity
+                      key={event.id}
+                      activeOpacity={0.7}
+                      onPress={() => setSelectedEventToLog(mapEventForModal(event))}
+                    >
+                      <GlassCard borderRadius={16} style={styles.apiResultCard}>
+                        {isSports ? (
+                          /* ── Sports card ── */
+                          <>
+                            {/* Away team logo on glassy dark bg (matches logbook style) */}
+                            <View style={styles.searchLogoContainer}>
+                              {meta?.home_team_logo ? (
+                                <Image source={{ uri: meta.home_team_logo }} style={{ width: '72%', height: '72%' }} resizeMode="contain" />
+                              ) : (
+                                <Text style={styles.logoFallbackText}>{meta?.home_team_name?.charAt(0) || '?'}</Text>
+                              )}
+                            </View>
+
+                            <View style={styles.apiResultInfo}>
+                              {/* Title row — name left, pill right (matches logbook) */}
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                                <Text style={[styles.teamNamesText, { flex: 1 }]} numberOfLines={1}>{displayTitle}</Text>
+                                {scoreLabel ? (
+                                  <View style={styles.scoreBugAddLog}>
+                                    <Text style={styles.scoreBugText}>{scoreLabel}</Text>
+                                  </View>
+                                ) : daysUntilLabel ? (
+                                  <View style={styles.daysUntilPill}>
+                                    <Text style={styles.daysUntilText}>{daysUntilLabel}</Text>
+                                  </View>
+                                ) : null}
+                              </View>
+                              {/* Date · venue · league */}
+                              <Text style={styles.apiResultSub} numberOfLines={1}>
+                                {dateStr}{event.venue_name ? ` · ${event.venue_name}` : ''}{meta?.league ? ` · ${meta.league}` : ''}
+                              </Text>
+                            </View>
+                          </>
+                        ) : (
+                          /* ── Non-sports card ── */
+                          <>
+                            <Ionicons name="checkmark-circle-outline" size={24} color={Colors.primaryContainer} />
+                            <View style={styles.apiResultInfo}>
+                              <Text style={styles.apiResultTitle}>{event.title}</Text>
+                              <Text style={styles.apiResultSub}>{getResultSubtitle(event)}</Text>
+                            </View>
+                            <View style={styles.statusBadge}>
+                              <Text style={styles.statusBadgeText}>{event.status === 'completed' ? 'Final' : event.status === 'in_progress' ? 'Live' : 'Upcoming'}</Text>
+                            </View>
+                          </>
+                        )}
+                      </GlassCard>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Load More button */}
+              {hasMore && !isSearching && (
+                <TouchableOpacity
+                  style={styles.loadMoreButton}
+                  activeOpacity={0.7}
+                  onPress={handleLoadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore
+                    ? <ActivityIndicator size="small" color={Colors.primaryContainer} />
+                    : <Text style={styles.loadMoreText}>Load More Results</Text>}
+                </TouchableOpacity>
+              )}
             </>)}
 
             <View style={styles.fallbackContainer}>
@@ -981,6 +1273,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  teamBrowseFixedHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 34,
+    paddingBottom: 8,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -1423,6 +1720,27 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 20,
     marginBottom: 12,
+  },
+  stickySeasonHeader: {
+    backgroundColor: 'transparent',
+    paddingVertical: 0,
+  },
+  stickySeasonPill: {
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: 'rgba(74, 222, 128, 0.6)',
+    borderRadius: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 24,
+    alignSelf: 'stretch' as const,
+    alignItems: 'center' as const,
+  },
+  stickySeasonText: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: Colors.primaryContainer,
+    textTransform: 'uppercase' as const,
   },
   seasonHeaderLine: {
     flex: 1,

@@ -261,8 +261,11 @@ export default function LogbookScreen() {
         rating: updatedData.rating,
         companions: updatedData.companions,
       });
+      // Merge edits into the event and reopen the detail modal
+      const updatedEvent = { ...editingLog, ...updatedData };
       setEditingLog(null);
-      fetchLogs(true); // Refetch quietly
+      setTimeout(() => setSelectedEvent(updatedEvent), 350); // wait for edit modal dismiss animation
+      fetchLogs(true); // Refetch quietly in background
     } catch (err) {
       console.error('Failed to update log:', err);
       Alert.alert('Error', 'Could not update your log.');
