@@ -1,7 +1,9 @@
 # Log It — Feature Roadmap
 
-> **Last updated:** 2026-03-31
+> **Last updated:** 2026-04-02
 > **Changes:**
+> - 2026-04-02: NHL support added — sync, backfill, 32-team browse UI, cron at 6:10 AM UTC.
+> - 2026-04-01: Photos now work during log creation (not just edit). EditLogModal overhauled with polymorphic top sections, venue background images, condensed layout. Edit→Detail return flow implemented. Delete button fixed (onDelete prop wiring). Duplicate log error handled gracefully.
 > - 2026-03-31: NFL sync + backfill implemented (shared ESPN integration via `server-lib/espn.ts`). Box score refactored for multi-sport. Season type + playoff round tracking added (migration 015). Team browse redesigned with season-grouped headers, filter bar, and 100-result initial load.
 > - 2026-03-31: Venue auto-enrichment implemented (Nominatim + Wikimedia). Admin Portal v1 shipped (static HTML viewer for venues & games). Moved admin portal to v1.5 with partial completion.
 > - 2026-03-30: Checked off photo upload (Firebase Storage, log_photos table, compression, react-native-image-viewing viewer). Fixed stale Supabase Storage reference in log creation.
@@ -141,7 +143,7 @@ gantt
 ### 12. Additional Sports
 - [x] Add NFL support (ESPN API — `api/cron/sync-nfl.ts`, `api/cron/backfill-nfl.ts`, `server-lib/nfl-venues.ts`)
 - [ ] Add MLB support (ESPN API)
-- [ ] Add NHL support
+- [x] Add NHL support (ESPN API — `api/cron/sync-nhl.ts`, `api/cron/backfill-nhl.ts`, `server-lib/nhl-venues.ts`)
 - [ ] Multi-sport filter in logbook and feed
 
 ---

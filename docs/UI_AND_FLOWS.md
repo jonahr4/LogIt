@@ -1,7 +1,8 @@
 # Log It — UI Design & User Flows
 
-> **Last updated:** 2026-03-31
+> **Last updated:** 2026-04-01
 > **Changes:**
+> - 2026-04-01: EditLogModal overhauled — polymorphic top sections (team logos/scores for sports, hero title for others), venue background image, reordered bottom (Rating+Privacy → Notes → Photos → Type-specific → Companions → Actions). Photos now work during creation. Edit→Detail return flow: saving edits reopens EventDetailModal with updated data.
 > - 2026-03-31: Redesigned team browse: season-grouped inline headers ("2025-26", "2024-25"), phase sub-dividers (preseason/postseason), client-side filter bar, 100-result initial load with deduped Load More. Documented success checkmark animation.
 > - 2026-03-29: Documented sports browse flow (Sports Hub -> Teams grid -> pre-filled search) in Add Log. Updated search to note pagination/load more and multi-word token search.
 > - 2026-03-29: Fixed stale Ball Don't Lie reference in Add Log search to ESPN.
@@ -167,45 +168,34 @@ graph LR
 
 ### 3a. Edit / Create Log Modal (`EditLogModal`)
 
-Ticket-style modal (mirroring the Event Detail Modal design) used for both **creating** a new log and **editing** an existing one. Accessed from:
-- **Add Log tab** → tap any event type card → opens in create mode
+Ticket-style modal matching the Event Detail Modal design language, used for both **creating** a new log and **editing** an existing one. Accessed from:
+- **Add Log tab** → tap any event card → opens in create mode
 - **Event Detail Modal** → tap "Edit Log" → opens in edit mode, pre-filled with existing data
 
-**Structure:**
-```
-┌─────────────────────────────┐
-│  ≡ Drag handle              │
-│  ┌─────────────────────────┐│
-│  │  "New [Type]" badge     ││
-│  │  Title / Venue / Date   ││
-│  │  TYPE-SPECIFIC INPUTS   ││
-│  └─────────────────────────┘│
-│  ╌╌╌╌ dashed separator ╌╌╌╌│
-│  ┌─────────────────────────┐│
-│  │  ★ Rating (1-5 stars)   ││
-│  │  Notes (multiline)      ││
-│  │  Privacy selector       ││
-│  │  Companions (chip list) ││
-│  │  Photos (placeholder)   ││
-│  │  [Log It]  [Cancel]     ││
-│  └─────────────────────────┘│
-└─────────────────────────────┘
-```
+**Top section (above dashed separator):**
+- Venue background image with 85% dim + vignette gradients
+- "New/Edit [Type]" green badge
+- **Polymorphic content per event type:**
+  - **Sports:** Team logos (52px) + score bug (46px ExtraBold) — read-only
+  - **Movie/Concert/Restaurant/Nightlife:** Hero title + metadata pills (director, artist, genre, etc.)
+  - **Custom/manual:** Editable title input
+- Compact venue/date MetaGrid (two rounded cells, centered text)
+- Entire top section is a drag-to-dismiss hotbox
 
-**Type-specific input sections:**
+**Bottom section (scrollable, below separator):**
 
-| Type | Fields |
-|---|---|
-| **Sports** | Sport picker (Basketball/Football/Baseball/Hockey), league, season, home/away team names, home/away scores, status |
-| **Movie** | Director, genre, runtime, cast (comma-separated), watched-at picker (Theater/Home/Drive-In/Streaming), theater name |
-| **Concert** | Artist, tour name, opener, genre, setlist (dynamic add/remove list) |
-| **Restaurant** | Cuisine, price level segmented control ($–$$$$) |
-| **Nightlife** | Venue type picker (Club/Bar/Lounge/Rooftop/Pub), vibe, dress code, music genre, price level |
-| **Custom** | No extra fields — uses shared inputs only |
+| Order | Section | Details |
+|---|---|---|
+| 1 | ⭐ Rating + Privacy | Half-star rating (left) + privacy icon pills (right) on same row |
+| 2 | 📝 Notes | Multiline input with icon section header |
+| 3 | 📸 Photos | Horizontal scroll with add button, works in both create and edit modes |
+| 4 | 🔧 Type-specific | Sports: sport/league/season/teams/scores. Movie: director/genre/runtime/cast/watched-at. Concert: artist/tour/opener/setlist. Restaurant: cuisine/price. Nightlife: venue type/vibe/dress/music/price |
+| 5 | 👥 Companions | Text input + chip list with remove |
+| 6 | 🔘 Actions | "Log It" / "Save Changes" + Cancel |
 
-**Shared bottom inputs (all types):** Rating stars, notes, privacy (Public/Friends/Private), companions (add names + chip list), photos placeholder.
+**Edit→Detail return flow:** After saving edits from Logbook, the EditLogModal dismisses and the EventDetailModal reopens with merged updated data (350ms animation delay).
 
-**Component:** [`EditLogModal.tsx`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/components/ui/EditLogModal.tsx)
+**Component:** [EditLogModal.tsx](file:///Users/jonahrothman/Desktop/Workspace/LogIt/components/ui/EditLogModal.tsx)
 
 ---
 

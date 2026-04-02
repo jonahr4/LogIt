@@ -45,7 +45,7 @@ const SUPPORTED_SPORTS = [
   { key: 'nba', label: 'NBA', icon: 'basketball-outline' as const, active: true },
   { key: 'nfl', label: 'NFL', icon: 'american-football-outline' as const, active: true },
   { key: 'mlb', label: 'MLB', icon: 'baseball-outline' as const, active: false },
-  { key: 'nhl', label: 'NHL', icon: 'snow-outline' as const, active: false },
+  { key: 'nhl', label: 'NHL', icon: 'snow-outline' as const, active: true },
 ] as const;
 
 const NBA_TEAMS = [
@@ -122,9 +122,49 @@ const NFL_TEAMS = [
   logo: `https://a.espncdn.com/i/teamlogos/nfl/500/${t.abbrev}.png`,
 }));
 
+const NHL_TEAMS = [
+  { name: 'Anaheim Ducks', short: 'Ducks', abbrev: 'ana' },
+  { name: 'Arizona Coyotes', short: 'Coyotes', abbrev: 'ari' },
+  { name: 'Boston Bruins', short: 'Bruins', abbrev: 'bos' },
+  { name: 'Buffalo Sabres', short: 'Sabres', abbrev: 'buf' },
+  { name: 'Calgary Flames', short: 'Flames', abbrev: 'cgy' },
+  { name: 'Carolina Hurricanes', short: 'Hurricanes', abbrev: 'car' },
+  { name: 'Chicago Blackhawks', short: 'Blackhawks', abbrev: 'chi' },
+  { name: 'Colorado Avalanche', short: 'Avalanche', abbrev: 'col' },
+  { name: 'Columbus Blue Jackets', short: 'Blue Jackets', abbrev: 'cbj' },
+  { name: 'Dallas Stars', short: 'Stars', abbrev: 'dal' },
+  { name: 'Detroit Red Wings', short: 'Red Wings', abbrev: 'det' },
+  { name: 'Edmonton Oilers', short: 'Oilers', abbrev: 'edm' },
+  { name: 'Florida Panthers', short: 'Panthers', abbrev: 'fla' },
+  { name: 'Los Angeles Kings', short: 'Kings', abbrev: 'la' },
+  { name: 'Minnesota Wild', short: 'Wild', abbrev: 'min' },
+  { name: 'Montreal Canadiens', short: 'Canadiens', abbrev: 'mtl' },
+  { name: 'Nashville Predators', short: 'Predators', abbrev: 'nsh' },
+  { name: 'New Jersey Devils', short: 'Devils', abbrev: 'nj' },
+  { name: 'New York Islanders', short: 'Islanders', abbrev: 'nyi' },
+  { name: 'New York Rangers', short: 'Rangers', abbrev: 'nyr' },
+  { name: 'Ottawa Senators', short: 'Senators', abbrev: 'ott' },
+  { name: 'Philadelphia Flyers', short: 'Flyers', abbrev: 'phi' },
+  { name: 'Pittsburgh Penguins', short: 'Penguins', abbrev: 'pit' },
+  { name: 'San Jose Sharks', short: 'Sharks', abbrev: 'sj' },
+  { name: 'Seattle Kraken', short: 'Kraken', abbrev: 'sea' },
+  { name: 'St. Louis Blues', short: 'Blues', abbrev: 'stl' },
+  { name: 'Tampa Bay Lightning', short: 'Lightning', abbrev: 'tb' },
+  { name: 'Toronto Maple Leafs', short: 'Maple Leafs', abbrev: 'tor' },
+  { name: 'Utah Hockey Club', short: 'Utah HC', abbrev: 'uta' },
+  { name: 'Vancouver Canucks', short: 'Canucks', abbrev: 'van' },
+  { name: 'Vegas Golden Knights', short: 'Golden Knights', abbrev: 'vgk' },
+  { name: 'Washington Capitals', short: 'Capitals', abbrev: 'wsh' },
+  { name: 'Winnipeg Jets', short: 'Jets', abbrev: 'wpg' },
+].map(t => ({
+  ...t,
+  logo: `https://a.espncdn.com/i/teamlogos/nhl/500/${t.abbrev}.png`,
+}));
+
 /** Get the team array for the selected sport */
 function getTeamsForSport(sport: string | null) {
   if (sport === 'nfl') return NFL_TEAMS;
+  if (sport === 'nhl') return NHL_TEAMS;
   return NBA_TEAMS; // default
 }
 

@@ -38,7 +38,7 @@ People track the events they attend in Notes, spreadsheets, photos, or memory. T
 | 📡 **Feed** | See your activity and discover what others are logging |
 | 🔒 **Privacy Controls** | Each log can be public, friends-only, or private |
 | 🏟️ **Venue Enrichment** | Auto-populated venue photos and coordinates via Wikimedia + Nominatim |
-| 🏈 **Multi-Sport** | NBA and NFL supported, with a scalable pattern for adding more leagues |
+| 🏈 **Multi-Sport** | NBA, NFL, and NHL supported, with a scalable pattern for adding more leagues |
 | 🛠️ **Admin Portal** | Static HTML dashboard for viewing venue and game data with filters |
 
 ---
@@ -52,7 +52,7 @@ People track the events they attend in Notes, spreadsheets, photos, or memory. T
 | **Database** | [Supabase](https://supabase.com/) (Postgres + Row Level Security) |
 | **Auth** | [Firebase Authentication](https://firebase.google.com/docs/auth) (Google + Apple Sign-In) |
 | **API / Cron** | [Vercel](https://vercel.com/) (serverless functions + scheduled cron jobs) |
-| **Sports Data** | [ESPN API](https://site.api.espn.com/) (NBA, NFL — scoreboard + team data) |
+| **Sports Data** | [ESPN API](https://site.api.espn.com/) (NBA, NFL, NHL — scoreboard + team data) |
 | **Venue Media** | [Nominatim](https://nominatim.org/) (geocoding) + [Wikimedia Commons](https://commons.wikimedia.org/) (images) |
 | **Language** | TypeScript |
 
@@ -78,13 +78,16 @@ People track the events they attend in Notes, spreadsheets, photos, or memory. T
 │   ├── venue-lookup.ts         # findOrCreateVenue() + auto-enrichment
 │   ├── nba-venues.ts           # Static NBA arena mappings (30 teams)
 │   ├── nfl-venues.ts           # Static NFL stadium mappings (32 teams)
+│   ├── nhl-venues.ts           # Static NHL arena mappings (32 teams)
 │   └── supabase-admin.ts       # Supabase service-role client
 ├── api/                        # Vercel serverless functions
 │   ├── cron/                   # Scheduled sync jobs
 │   │   ├── sync-nba.ts         # Daily NBA game sync (ESPN)
 │   │   ├── sync-nfl.ts         # Daily NFL game sync (ESPN)
+│   │   ├── sync-nhl.ts         # Daily NHL game sync (ESPN)
 │   │   ├── backfill-nba.ts     # Historical NBA season backfill
-│   │   └── backfill-nfl.ts     # Historical NFL season backfill
+│   │   ├── backfill-nfl.ts     # Historical NFL season backfill
+│   │   └── backfill-nhl.ts     # Historical NHL season backfill
 │   ├── events/                 # Event search & box score APIs
 │   ├── logs/                   # Log CRUD APIs
 │   └── scripts/                # One-off scripts (venue backfill)
@@ -170,14 +173,14 @@ All planning and reference docs live in [`docs/`](./docs/):
 | Phase | Focus |
 |---|---|
 | **MVP (v1.0)** | Auth, NBA game search, log creation with photos, logbook, event detail, feed |
-| **v1.5** | Multi-sport (NFL ✅, MLB, NHL), friend system, stats dashboard, map view |
+| **v1.5** | Multi-sport (NFL ✅, NHL ✅, MLB), friend system, stats dashboard, map view |
 | **v2.0** | Shared attendance, event discovery & reviews, comments/reactions, beyond sports |
 
 ---
 
 ## Status
 
-🟢 **MVP core complete** — Auth, onboarding, full UI (Spatial Green v2 design), NBA + NFL game sync from ESPN, Supabase-backed event search with fuzzy matching, log creation with companions, personal logbook with sort/filter, venue auto-enrichment, and admin data portal.
+🟢 **MVP core complete** — Auth, onboarding, full UI (Spatial Green v2 design), NBA + NFL + NHL game sync from ESPN, Supabase-backed event search with fuzzy matching, log creation with companions, personal logbook with sort/filter, venue auto-enrichment, and admin data portal.
 
 ---
 
@@ -185,6 +188,7 @@ All planning and reference docs live in [`docs/`](./docs/):
 
 | Date | Update |
 |---|---|
+| 2026-04-02 | NHL integration — sync + backfill + 32 NHL teams in browse UI, cron at 6:10 AM UTC |
 | 2026-03-31 | Season metadata — `season_type` + playoff `round` tracking, multi-sport box score, team browse with season headers |
 | 2026-03-31 | NFL integration — shared ESPN utility, sync + backfill scripts, 32 NFL teams in browse UI |
 | 2026-03-31 | Admin portal — static HTML dashboard for venues & games with filters, pagination, sorting |

@@ -1,7 +1,8 @@
 # Adding New Sports Leagues
 
-> **Last updated:** 2026-03-31
+> **Last updated:** 2026-04-02
 > **Changes:**
+> - 2026-04-02: NHL implemented — `sync-nhl.ts`, `backfill-nhl.ts`, `nhl-venues.ts` (32 arenas). Cron at 6:10 AM UTC. Date-range backfill (Oct–Jun). Split-year season format (`2025-26`).
 > - 2026-03-31: Added ESPN playoff/season metadata reference, planned `season_type` + `round` fields, and comprehensive testing strategy.
 > - 2026-03-31: Initial document. Documents the pattern for adding NFL as the second sport, establishing the reusable workflow for future leagues.
 
@@ -140,6 +141,7 @@ https://a.espncdn.com/i/teamlogos/{sport}/500/{abbrev}.png
 |---|---|
 | NBA | `0 6 * * *` (6:00 AM) |
 | NFL | `5 6 * * *` (6:05 AM) |
+| NHL | `10 6 * * *` (6:10 AM) |
 
 ---
 
@@ -148,7 +150,7 @@ https://a.espncdn.com/i/teamlogos/{sport}/500/{abbrev}.png
 - [x] **NBA** — `sync-nba.ts` (2026-03-28)
 - [x] **NFL** — `sync-nfl.ts` (2026-03-31)
 - [ ] MLB
-- [ ] NHL
+- [x] **NHL** — `sync-nhl.ts` (2026-04-02)
 - [ ] MLS
 - [ ] Premier League
 

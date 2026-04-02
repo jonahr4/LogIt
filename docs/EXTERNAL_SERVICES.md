@@ -1,7 +1,8 @@
 # Log It — External Services & Data Ingestion
 
-> **Last updated:** 2026-03-31
+> **Last updated:** 2026-04-02
 > **Changes:**
+> - 2026-04-02: NHL ingestion implemented via shared ESPN integration. Added NHL sync section. Updated ingestion map.
 > - 2026-03-31: NFL ingestion implemented via shared ESPN integration (`server-lib/espn.ts`). Updated ingestion map to show NFL as MVP. Added NFL sync section.
 > - 2026-03-29: Added Strategy C — client-side ESPN live score fetch for non-completed sports events.
 > - 2026-03-29: Fixed stale BDL section headers and env var references to match ESPN-only ingestion.
@@ -91,7 +92,8 @@ Nightly cron → Writes final score into DB
 |---|---|---|---|---|
 | **Sports (NBA)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
 | **Sports (NFL)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
-| **Sports (MLB/NHL)** | A Pre-Ingest | ESPN API | v1.5 | `events` + `sports_events` |
+| **Sports (NHL)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (MLB)** | A Pre-Ingest | ESPN API | v1.5 | `events` + `sports_events` |
 | **Movies** | 🅰️ Pre-Ingest | TMDB | v2.0 | `events` + `movie_events` |
 | **Concerts** | 🅱️ On-Demand | Ticketmaster Discovery | v2.0 | `events` + `concert_events` |
 | **Restaurants** | 🅱️ On-Demand | Google Places / Foursquare | v2.0 | `events` + `restaurant_events` |
@@ -199,6 +201,33 @@ One-time historical backfill for full NFL season. Run manually via `npx tsx api/
 | **Implementation** | Separate cron job per league, same `events` + `sports_events` tables |
 
 > Same pattern as NBA. Each league gets its own cron job with league-specific API mapping. The `sport` and `league` fields on `sports_events` distinguish them.
+
+---
+
+### 🏒 Sports — NHL (Implemented)
+
+| Detail | Value |
+|---|---|
+| **API** | ESPN API |
+| **Strategy** | Pre-Ingest via Vercel cron |
+| **Env key** | N/A (unauthenticated) |
+| **Free tier** | Yes — free, undocumented API |
+| **Data volume** | ~1,312 games/season |
+| **Shared logic** | `server-lib/espn.ts` (same `fetchAndUpsertGames` as NBA/NFL) |
+
+#### Cron Job: Daily NHL Sync
+
+| Field | Value |
+|---|---|
+| **Schedule** | Every day at 6:10 AM UTC (`10 6 * * *`) |
+| **Endpoint** | `api/cron/sync-nhl.ts` |
+| **Logic** | Same pattern as NBA/NFL — fetch games from ESPN, upsert via shared `espn.ts`. Uses `server-lib/nhl-venues.ts` for 32-team venue mapping. |
+| **Dedup key** | `external_id = ESPN game ID`, `external_source = 'espn'` |
+| **Season format** | Split-year: `"2025-26"` (Oct+ = start year, like NBA) |
+
+#### Backfill: `api/cron/backfill-nhl.ts`
+
+Manual historical backfill for full NHL seasons. Date-range iteration (Oct 1 → Jun 30). Not scheduled as a cron — run manually when ready.
 
 ---
 
