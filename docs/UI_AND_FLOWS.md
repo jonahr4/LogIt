@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-04-01
 > **Changes:**
+> - 2026-04-02: Added season type badges (PRE/R1/R2/R3/FIN) to logbook and add-log cards. Reordered logbook metadata row: league → stars → privacy → companions (left), season badge + W/L (right-aligned).
 > - 2026-04-01: EditLogModal overhauled — polymorphic top sections (team logos/scores for sports, hero title for others), venue background image, reordered bottom (Rating+Privacy → Notes → Photos → Type-specific → Companions → Actions). Photos now work during creation. Edit→Detail return flow: saving edits reopens EventDetailModal with updated data.
 > - 2026-03-31: Redesigned team browse: season-grouped inline headers ("2025-26", "2024-25"), phase sub-dividers (preseason/postseason), client-side filter bar, 100-result initial load with deduped Load More. Documented success checkmark animation.
 > - 2026-03-29: Documented sports browse flow (Sports Hub -> Teams grid -> pre-filled search) in Add Log. Updated search to note pagination/load more and multi-word token search.
@@ -100,7 +101,9 @@ The power-user screen — your complete history.
 - **Dynamic Timeline View:**
   - **Upcoming Events:** Stacked at the top with a dynamic days-remaining pill (`IN 5 DAYS`, `TODAY`). Auto-hides if empty.
   - **Past Events:** Grouped chronologically with sleek `MONTH YEAR` text dividers.
-- Each entry: event title, date, venue, privacy badge, companion count, dynamic UI pill for upcoming
+- Each entry: event title, date, venue
+- **Bottom metadata row (left→right):** league tag, star rating, privacy icon, companion count — then right-aligned: **season badge** (PRE/R1/R2/R3/FIN with game number) + W/L result
+- Season badges only appear for non-regular-season games (preseason=green, playoffs=orange, finals=gold)
 
 **Design Direction:**
 - Unified single list — filter down, don't force category navigation

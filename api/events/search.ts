@@ -109,6 +109,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const hasMore = filtered.length > limit;
     const formatted = filtered.slice(0, limit).map(formatRpcRow);
 
+    // Enrich: ensure season_type/round are present (RPC may not return them if migration 016 wasn't applied)
+    const sportsIds = formatted
+      .filter((e: any) => e.type_metadata && e.type_metadata.season_type == null)
+      .map((e: any) => e.id);
+
+    if (sportsIds.length > 0) {
+      const { data: enrichData } = await supabase
+        .from('sports_events')
+        .select('event_id, season_type, round')
+        .in('event_id', sportsIds);
+
+      if (enrichData) {
+        const enrichMap = new Map(enrichData.map((r: any) => [r.event_id, r]));
+        for (const event of formatted as any[]) {
+          const extra = enrichMap.get(event.id);
+          if (extra && event.type_metadata) {
+            event.type_metadata.season_type = extra.season_type;
+            event.type_metadata.round = extra.round;
+          }
+        }
+      }
+    }
+
     return res.status(200).json({
       data: formatted,
       meta: { count: formatted.length, query: searchQuery, offset, has_more: hasMore },

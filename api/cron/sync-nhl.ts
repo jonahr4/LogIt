@@ -9,7 +9,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
-import { fetchESPNScoreboard, upsertESPNGame, type SportConfig } from '../../server-lib/espn';
+import { fetchESPNScoreboard, upsertESPNGame, mapESPNStatus, type SportConfig } from '../../server-lib/espn';
 
 /** NHL uses split-year seasons (e.g. '2025-26'). Oct+ = start year, Jan-Sep = previous year */
 function deriveNHLSeason(eventDate: string): string {
@@ -48,36 +48,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    console.log(`\n🏒 ── NHL Sync Starting ──────────────────────────`);
+    console.log(`  Fetching ESPN scoreboard (±7 days)...`);
+
     const allGames = await fetchESPNScoreboard(NHL_CONFIG.espnPath);
-    console.log(`Fetched ${allGames.length} NHL games from ESPN API`);
+    console.log(`  📡 ESPN returned ${allGames.length} games\n`);
 
     if (allGames.length === 0) {
+      console.log(`  ⚠ No NHL games found for date range`);
       return res.status(200).json({ message: 'No NHL games found for date range', synced: 0 });
     }
 
     const supabase = getSupabaseAdmin();
     let synced = 0;
     let updated = 0;
+    let skipped = 0;
 
     for (const game of allGames) {
+      const title = game.name || 'Unknown';
+      const status = game.status?.type?.state ? mapESPNStatus(game.status.type.state) : 'upcoming';
+      const date = game.date ? new Date(game.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '??';
+      const comp = game.competitions?.[0];
+      const home = comp?.competitors?.find((c: any) => c.homeAway === 'home');
+      const away = comp?.competitors?.find((c: any) => c.homeAway === 'away');
+      const scoreStr = home?.score && away?.score ? `${away.score}-${home.score}` : 'no score';
+
       try {
         const result = await upsertESPNGame(supabase, game, NHL_CONFIG);
+        const icon = result === 'inserted' ? '✅' : result === 'updated' ? '🔄' : '⏭️';
+        console.log(`  ${icon} ${date} │ ${title} │ ${scoreStr} │ ${status} │ ${result}`);
         if (result === 'inserted') synced++;
         else if (result === 'updated') updated++;
+        else skipped++;
       } catch (err) {
-        console.error(`Unexpected error processing NHL game ${game.id}:`, err);
+        console.error(`  ❌ ${date} │ ${title} │ ERROR: ${err}`);
+        skipped++;
       }
     }
 
-    console.log(`Synced ${synced} NHL games (${updated} updated)`);
+    console.log(`\n🏒 ── NHL Sync Complete ──────────────────────────`);
+    console.log(`  📊 ${synced} inserted │ ${updated} updated │ ${skipped} skipped │ ${allGames.length} total\n`);
+
     return res.status(200).json({
       message: `Synced ${synced} NHL games`,
       synced,
       updated,
+      skipped,
       total_fetched: allGames.length,
     });
   } catch (error: any) {
-    console.error('NHL sync error:', error);
+    console.error('❌ NHL sync error:', error);
     return res.status(500).json({
       error: { code: 'SERVER_ERROR', message: error.message || 'NHL sync failed', status: 500 },
     });

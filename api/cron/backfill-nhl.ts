@@ -15,7 +15,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
-import { upsertESPNGame, formatDate, type SportConfig } from '../../server-lib/espn';
+import { upsertESPNGame, formatDate, mapESPNStatus, type SportConfig } from '../../server-lib/espn';
 
 function deriveNHLSeason(eventDate: string): string {
   const d = new Date(eventDate);
@@ -66,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     for (const startYear of seasons) {
       const seasonLabel = `${startYear}-${String(startYear + 1).slice(2)}`;
-      console.log(`\nBackfilling NHL season ${seasonLabel}...`);
+      console.log(`\n🏒 ── NHL Backfill: Season ${seasonLabel} ──────────────────`);
 
       let totalFetched = 0;
       let totalSynced = 0;
@@ -77,28 +77,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const seasonStart = new Date(startYear, 9, 1);   // Oct 1 of start year
       const seasonEnd = new Date(startYear + 1, 5, 30); // Jun 30 of end year
 
+      const totalDays = Math.ceil((seasonEnd.getTime() - seasonStart.getTime()) / 86400000);
+      let dayCount = 0;
+
       const current = new Date(seasonStart);
       while (current <= seasonEnd) {
         const dateStr = formatDate(current);
+        dayCount++;
 
         try {
           const games = await fetchNHLDay(dateStr);
           totalFetched += games.length;
 
           if (games.length > 0) {
-            console.log(`  ${dateStr}: ${games.length} games`);
+            const monthLabel = current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            console.log(`\n  📅 ${monthLabel} (${dateStr}) — ${games.length} games  [day ${dayCount}/${totalDays}]`);
+
             for (const game of games) {
+              const title = game.name || 'Unknown';
+              const status = game.status?.type?.state ? mapESPNStatus(game.status.type.state) : 'upcoming';
+              const comp = game.competitions?.[0];
+              const home = comp?.competitors?.find((c: any) => c.homeAway === 'home');
+              const away = comp?.competitors?.find((c: any) => c.homeAway === 'away');
+              const scoreStr = home?.score && away?.score ? `${away.score}-${home.score}` : 'no score';
+
               try {
                 const result = await upsertESPNGame(supabase, game, NHL_CONFIG);
+                const icon = result === 'inserted' ? '✅' : result === 'updated' ? '🔄' : '⏭️';
+                console.log(`    ${icon} ${title} │ ${scoreStr} │ ${status} │ ${result}`);
                 if (result === 'inserted') totalSynced++;
                 else if (result === 'updated') totalUpdated++;
               } catch {
+                console.error(`    ❌ ${title} │ ERROR`);
                 totalErrors++;
               }
             }
           }
         } catch (err) {
           console.error(`  ⚠ Fetch error for ${dateStr}:`, err);
+        }
+
+        // Progress log every 30 days for days with no games
+        if (dayCount % 30 === 0) {
+          console.log(`  ... day ${dayCount}/${totalDays} │ ${totalFetched} games found so far │ ${totalSynced} inserted`);
         }
 
         // Next day
@@ -113,16 +134,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         errors: totalErrors,
       });
 
-      console.log(`Season ${seasonLabel}: ${totalFetched} fetched, ${totalSynced} inserted, ${totalUpdated} updated`);
+      console.log(`\n  📊 Season ${seasonLabel}: ${totalFetched} fetched │ ${totalSynced} inserted │ ${totalUpdated} updated │ ${totalErrors} errors`);
     }
 
     const totalSynced = results.reduce((sum, r) => sum + r.synced, 0);
+    console.log(`\n🏒 ── NHL Backfill Complete ──────────────────────`);
+    console.log(`  Total: ${totalSynced} games inserted across ${seasons.length} season(s)\n`);
+
     return res.status(200).json({
       message: `Backfilled ${totalSynced} NHL games across ${seasons.length} season(s)`,
       results,
     });
   } catch (error: any) {
-    console.error('NHL backfill error:', error);
+    console.error('❌ NHL backfill error:', error);
     return res.status(500).json({
       error: { code: 'SERVER_ERROR', message: error.message || 'Backfill failed', status: 500 },
       partial_results: results,

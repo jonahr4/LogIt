@@ -14,7 +14,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
-import { upsertESPNGame, type SportConfig } from '../../server-lib/espn';
+import { upsertESPNGame, mapESPNStatus, type SportConfig } from '../../server-lib/espn';
 
 function deriveNFLSeason(eventDate: string): string {
   const d = new Date(eventDate);
@@ -60,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     for (const seasonYear of seasons) {
-      console.log(`\nBackfilling NFL season ${seasonYear}...`);
+      console.log(`\n🏈 ── NFL Backfill: Season ${seasonYear} ──────────────────`);
 
       let totalFetched = 0;
       let totalSynced = 0;
@@ -68,6 +68,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let totalErrors = 0;
 
       for (const st of SEASON_TYPES) {
+        console.log(`\n  📋 ${st.label} (${st.weeks} weeks)`);
+
         for (let week = 1; week <= st.weeks; week++) {
           const url =
             `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard` +
@@ -76,27 +78,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           try {
             const response = await fetch(url);
             if (!response.ok) {
-              console.log(`  ⚠ ESPN ${response.status} for ${st.label} week ${week}`);
+              console.log(`    ⚠ ESPN ${response.status} for ${st.label} week ${week}`);
               continue;
             }
             const data = await response.json();
             const games = data.events || [];
             totalFetched += games.length;
 
-            if (games.length === 0) continue;
-            console.log(`  ${st.label} Week ${week}: ${games.length} games`);
+            if (games.length === 0) {
+              console.log(`    Week ${week}: 0 games`);
+              continue;
+            }
+            console.log(`    Week ${week}: ${games.length} games`);
 
             for (const game of games) {
+              const title = game.name || 'Unknown';
+              const status = game.status?.type?.state ? mapESPNStatus(game.status.type.state) : 'upcoming';
+              const date = game.date ? new Date(game.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '??';
+
               try {
                 const result = await upsertESPNGame(supabase, game, NFL_CONFIG);
+                const icon = result === 'inserted' ? '✅' : result === 'updated' ? '🔄' : '⏭️';
+                console.log(`      ${icon} ${date} │ ${title} │ ${status} │ ${result}`);
                 if (result === 'inserted') totalSynced++;
                 else if (result === 'updated') totalUpdated++;
               } catch {
+                console.error(`      ❌ ${date} │ ${title} │ ERROR`);
                 totalErrors++;
               }
             }
           } catch (err) {
-            console.error(`  ⚠ Fetch error for ${st.label} week ${week}:`, err);
+            console.error(`    ⚠ Fetch error for ${st.label} week ${week}:`, err);
           }
         }
       }
@@ -109,16 +121,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         errors: totalErrors,
       });
 
-      console.log(`Season ${seasonYear}: ${totalFetched} fetched, ${totalSynced} inserted, ${totalUpdated} updated`);
+      console.log(`\n  📊 Season ${seasonYear}: ${totalFetched} fetched │ ${totalSynced} inserted │ ${totalUpdated} updated │ ${totalErrors} errors`);
     }
 
     const totalSynced = results.reduce((sum, r) => sum + r.synced, 0);
+    console.log(`\n🏈 ── NFL Backfill Complete ──────────────────────`);
+    console.log(`  Total: ${totalSynced} games inserted across ${seasons.length} season(s)\n`);
+
     return res.status(200).json({
       message: `Backfilled ${totalSynced} NFL games across ${seasons.length} season(s)`,
       results,
     });
   } catch (error: any) {
-    console.error('NFL backfill error:', error);
+    console.error('❌ NFL backfill error:', error);
     return res.status(500).json({
       error: { code: 'SERVER_ERROR', message: error.message || 'Backfill failed', status: 500 },
       partial_results: results,

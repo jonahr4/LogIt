@@ -168,6 +168,32 @@ function getTeamsForSport(sport: string | null) {
   return NBA_TEAMS; // default
 }
 
+/** Compact season badge — checks R1→R2→R3→FIN with ordinal support */
+function getSeasonBadge(seasonType?: number, round?: string): { label: string; color: string } | null {
+  if (!seasonType || seasonType === 2) return null;
+  if (seasonType === 1) return { label: 'PRE', color: '#4ade80' };
+  if (seasonType === 4) return { label: 'OFF', color: '#8B95A5' };
+  if (!round) return { label: 'POST', color: '#fb923c' };
+  const r = round.toLowerCase();
+  const gm = round.match(/game\s*(\d+)/i);
+  const gs = gm ? ` G${gm[1]}` : '';
+  if (r.includes('play-in') || r.includes('playin')) return { label: 'PIN', color: '#fb923c' };
+  if (r.includes('wild card') || r.includes('first round') || r.includes('1st round')
+      || r.includes('round 1'))
+    return { label: `R1${gs}`, color: '#fb923c' };
+  if (r.includes('semifinal') || r.includes('semis') || r.includes('divisional')
+      || r.includes('second round') || r.includes('2nd round') || r.includes('round 2')
+      || r.match(/[an]l[dc]s/))
+    return { label: `R2${gs}`, color: '#fb923c' };
+  if (r.includes('championship') || (r.includes('conf') && r.includes('final'))
+      || r.includes('3rd round') || r.includes('round 3'))
+    return { label: `R3${gs}`, color: '#fb923c' };
+  if (r.includes('super bowl') || r.includes('finals') || r.includes('stanley cup')
+      || r.includes('world series'))
+    return { label: `FIN${gs}`, color: '#fbbf24' };
+  return { label: `POST${gs}`, color: '#fb923c' };
+}
+
 export default function AddLogScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
@@ -1052,9 +1078,19 @@ export default function AddLogScreen() {
                                           </View>
                                         ) : null}
                                       </View>
-                                      <Text style={styles.apiResultSub} numberOfLines={1}>
-                                        {dateStr}{event.venue_name ? ` \u00b7 ${event.venue_name}` : ''}
-                                      </Text>
+                                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                        <Text style={styles.apiResultSub} numberOfLines={1}>
+                                          {dateStr}{event.venue_name ? ` \u00b7 ${event.venue_name}` : ''}
+                                        </Text>
+                                        {(() => {
+                                          const badge = getSeasonBadge(meta?.season_type ?? undefined, meta?.round ?? undefined);
+                                          return badge ? (
+                                            <View style={[styles.phaseBadgeSmall, { borderColor: badge.color + '50' }]}>
+                                              <Text style={[styles.phaseBadgeSmallText, { color: badge.color }]}>{badge.label}</Text>
+                                            </View>
+                                          ) : null;
+                                        })()}
+                                      </View>
                                     </View>
                                   </GlassCard>
                                 </TouchableOpacity>
@@ -1763,7 +1799,8 @@ const styles = StyleSheet.create({
   },
   stickySeasonHeader: {
     backgroundColor: 'transparent',
-    paddingVertical: 0,
+    paddingTop: 0,
+    paddingBottom: 8,
   },
   stickySeasonPill: {
     backgroundColor: Colors.background,
@@ -1813,6 +1850,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.5,
     textTransform: 'uppercase' as const,
+  },
+  phaseBadgeSmall: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    marginLeft: 'auto' as any,
+    flexShrink: 0,
+  },
+  phaseBadgeSmallText: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 8,
+    letterSpacing: 0.5,
   },
 });
 

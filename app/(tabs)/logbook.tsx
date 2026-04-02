@@ -73,6 +73,8 @@ export type EventDetail = {
   companions?: Array<{ name: string; user_id?: string }>;
   photos?: Array<{ id: string; url: string; firebase_path: string; display_order?: number }>;
   external_id?: string;
+  season_type?: number;
+  round?: string;
 };
 
 // --- Constants ---
@@ -123,6 +125,48 @@ function shortSportsTitle(entry: EventDetail): string {
     return `${shortTeamName(entry.awayTeamName)} vs ${shortTeamName(entry.homeTeamName)}`;
   }
   return entry.title;
+}
+
+/**
+ * Get a compact season badge for non-regular-season games.
+ * Checks rounds bottom-up (R1→R2→R3→FIN) to avoid substring false positives.
+ * ESPN uses: "East 1st Round", "West 2nd Round", "East Conf Semifinals", "NBA Finals"
+ */
+function getSeasonBadge(seasonType?: number, round?: string): { label: string; color: string } | null {
+  if (!seasonType || seasonType === 2) return null;
+  if (seasonType === 1) return { label: 'PRE', color: '#4ade80' };
+  if (seasonType === 4) return { label: 'OFF', color: '#8B95A5' };
+  if (!round) return { label: 'POST', color: '#fb923c' };
+
+  const r = round.toLowerCase();
+  const gm = round.match(/game\s*(\d+)/i);
+  const gs = gm ? ` G${gm[1]}` : '';
+
+  // Play-in
+  if (r.includes('play-in') || r.includes('playin')) return { label: 'PIN', color: '#fb923c' };
+
+  // R1: Wild card / first round / 1st round
+  if (r.includes('wild card') || r.includes('first round') || r.includes('1st round')
+      || r.includes('round 1'))
+    return { label: `R1${gs}`, color: '#fb923c' };
+
+  // R2: Semifinal / semis / 2nd round / divisional
+  if (r.includes('semifinal') || r.includes('semis') || r.includes('divisional')
+      || r.includes('second round') || r.includes('2nd round') || r.includes('round 2')
+      || r.match(/[an]l[dc]s/))
+    return { label: `R2${gs}`, color: '#fb923c' };
+
+  // R3: Conference championship / conference finals / 3rd round
+  if (r.includes('championship') || (r.includes('conf') && r.includes('final'))
+      || r.includes('3rd round') || r.includes('round 3'))
+    return { label: `R3${gs}`, color: '#fb923c' };
+
+  // FIN: Only true finals (semis and conf finals already caught above)
+  if (r.includes('super bowl') || r.includes('finals') || r.includes('stanley cup')
+      || r.includes('world series'))
+    return { label: `FIN${gs}`, color: '#fbbf24' };
+
+  return { label: `POST${gs}`, color: '#fb923c' };
 }
 
 /** Map API log response to EventDetail for the UI */
@@ -428,6 +472,7 @@ export default function LogbookScreen() {
 
             {/* Unified Metadata Row */}
             <View style={styles.bottomMetaRow}>
+              {/* Left side: league → stars → privacy → companions */}
               {isSports && entry.eventType && (
                 <View style={styles.leagueTag}>
                   <Text style={styles.leagueTagText}>{entry.eventType}</Text>
@@ -442,23 +487,38 @@ export default function LogbookScreen() {
                   })}
                 </View>
               )}
+              <Ionicons
+                name={entry.privacy === 'private' ? 'lock-closed' : entry.privacy === 'friends' ? 'people' : 'globe-outline'}
+                size={12}
+                color={Colors.textMuted}
+              />
               {entry.companions && entry.companions.length > 0 && (
                 <View style={styles.metaIconRow}>
                   <Ionicons name="people" size={12} color={Colors.textMuted} />
                   <Text style={styles.metaText}>{entry.companions.length}</Text>
                 </View>
               )}
-              <Ionicons
-                name={entry.privacy === 'private' ? 'lock-closed' : entry.privacy === 'friends' ? 'people' : 'globe-outline'}
-                size={12}
-                color={Colors.textMuted}
-              />
-              {/* W/L result at the end */}
-              {hasScore && (
-                <Text style={[styles.entryResult, isWin ? styles.entryResultWin : styles.entryResultLoss]}>
-                  {isWin ? 'W' : 'L'}
-                </Text>
-              )}
+
+              {/* Right side: season badge + W/L (pushed right) */}
+              {isSports && (() => {
+                const badge = getSeasonBadge(entry.season_type, entry.round);
+                const showWL = hasScore;
+                if (!badge && !showWL) return null;
+                return (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+                    {badge && (
+                      <View style={[styles.phaseBadge, { borderColor: badge.color + '50' }]}>
+                        <Text style={[styles.phaseBadgeText, { color: badge.color }]}>{badge.label}</Text>
+                      </View>
+                    )}
+                    {showWL && (
+                      <Text style={[styles.entryResult, isWin ? styles.entryResultWin : styles.entryResultLoss]}>
+                        {isWin ? 'W' : 'L'}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })()}
             </View>
           </View>
         </GlassCard>
@@ -1013,7 +1073,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 255, 194, 0.4)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 6,
-    marginLeft: 'auto' as any,
   },
   entryResultWin: {
     color: Colors.primaryContainer,
@@ -1021,6 +1080,17 @@ const styles = StyleSheet.create({
   entryResultLoss: {
     color: Colors.error,
     textShadowColor: 'rgba(255, 113, 108, 0.4)',
+  },
+  phaseBadge: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  phaseBadgeText: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 8,
+    letterSpacing: 0.5,
   },
   nonSportsRight: {
     alignItems: 'flex-end',
