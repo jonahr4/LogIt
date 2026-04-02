@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-04-02
 > **Changes:**
+> - 2026-04-02: Merged restaurants & nightlife into "Dining & Nightlife". Added theater event type. Custom logs planned with real venue tagging via Google Places.
 > - 2026-04-02: NHL support added — sync, backfill, 32-team browse UI, cron at 6:10 AM UTC.
 > - 2026-04-01: Photos now work during log creation (not just edit). EditLogModal overhauled with polymorphic top sections, venue background images, condensed layout. Edit→Detail return flow implemented. Delete button fixed (onDelete prop wiring). Duplicate log error handled gracefully.
 > - 2026-03-31: NFL sync + backfill implemented (shared ESPN integration via `server-lib/espn.ts`). Box score refactored for multi-sport. Season type + playoff round tracking added (migration 015). Team browse redesigned with season-grouped headers, filter bar, and 100-result initial load.
@@ -171,12 +172,14 @@ gantt
 ### 16. Beyond Sports — New Event Types
 - [ ] Movies (TMDB API integration + `movie_events` child table)
 - [ ] Concerts (Ticketmaster API integration + `concert_events` child table)
-- [ ] Restaurants (Google Places / Foursquare integration + `restaurant_events` child table)
-- [ ] Nightlife — clubs, bars, nights out (Google Places / Foursquare / Yelp + `nightlife_events` child table)
+- [ ] Theater — Broadway, plays, musicals (Ticketmaster / SeatGeek + `theater_events` child table)
+- [ ] Dining & Nightlife — restaurants, bars, clubs, nights out (Google Places / Foursquare + single `dining_events` child table)
+  - Merged from separate restaurant/nightlife categories — functionally the same: venue-based social experiences
   - Venue discovery: see if friends have been, browse photos/reviews before going
   - Social-first: tag friends, shared group outings, public/private visibility
-  - BeReal/Paparazzi-style social energy — logging nights out drives engagement
-- [ ] Manual / custom events (no child table needed)
+- [ ] Custom / versatile events — user-created logs with **optional real venue tagging** via Google Places
+  - Allows logging any real-world activity (golf, hiking, gym, etc.) while tagging the actual location
+  - No child table needed — uses base `events` table with venue association
 - [ ] Companion reassignment tool (link freeform names to new accounts)
 
 ### 17. Advanced Features

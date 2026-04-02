@@ -445,9 +445,17 @@ export default function LogbookScreen() {
           </View>
 
           <View style={styles.entryInfo}>
-            {/* Title row — game name on left, score/days pill on right */}
+            {/* Title row — game name on left, badge + score/days pill on right */}
             <View style={styles.titleRow}>
               <Text style={styles.entryTitle} numberOfLines={1}>{displayTitle}</Text>
+              {isSports && (() => {
+                const badge = getSeasonBadge(entry.season_type, entry.round);
+                return badge ? (
+                  <View style={[styles.phaseBadge, { backgroundColor: badge.color + '20', borderColor: badge.color }]}>
+                    <Text style={[styles.phaseBadgeText, { color: badge.color }]}>{badge.label}</Text>
+                  </View>
+                ) : null;
+              })()}
               {hasScore ? (
                 <View style={styles.scoreBug}>
                   <Text style={styles.scoreText}>{entry.awayScore} – {entry.homeScore}</Text>
@@ -499,26 +507,12 @@ export default function LogbookScreen() {
                 </View>
               )}
 
-              {/* Right side: season badge + W/L (pushed right) */}
-              {isSports && (() => {
-                const badge = getSeasonBadge(entry.season_type, entry.round);
-                const showWL = hasScore;
-                if (!badge && !showWL) return null;
-                return (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
-                    {badge && (
-                      <View style={[styles.phaseBadge, { borderColor: badge.color + '50' }]}>
-                        <Text style={[styles.phaseBadgeText, { color: badge.color }]}>{badge.label}</Text>
-                      </View>
-                    )}
-                    {showWL && (
-                      <Text style={[styles.entryResult, isWin ? styles.entryResultWin : styles.entryResultLoss]}>
-                        {isWin ? 'W' : 'L'}
-                      </Text>
-                    )}
-                  </View>
-                );
-              })()}
+              {/* Right side: W/L (pushed right) */}
+              {isSports && hasScore && (
+                <Text style={[styles.entryResult, isWin ? styles.entryResultWin : styles.entryResultLoss, { marginLeft: 'auto' as any }]}>
+                  {isWin ? 'W' : 'L'}
+                </Text>
+              )}
             </View>
           </View>
         </GlassCard>
@@ -1052,6 +1046,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     flexShrink: 0,
+    minWidth: 68,
+    alignItems: 'center' as const,
   },
   scoreBugGreen: {
     borderColor: 'rgba(0, 255, 194, 0.4)',
@@ -1084,12 +1080,15 @@ const styles = StyleSheet.create({
   phaseBadge: {
     borderWidth: 1,
     borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    minWidth: 32,
+    alignItems: 'center' as const,
   },
   phaseBadgeText: {
     fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 8,
+    fontSize: 9,
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
   nonSportsRight: {

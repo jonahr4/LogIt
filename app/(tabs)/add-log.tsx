@@ -651,8 +651,16 @@ export default function AddLogScreen() {
                             )}
                           </View>
                           <View style={styles.apiResultInfo}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                               <Text style={[styles.teamNamesText, { flex: 1 }]} numberOfLines={1}>{displayTitle}</Text>
+                              {meta?.season_type != null && meta.season_type !== 2 ? (() => {
+                                const badge = getSeasonBadge(meta.season_type, meta?.round ?? undefined);
+                                return badge ? (
+                                  <View style={{ backgroundColor: badge.color + '20', borderWidth: 1, borderColor: badge.color, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2, flexShrink: 0, minWidth: 32, alignItems: 'center' as any }}>
+                                    <Text style={{ color: badge.color, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 }}>{badge.label}</Text>
+                                  </View>
+                                ) : null;
+                              })() : null}
                               {scoreLabel ? (
                                 <View style={styles.scoreBugAddLog}>
                                   <Text style={styles.scoreBugText}>{scoreLabel}</Text>
@@ -1066,8 +1074,17 @@ export default function AddLogScreen() {
                                       )}
                                     </View>
                                     <View style={styles.apiResultInfo}>
-                                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                                         <Text style={[styles.teamNamesText, { flex: 1 }]} numberOfLines={1}>{displayTitle}</Text>
+                                        {/* DEBUG: always show a test badge to verify rendering */}
+                                        {meta?.season_type != null && meta.season_type !== 2 ? (() => {
+                                          const badge = getSeasonBadge(meta.season_type, meta?.round ?? undefined);
+                                          return badge ? (
+                                            <View style={{ backgroundColor: badge.color + '20', borderWidth: 1, borderColor: badge.color, borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 }}>
+                                              <Text style={{ color: badge.color, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 }}>{badge.label}</Text>
+                                            </View>
+                                          ) : null;
+                                        })() : null}
                                         {scoreLabel ? (
                                           <View style={styles.scoreBugAddLog}>
                                             <Text style={styles.scoreBugText}>{scoreLabel}</Text>
@@ -1078,19 +1095,10 @@ export default function AddLogScreen() {
                                           </View>
                                         ) : null}
                                       </View>
-                                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                        <Text style={styles.apiResultSub} numberOfLines={1}>
-                                          {dateStr}{event.venue_name ? ` \u00b7 ${event.venue_name}` : ''}
-                                        </Text>
-                                        {(() => {
-                                          const badge = getSeasonBadge(meta?.season_type ?? undefined, meta?.round ?? undefined);
-                                          return badge ? (
-                                            <View style={[styles.phaseBadgeSmall, { borderColor: badge.color + '50' }]}>
-                                              <Text style={[styles.phaseBadgeSmallText, { color: badge.color }]}>{badge.label}</Text>
-                                            </View>
-                                          ) : null;
-                                        })()}
-                                      </View>
+                                      <Text style={styles.apiResultSub} numberOfLines={1}>
+                                        {dateStr}{event.venue_name ? ` \u00b7 ${event.venue_name}` : ''}
+                                      </Text>
+
                                     </View>
                                   </GlassCard>
                                 </TouchableOpacity>
@@ -1530,6 +1538,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     flexShrink: 0,
+    minWidth: 70,
+    alignItems: 'center' as const,
   },
   scoreBugText: {
     fontFamily: FontFamily.headlineBold,

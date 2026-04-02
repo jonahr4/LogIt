@@ -1,7 +1,8 @@
 # Log It — Product Overview
 
-> **Last updated:** 2026-03-29
+> **Last updated:** 2026-04-02
 > **Changes:**
+> - 2026-04-02: Merged restaurants & nightlife into "Dining & Nightlife". Added theater. Custom logs will support real venue tagging via Google Places.
 > - 2026-03-29: Migrated primary sports data source from Ball Dont Lie to ESPN API for high-resolution team logos and better backend data stability.
 > - 2026-03-28: Emphasized that events map to real-world canonical objects (APIs) rather than manual text entry.
 > - 2026-03-27: Added nightlife (clubs, bars, nights out) as a future event type.
@@ -63,9 +64,9 @@ Build sports first (starting with NBA) to prove the model, then expand across ev
 | Sports (MLB/NFL/NHL) | ESPN API | Later |
 | Movies | TMDB API | v2.0+ |
 | Concerts | Ticketmaster API | v2.0+ |
-| Restaurants | Google Places / Foursquare | v2.0+ |
-| Nightlife (clubs, bars) | Google Places / Foursquare / Yelp | v2.0+ |
-| Manual / Custom | User-created | v2.0+ |
+| Theater | Ticketmaster / SeatGeek | v2.0+ |
+| Dining & Nightlife | Google Places / Foursquare | v2.0+ |
+| Custom | User-created + optional Google Places venue tagging | v2.0+ |
 
 ## MVP Goals
 
@@ -128,13 +129,12 @@ The data model should support both **Event Instance** (specific game/date) and *
 Not for MVP, but the long-term vision:
 
 - 🎬 Movies
-- 🎭 Theater
-- 🍽️ Restaurants
+- 🎭 Theater (Broadway, plays, musicals)
 - 🎵 Concerts
-- 🍸 Nightlife — clubs, bars, cocktail bars, nights out
-- 🎯 Custom events
+- 🍽️ Dining & Nightlife — restaurants, bars, clubs, nights out (merged into one category)
+- 🎯 Custom events — versatile logs with optional real venue tagging (e.g., golf courses, parks, gyms via Google Places)
 
-**Long-term idea:** Log It becomes a general "log experiences" platform, but sports should prove the model first. Nightlife is a high-engagement category — people naturally want to share nights out, see where friends are going, and check out venues before they go. The social discovery angle (photos, ratings, friend activity at venues) aligns with BeReal/Paparazzi-style energy.
+**Long-term idea:** Log It becomes a general "log experiences" platform, but sports should prove the model first. Dining & nightlife is a high-engagement category — people naturally want to share meals and nights out, see where friends are going, and check out venues before they go. Custom events with venue tagging extend this to any real-world activity.
 
 ## Naming Note
 
