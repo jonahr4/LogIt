@@ -188,6 +188,7 @@ All planning and reference docs live in [`docs/`](./docs/):
 
 | Date | Update |
 |---|---|
+| 2026-04-02 | MLB integration — sync + backfill + 30 MLB teams in browse UI, cron at 6:10 AM UTC |
 | 2026-04-02 | NHL integration — sync + backfill + 32 NHL teams in browse UI, cron at 6:10 AM UTC |
 | 2026-03-31 | Season metadata — `season_type` + playoff `round` tracking, multi-sport box score, team browse with season headers |
 | 2026-03-31 | NFL integration — shared ESPN utility, sync + backfill scripts, 32 NFL teams in browse UI |

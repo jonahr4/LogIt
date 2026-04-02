@@ -12,8 +12,10 @@
     "api/cron/sync-nba.ts": { "maxDuration": 60 },
     "api/cron/sync-nfl.ts": { "maxDuration": 60 },
     "api/cron/sync-nhl.ts": { "maxDuration": 60 },
+    "api/cron/sync-mlb.ts": { "maxDuration": 60 },
     "api/cron/backfill-nfl.ts": { "maxDuration": 300 },
-    "api/cron/backfill-nhl.ts": { "maxDuration": 300 }
+    "api/cron/backfill-nhl.ts": { "maxDuration": 300 },
+    "api/cron/backfill-mlb.ts": { "maxDuration": 300 }
   },
   "crons": [
     {
@@ -27,6 +29,10 @@
     {
       "path": "/api/cron/sync-nhl",
       "schedule": "10 6 * * *"
+    },
+    {
+      "path": "/api/cron/sync-mlb",
+      "schedule": "15 6 * * *"
     }
   ]
 }

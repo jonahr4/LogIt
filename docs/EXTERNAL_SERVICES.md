@@ -127,12 +127,12 @@ Nightly cron → Writes final score into DB
 
 #### ESPN API → LogIt Mapping
 
-| ESPN Field | LogIt Field | Table |
-|---|---|---|
-| `id` | `external_id` | `events` |
-| `'espn'` | `external_source` | `events` |
-| `name` | `title` | `events` |
-| `date` | `event_date` | `events` |
+| Sport | Vercel Wrapper | Shared Utility | Path |
+|---|---|---|---|
+| NBA | `sync-nba.ts` | `upsertESPNGame(..., config)` | `basketball/nba` |
+| NFL | `sync-nfl.ts` | `upsertESPNGame(..., config)` | `football/nfl` |
+| NHL | `sync-nhl.ts` | `upsertESPNGame(..., config)` | `hockey/nhl` |
+| MLB | `sync-mlb.ts` | `upsertESPNGame(..., config)` | `baseball/mlb` |
 | `status.type.state` ("post" / "in" / "pre") | `status` | `events` |
 | `home_team.city` | `venue_city` | `events` |
 | `home_team.id` | `home_team_id` | `sports_events` |
@@ -188,19 +188,6 @@ User types "Celtics" in Add Log
 #### Backfill: `api/cron/backfill-nfl.ts`
 
 One-time historical backfill for full NFL season. Run manually via `npx tsx api/cron/backfill-nfl.ts`.
-
----
-
-### ⚾🏒 Sports — MLB / NHL (v1.5)
-
-| Detail | Value |
-|---|---|
-| **API** | [TheSportsDB](https://www.thesportsdb.com/api.php) (free JSON) or [API-Sports](https://api-sports.io/) |
-| **Strategy** | Pre-Ingest (same as NBA) |
-| **Data volume** | MLB ~2,430 games, NFL ~272, NHL ~1,312 per season |
-| **Implementation** | Separate cron job per league, same `events` + `sports_events` tables |
-
-> Same pattern as NBA. Each league gets its own cron job with league-specific API mapping. The `sport` and `league` fields on `sports_events` distinguish them.
 
 ---
 

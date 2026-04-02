@@ -1,10 +1,10 @@
 /**
- * Log It — NHL Backfill (standalone runner)
- * Run locally: npx tsx api/scripts/backfill-nhl.ts [seasons]
- * Example: npx tsx api/scripts/backfill-nhl.ts 2023,2024,2025
+ * Log It — MLB Backfill (standalone runner)
+ * Run locally: npx tsx api/scripts/backfill-mlb.ts [seasons]
+ * Example: npx tsx api/scripts/backfill-mlb.ts 2024,2025
  *
- * Season arg is the START year (e.g. 2025 = 2025-26 season).
- * Iterates by 7-day date windows across Oct → Jun.
+ * Season arg is the calendar year.
+ * Iterates by 7-day date windows across Feb → Nov.
  */
 
 import * as dotenv from 'dotenv';
@@ -22,39 +22,35 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function deriveNHLSeason(eventDate: string): string {
+function deriveMLBSeason(eventDate: string): string {
   const d = new Date(eventDate);
-  const year = d.getFullYear();
-  const month = d.getMonth();
-  const startYear = month >= 9 ? year : year - 1;
-  const endYear = startYear + 1;
-  return `${startYear}-${String(endYear).slice(-2)}`;
+  return String(d.getFullYear());
 }
 
-const NHL_CONFIG: SportConfig = {
-  sport: 'hockey',
-  league: 'NHL',
-  espnPath: 'hockey/nhl',
-  venueType: 'arena',
-  deriveSeason: deriveNHLSeason,
+const MLB_CONFIG: SportConfig = {
+  sport: 'baseball',
+  league: 'MLB',
+  espnPath: 'baseball/mlb',
+  venueType: 'stadium',
+  deriveSeason: deriveMLBSeason,
 };
 
 /**
- * NHL season date ranges:
- * - Preseason: late September → early October
- * - Regular season: early October → mid April
- * - Postseason: mid April → late June
+ * MLB season date ranges:
+ * - Preseason: late Feb
+ * - Regular season: March → Oct
+ * - Postseason: Oct → Nov
  */
-function getSeasonDateRange(startYear: number): { start: Date; end: Date } {
+function getSeasonDateRange(year: number): { start: Date; end: Date } {
   return {
-    start: new Date(startYear, 8, 15),     // September 15 (covers preseason)
-    end: new Date(startYear + 1, 5, 30),   // June 30 (covers Stanley Cup Finals)
+    start: new Date(year, 1, 15),   // Feb 15
+    end: new Date(year, 10, 5),     // Nov 5
   };
 }
 
 async function fetchWeek(startDate: Date, endDate: Date): Promise<any[]> {
   const url =
-    `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard` +
+    `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard` +
     `?dates=${formatDate(startDate)}-${formatDate(endDate)}&limit=1000`;
 
   const response = await fetch(url);
@@ -67,14 +63,14 @@ async function main() {
   const seasonsArg = process.argv[2] || '2025';
   const seasons = seasonsArg.split(',').map((s) => parseInt(s.trim())).filter((n) => !isNaN(n));
 
-  console.log(`\n🏒 NHL Backfill — Seasons: ${seasons.map(y => `${y}-${String(y+1).slice(-2)}`).join(', ')}\n`);
+  console.log(`\n⚾ MLB Backfill — Seasons: ${seasons.join(', ')}\n`);
 
   let grandTotal = { fetched: 0, inserted: 0, updated: 0, errors: 0 };
 
-  for (const startYear of seasons) {
-    const range = getSeasonDateRange(startYear);
+  for (const year of seasons) {
+    const range = getSeasonDateRange(year);
     console.log(`${'═'.repeat(55)}`);
-    console.log(`Season ${startYear}-${String(startYear + 1).slice(-2)} (${formatDate(range.start)} → ${formatDate(range.end)})`);
+    console.log(`Season ${year} (${formatDate(range.start)} → ${formatDate(range.end)})`);
     console.log(`${'═'.repeat(55)}`);
 
     let totalFetched = 0;
@@ -98,7 +94,7 @@ async function main() {
         let weekUpdated = 0;
         for (const game of games) {
           try {
-            const result = await upsertESPNGame(supabase, game, NHL_CONFIG);
+            const result = await upsertESPNGame(supabase, game, MLB_CONFIG);
             if (result === 'inserted') weekSynced++;
             else if (result === 'updated') weekUpdated++;
           } catch {
@@ -126,7 +122,7 @@ async function main() {
 
   console.log(`${'═'.repeat(55)}`);
   console.log(`Grand Total: ${grandTotal.fetched} fetched, ${grandTotal.inserted} inserted, ${grandTotal.updated} updated, ${grandTotal.errors} errors`);
-  console.log(`🏒 Done!\n`);
+  console.log(`⚾ Done!\n`);
 }
 
 main().catch(console.error);

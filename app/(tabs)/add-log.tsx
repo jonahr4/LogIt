@@ -44,7 +44,7 @@ const EVENT_TYPES = [
 const SUPPORTED_SPORTS = [
   { key: 'nba', label: 'NBA', icon: 'basketball-outline' as const, active: true },
   { key: 'nfl', label: 'NFL', icon: 'american-football-outline' as const, active: true },
-  { key: 'mlb', label: 'MLB', icon: 'baseball-outline' as const, active: false },
+  { key: 'mlb', label: 'MLB', icon: 'baseball-outline' as const, active: true },
   { key: 'nhl', label: 'NHL', icon: 'snow-outline' as const, active: true },
 ] as const;
 
@@ -161,10 +161,53 @@ const NHL_TEAMS = [
   logo: `https://a.espncdn.com/i/teamlogos/nhl/500/${t.abbrev}.png`,
 }));
 
+const MLB_TEAMS = [
+  // AL East
+  { name: 'Baltimore Orioles', short: 'Orioles', abbrev: 'bal' },
+  { name: 'Boston Red Sox', short: 'Red Sox', abbrev: 'bos' },
+  { name: 'New York Yankees', short: 'Yankees', abbrev: 'nyy' },
+  { name: 'Tampa Bay Rays', short: 'Rays', abbrev: 'tb' },
+  { name: 'Toronto Blue Jays', short: 'Blue Jays', abbrev: 'tor' },
+  // AL Central
+  { name: 'Chicago White Sox', short: 'White Sox', abbrev: 'cws' },
+  { name: 'Cleveland Guardians', short: 'Guardians', abbrev: 'cle' },
+  { name: 'Detroit Tigers', short: 'Tigers', abbrev: 'det' },
+  { name: 'Kansas City Royals', short: 'Royals', abbrev: 'kc' },
+  { name: 'Minnesota Twins', short: 'Twins', abbrev: 'min' },
+  // AL West
+  { name: 'Houston Astros', short: 'Astros', abbrev: 'hou' },
+  { name: 'Los Angeles Angels', short: 'Angels', abbrev: 'laa' },
+  { name: 'Oakland Athletics', short: 'Athletics', abbrev: 'oak' },
+  { name: 'Seattle Mariners', short: 'Mariners', abbrev: 'sea' },
+  { name: 'Texas Rangers', short: 'Rangers', abbrev: 'tex' },
+  // NL East
+  { name: 'Atlanta Braves', short: 'Braves', abbrev: 'atl' },
+  { name: 'Miami Marlins', short: 'Marlins', abbrev: 'mia' },
+  { name: 'New York Mets', short: 'Mets', abbrev: 'nym' },
+  { name: 'Philadelphia Phillies', short: 'Phillies', abbrev: 'phi' },
+  { name: 'Washington Nationals', short: 'Nationals', abbrev: 'wsh' },
+  // NL Central
+  { name: 'Chicago Cubs', short: 'Cubs', abbrev: 'chc' },
+  { name: 'Cincinnati Reds', short: 'Reds', abbrev: 'cin' },
+  { name: 'Milwaukee Brewers', short: 'Brewers', abbrev: 'mil' },
+  { name: 'Pittsburgh Pirates', short: 'Pirates', abbrev: 'pit' },
+  { name: 'St. Louis Cardinals', short: 'Cardinals', abbrev: 'stl' },
+  // NL West
+  { name: 'Arizona Diamondbacks', short: 'Diamondbacks', abbrev: 'ari' },
+  { name: 'Colorado Rockies', short: 'Rockies', abbrev: 'col' },
+  { name: 'Los Angeles Dodgers', short: 'Dodgers', abbrev: 'lad' },
+  { name: 'San Diego Padres', short: 'Padres', abbrev: 'sd' },
+  { name: 'San Francisco Giants', short: 'Giants', abbrev: 'sf' },
+].map(t => ({
+  ...t,
+  logo: `https://a.espncdn.com/i/teamlogos/mlb/500/${t.abbrev}.png`,
+}));
+
 /** Get the team array for the selected sport */
 function getTeamsForSport(sport: string | null) {
   if (sport === 'nfl') return NFL_TEAMS;
   if (sport === 'nhl') return NHL_TEAMS;
+  if (sport === 'mlb') return MLB_TEAMS;
   return NBA_TEAMS; // default
 }
 

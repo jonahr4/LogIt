@@ -1,15 +1,15 @@
 /**
- * Log It — GET /api/cron/backfill-nhl
- * ONE-TIME script to backfill historical NHL seasons from ESPN.
+ * Log It — GET /api/cron/backfill-mlb
+ * ONE-TIME script to backfill historical MLB seasons from ESPN.
  *
- * Usage: GET /api/cron/backfill-nhl?seasons=2023,2024,2025
- *   - seasons: comma-separated start-years (e.g. 2025 = the 2025-26 season)
+ * Usage: GET /api/cron/backfill-mlb?seasons=2023,2024,2025
+ *   - seasons: comma-separated start-years (e.g. 2025)
  *   - defaults to current season (2025) if not specified
  *
- * NHL backfill uses date-range iteration (not week-based like NFL),
- * stepping day-by-day from Oct 1 through Jun 30 for each season.
+ * MLB backfill uses date-range iteration,
+ * stepping day-by-day from Feb 15 through Nov 5 for each season.
  *
- * DO NOT RUN until sync-nhl is verified working with ±7 day window.
+ * DO NOT RUN until sync-mlb is verified working with ±7 day window.
  * This is a MANUAL endpoint — not scheduled as a cron job.
  */
 
@@ -17,26 +17,23 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
 import { upsertESPNGame, formatDate, mapESPNStatus, type SportConfig } from '../../server-lib/espn';
 
-function deriveNHLSeason(eventDate: string): string {
+function deriveMLBSeason(eventDate: string): string {
   const d = new Date(eventDate);
-  const year = d.getFullYear();
-  const month = d.getMonth();
-  if (month >= 9) return `${year}-${String(year + 1).slice(2)}`;
-  return `${year - 1}-${String(year).slice(2)}`;
+  return String(d.getFullYear());
 }
 
-const NHL_CONFIG: SportConfig = {
-  sport: 'hockey',
-  league: 'NHL',
-  espnPath: 'hockey/nhl',
-  venueType: 'arena',
-  deriveSeason: deriveNHLSeason,
+const MLB_CONFIG: SportConfig = {
+  sport: 'baseball',
+  league: 'MLB',
+  espnPath: 'baseball/mlb',
+  venueType: 'stadium',
+  deriveSeason: deriveMLBSeason,
 };
 
-/** Fetch a single day's NHL scoreboard from ESPN */
-async function fetchNHLDay(dateStr: string): Promise<any[]> {
+/** Fetch a single day's MLB scoreboard from ESPN */
+async function fetchMLBDay(dateStr: string): Promise<any[]> {
   const url =
-    `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard` +
+    `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard` +
     `?dates=${dateStr}&limit=1000`;
   const response = await fetch(url);
   if (!response.ok) return [];
@@ -56,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (seasons.length === 0) {
     return res.status(422).json({
-      error: { code: 'VALIDATION_ERROR', message: 'Provide at least one season start year', status: 422 },
+      error: { code: 'VALIDATION_ERROR', message: 'Provide at least one season year', status: 422 },
     });
   }
 
@@ -64,18 +61,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const results: { season: string; fetched: number; synced: number; updated: number; errors: number }[] = [];
 
   try {
-    for (const startYear of seasons) {
-      const seasonLabel = `${startYear}-${String(startYear + 1).slice(2)}`;
-      console.log(`\n🏒 ── NHL Backfill: Season ${seasonLabel} ──────────────────`);
+    for (const year of seasons) {
+      const seasonLabel = String(year);
+      console.log(`\n⚾ ── MLB Backfill: Season ${seasonLabel} ──────────────────`);
 
       let totalFetched = 0;
       let totalSynced = 0;
       let totalUpdated = 0;
       let totalErrors = 0;
 
-      // NHL season runs roughly Oct 1 → Jun 30
-      const seasonStart = new Date(startYear, 9, 1);   // Oct 1 of start year
-      const seasonEnd = new Date(startYear + 1, 5, 30); // Jun 30 of end year
+      // MLB season runs roughly Feb 15 → Nov 5
+      const seasonStart = new Date(year, 1, 15);   // Feb 15
+      const seasonEnd = new Date(year, 10, 5);     // Nov 5
 
       const totalDays = Math.ceil((seasonEnd.getTime() - seasonStart.getTime()) / 86400000);
       let dayCount = 0;
@@ -86,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         dayCount++;
 
         try {
-          const games = await fetchNHLDay(dateStr);
+          const games = await fetchMLBDay(dateStr);
           totalFetched += games.length;
 
           if (games.length > 0) {
@@ -102,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               const scoreStr = home?.score && away?.score ? `${away.score}-${home.score}` : 'no score';
 
               try {
-                const result = await upsertESPNGame(supabase, game, NHL_CONFIG);
+                const result = await upsertESPNGame(supabase, game, MLB_CONFIG);
                 const icon = result === 'inserted' ? '✅' : result === 'updated' ? '🔄' : '⏭️';
                 console.log(`    ${icon} ${title} │ ${scoreStr} │ ${status} │ ${result}`);
                 if (result === 'inserted') totalSynced++;
@@ -138,15 +135,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const totalSynced = results.reduce((sum, r) => sum + r.synced, 0);
-    console.log(`\n🏒 ── NHL Backfill Complete ──────────────────────`);
+    console.log(`\n⚾ ── MLB Backfill Complete ──────────────────────`);
     console.log(`  Total: ${totalSynced} games inserted across ${seasons.length} season(s)\n`);
 
     return res.status(200).json({
-      message: `Backfilled ${totalSynced} NHL games across ${seasons.length} season(s)`,
+      message: `Backfilled ${totalSynced} MLB games across ${seasons.length} season(s)`,
       results,
     });
   } catch (error: any) {
-    console.error('❌ NHL backfill error:', error);
+    console.error('❌ MLB backfill error:', error);
     return res.status(500).json({
       error: { code: 'SERVER_ERROR', message: error.message || 'Backfill failed', status: 500 },
       partial_results: results,

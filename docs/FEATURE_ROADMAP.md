@@ -1,7 +1,7 @@
 # Log It — Feature Roadmap
 
 > **Last updated:** 2026-04-02
-> **Changes:**
+> - 2026-04-02: MLB support added — sync, backfill, 30-team browse UI, cron at 6:15 AM UTC.
 > - 2026-04-02: Merged restaurants & nightlife into "Dining & Nightlife". Added theater event type. Custom logs planned with real venue tagging via Google Places.
 > - 2026-04-02: NHL support added — sync, backfill, 32-team browse UI, cron at 6:10 AM UTC.
 > - 2026-04-01: Photos now work during log creation (not just edit). EditLogModal overhauled with polymorphic top sections, venue background images, condensed layout. Edit→Detail return flow implemented. Delete button fixed (onDelete prop wiring). Duplicate log error handled gracefully.

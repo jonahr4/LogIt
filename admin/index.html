@@ -295,6 +295,90 @@
       color: #556;
       padding: 0 8px;
     }
+
+    /* Gallery View */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      padding: 0 24px 16px;
+    }
+    .gallery-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s;
+    }
+    .gallery-card:hover { border-color: rgba(0,255,194,0.3); }
+    .gallery-img-wrap {
+      width: 100%;
+      height: 160px;
+      position: relative;
+      background: #0d1220;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .gallery-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .gallery-img:hover { opacity: 0.8; }
+    .gallery-missing-img {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #7a8aaa;
+      font-size: 13px;
+      font-style: italic;
+    }
+    .gallery-info {
+      padding: 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .gallery-venue-name { font-weight: 600; font-size: 15px; color: #e8eaf6; margin-bottom: 4px; }
+    .gallery-venue-details { font-size: 12px; color: #7a8aaa; margin-bottom: 12px; }
+    .gallery-map {
+      width: 100%;
+      height: 80px;
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 6px;
+      background: #0d1220;
+      margin-bottom: 12px;
+      opacity: 0.8;
+      transition: opacity 0.15s;
+    }
+    .gallery-map:hover { opacity: 1; }
+    .gallery-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .gallery-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #e8eaf6;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .gallery-btn:hover { background: rgba(0,255,194,0.15); color: #00FFC2; border-color: rgba(0,255,194,0.3); }
   </style>
 </head>
 <body>
@@ -306,6 +390,7 @@
 
 <div class="tabs">
   <div class="tab active" onclick="switchTab('venues')">Venues</div>
+  <div class="tab" onclick="switchTab('gallery')">Gallery View</div>
   <div class="tab" onclick="switchTab('games')">Games</div>
 </div>
 
@@ -367,7 +452,7 @@
     row.innerHTML = '';
     filters = {};
 
-    if (currentTab === 'venues') {
+    if (currentTab === 'venues' || currentTab === 'gallery') {
       // Enrichment filter
       addFilterGroup(row, 'Enrichment', 'enrichment', ['All', 'Complete', 'Partial', 'Missing']);
       addDivider(row);
@@ -463,7 +548,7 @@
       // Text search
       if (q && !Object.values(row).some(v => v != null && String(v).toLowerCase().includes(q))) return false;
 
-      if (currentTab === 'venues') {
+      if (currentTab === 'venues' || currentTab === 'gallery') {
         // Enrichment filter
         if (filters.enrichment && filters.enrichment !== 'All') {
           const hasGeo = row.lat != null && row.lng != null;
@@ -552,7 +637,9 @@
       `${filteredData.length} results${filteredData.length !== allData.length ? ` (of ${allData.length})` : ''}`;
 
     document.getElementById('content').innerHTML =
-      currentTab === 'venues' ? renderVenuesTable(pageData) : renderGamesTable(pageData);
+      currentTab === 'venues' ? renderVenuesTable(pageData) :
+      currentTab === 'gallery' ? renderGallery(pageData) :
+      renderGamesTable(pageData);
 
     renderPagination(totalPages);
   }
@@ -631,6 +718,42 @@
     return html;
   }
 
+  function renderGallery(data) {
+    if (data.length === 0) return '<div class="loading">No venues match filters</div>';
+    let html = '<div class="gallery-grid">';
+    for (const v of data) {
+      const hasGeo = v.lat != null && v.lng != null;
+      const hasImg = v.image_url != null;
+      const status = (hasGeo && hasImg) ? 'ok' : (!hasGeo && !hasImg) ? 'missing' : 'partial';
+
+      const mapIframe = hasGeo 
+        ? `<iframe class="gallery-map" frameborder="0" src="https://maps.google.com/maps?q=${v.lat},${v.lng}&z=13&output=embed" loading="lazy"></iframe>`
+        : `<div class="gallery-map" style="display:flex;align-items:center;justify-content:center;color:#556;font-size:11px;">No Coordinates</div>`;
+
+      html += `<div class="gallery-card">
+        <div class="gallery-img-wrap">
+          ${hasImg 
+            ? `<img class="gallery-img" src="${esc(v.image_url)}" alt="" loading="lazy" onclick="openLightbox('${esc(v.image_url).replace(/'/g, "\\'")}',' ${esc(v.name)}')">` 
+            : `<div class="gallery-missing-img">No Image Available</div>`}
+        </div>
+        <div class="gallery-info">
+          <div class="gallery-venue-name">${esc(v.name)}</div>
+          <div class="gallery-venue-details">
+            ${esc(v.city)}${v.state ? ', ' + esc(v.state) : ''} 
+            <span style="opacity:0.5;margin-left:6px">• ${esc(v.external_source || 'custom')}</span>
+            <span class="enrichment-status enrichment-${status}" style="float:right;margin-top:2px;"></span>
+          </div>
+          ${mapIframe}
+          <div class="gallery-actions">
+            <button class="gallery-btn" onclick="editVenueImage('${v.id}','${esc(v.name)}','${hasImg ? esc(v.image_url).replace(/'/g, "\\'") : ''}')">✏️ Edit Image URL</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+    return html;
+  }
+
   function renderGamesTable(data) {
     if (data.length === 0) return '<div class="loading">No games match filters</div>';
     let html = `<table><thead><tr>
@@ -684,8 +807,11 @@
 
   async function switchTab(tab) {
     currentTab = tab;
-    document.querySelectorAll('.tab').forEach((t, i) => {
-      t.classList.toggle('active', (i === 0 && tab === 'venues') || (i === 1 && tab === 'games'));
+    document.querySelectorAll('.tab').forEach((t) => {
+      const isVenues = t.textContent === 'Venues' && tab === 'venues';
+      const isGallery = t.textContent === 'Gallery View' && tab === 'gallery';
+      const isGames = t.textContent === 'Games' && tab === 'games';
+      t.classList.toggle('active', isVenues || isGallery || isGames);
     });
     document.getElementById('searchInput').value = '';
     sortCol = null;
@@ -699,7 +825,7 @@
     document.getElementById('pagination').innerHTML = '';
     document.getElementById('filterRow').innerHTML = '';
     try {
-      allData = currentTab === 'venues' ? await loadVenues() : await loadGames();
+      allData = (currentTab === 'venues' || currentTab === 'gallery') ? await loadVenues() : await loadGames();
       buildFilterChips();
       filteredData = [...allData];
       renderPage();

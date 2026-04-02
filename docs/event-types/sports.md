@@ -308,6 +308,8 @@ https://a.espncdn.com/i/teamlogos/{sport}/500/{abbrev}.png
 | NBA | `0 6 * * *` (6:00 AM) |
 | NFL | `5 6 * * *` (6:05 AM) |
 | NHL | `10 6 * * *` (6:10 AM) |
+| MLB | `15 6 * * *` (6:15 AM) |
+| MLB | `15 6 * * *` (6:15 AM) |
 
 ---
 
@@ -315,7 +317,7 @@ https://a.espncdn.com/i/teamlogos/{sport}/500/{abbrev}.png
 
 - [x] **NBA** — `sync-nba.ts` (2026-03-28)
 - [x] **NFL** — `sync-nfl.ts` (2026-03-31)
-- [ ] MLB
+- [x] **MLB** — `sync-mlb.ts` (2026-04-02)
 - [x] **NHL** — `sync-nhl.ts` (2026-04-02)
 - [ ] MLS
 - [ ] Premier League

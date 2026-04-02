@@ -73,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         for (let week = 1; week <= st.weeks; week++) {
           const url =
             `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard` +
-            `?seasontype=${st.type}&week=${week}&season=${seasonYear}&limit=100`;
+            `?seasontype=${st.type}&week=${week}&season=${seasonYear}&limit=1000`;
 
           try {
             const response = await fetch(url);

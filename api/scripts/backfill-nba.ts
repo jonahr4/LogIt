@@ -57,7 +57,7 @@ function getSeasonDateRange(startYear: number): { start: Date; end: Date } {
 async function fetchWeek(startDate: Date, endDate: Date): Promise<any[]> {
   const url =
     `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard` +
-    `?dates=${formatDate(startDate)}-${formatDate(endDate)}&limit=100`;
+    `?dates=${formatDate(startDate)}-${formatDate(endDate)}&limit=1000`;
 
   const response = await fetch(url);
   if (!response.ok) return [];
