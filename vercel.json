@@ -13,27 +13,35 @@
     "api/cron/sync-nfl.ts": { "maxDuration": 60 },
     "api/cron/sync-nhl.ts": { "maxDuration": 60 },
     "api/cron/sync-mlb.ts": { "maxDuration": 60 },
+    "api/cron/sync-wnba.ts": { "maxDuration": 60 },
+    "api/cron/sync-ncaaf.ts": { "maxDuration": 60 },
+    "api/cron/sync-ncaam.ts": { "maxDuration": 60 },
+    "api/cron/sync-ncaaw.ts": { "maxDuration": 60 },
+    "api/cron/sync-ncaamh.ts": { "maxDuration": 60 },
+    "api/cron/sync-ncaawh.ts": { "maxDuration": 60 },
+    "api/cron/sync-ncaabs.ts": { "maxDuration": 60 },
     "api/cron/backfill-nfl.ts": { "maxDuration": 300 },
     "api/cron/backfill-nhl.ts": { "maxDuration": 300 },
-    "api/cron/backfill-mlb.ts": { "maxDuration": 300 }
+    "api/cron/backfill-mlb.ts": { "maxDuration": 300 },
+    "api/cron/backfill-wnba.ts": { "maxDuration": 300 },
+    "api/cron/backfill-ncaaf.ts": { "maxDuration": 300 },
+    "api/cron/backfill-ncaam.ts": { "maxDuration": 300 },
+    "api/cron/backfill-ncaaw.ts": { "maxDuration": 300 },
+    "api/cron/backfill-ncaamh.ts": { "maxDuration": 300 },
+    "api/cron/backfill-ncaawh.ts": { "maxDuration": 300 },
+    "api/cron/backfill-ncaabs.ts": { "maxDuration": 300 }
   },
   "crons": [
-    {
-      "path": "/api/cron/sync-nba",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/sync-nfl",
-      "schedule": "5 6 * * *"
-    },
-    {
-      "path": "/api/cron/sync-nhl",
-      "schedule": "10 6 * * *"
-    },
-    {
-      "path": "/api/cron/sync-mlb",
-      "schedule": "15 6 * * *"
-    }
+    { "path": "/api/cron/sync-nba", "schedule": "0 6 * * *" },
+    { "path": "/api/cron/sync-nfl", "schedule": "5 6 * * *" },
+    { "path": "/api/cron/sync-nhl", "schedule": "10 6 * * *" },
+    { "path": "/api/cron/sync-mlb", "schedule": "15 6 * * *" },
+    { "path": "/api/cron/sync-wnba", "schedule": "20 6 * * *" },
+    { "path": "/api/cron/sync-ncaaf", "schedule": "25 6 * * *" },
+    { "path": "/api/cron/sync-ncaam", "schedule": "30 6 * * *" },
+    { "path": "/api/cron/sync-ncaaw", "schedule": "35 6 * * *" },
+    { "path": "/api/cron/sync-ncaamh", "schedule": "40 6 * * *" },
+    { "path": "/api/cron/sync-ncaawh", "schedule": "45 6 * * *" },
+    { "path": "/api/cron/sync-ncaabs", "schedule": "50 6 * * *" }
   ]
 }
-

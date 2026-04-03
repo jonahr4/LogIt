@@ -1,7 +1,8 @@
 # Log It — API Design
 
-> **Last updated:** 2026-03-31
+> **Last updated:** 2026-04-02
 > **Changes:**
+> - 2026-04-02: Added `league` query parameter to `GET /events/search` for filtering results by league (e.g., NCAAM vs NCAAF for shared college teams).
 > - 2026-03-31: Added `season_type` and `round` to sports `type_metadata` response. Box score endpoint refactored for multi-sport (dynamic sport/league lookup from DB). Added `round` to search fuzzy ILIKE fields.
 > - 2026-03-30: Added `POST/DELETE /api/logs/photos` for photo metadata management (actual upload goes client->Firebase Storage directly). Removed stale `photo_urls` from log create request body.
 > - 2026-03-29: Updated `/api/events/search` — added `offset` pagination param, `has_more` in response meta, bumped default limit to 40, documented fuzzy search strategy (trigram + levenshtein word-level + multi-token splitting).
@@ -94,6 +95,7 @@ Events follow a **polymorphic pattern** — all event types share a common base 
 | `event_type` | enum | Filter by type: `sports`, `movie`, `concert`, `restaurant`, `manual` |
 | `date_from` | ISO date | Start of date range |
 | `date_to` | ISO date | End of date range |
+| `league` | string | Filter by league (e.g., `NCAAM`, `NFL`) — post-filters results server-side |
 | `limit` | int | Results per page (default 40, max 100) |
 | `offset` | int | Pagination offset (default 0) |
 

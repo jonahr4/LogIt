@@ -56,6 +56,8 @@ export async function fetchESPNScoreboard(
   const url = `https://site.api.espn.com/apis/site/v2/sports/${espnPath}/scoreboard?dates=${startStr}-${endStr}&limit=${limit}`;
   const response = await fetch(url);
   if (!response.ok) {
+    // 404 is expected for off-season college sports — return empty instead of throwing
+    if (response.status === 404) return [];
     throw new Error(`ESPN API error: ${response.status}`);
   }
   const data = await response.json();

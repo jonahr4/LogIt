@@ -23,6 +23,15 @@ import * as Haptics from 'expo-haptics';
 
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
+import {
+  NCAAF_TEAMS, NCAAF_TEAMS_CONFERENCES,
+  NCAAM_TEAMS, NCAAM_TEAMS_CONFERENCES,
+  NCAAW_TEAMS, NCAAW_TEAMS_CONFERENCES,
+  NCAAMH_TEAMS, NCAAMH_TEAMS_CONFERENCES,
+  NCAAWH_TEAMS, NCAAWH_TEAMS_CONFERENCES,
+  NCAABS_TEAMS, NCAABS_TEAMS_CONFERENCES,
+  type CollegeTeam,
+} from '@/data/college-teams';
 import { FontFamily } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EditLogModal } from '@/components/ui/EditLogModal';
@@ -43,9 +52,22 @@ const EVENT_TYPES = [
 
 const SUPPORTED_SPORTS = [
   { key: 'nba', label: 'NBA', icon: 'basketball-outline' as const, active: true },
+  { key: 'wnba', label: 'WNBA', icon: 'basketball-outline' as const, active: true },
   { key: 'nfl', label: 'NFL', icon: 'american-football-outline' as const, active: true },
   { key: 'mlb', label: 'MLB', icon: 'baseball-outline' as const, active: true },
   { key: 'nhl', label: 'NHL', icon: 'snow-outline' as const, active: true },
+  // College sports — no team arrays (too many teams, search-based)
+  { key: 'ncaa_fb', label: 'NCAA Football', icon: 'american-football-outline' as const, active: true },
+  { key: 'ncaa_bb', label: 'NCAA Basketball', icon: 'basketball-outline' as const, active: true },
+  { key: 'wncaa_bb', label: 'WNCAA Basketball', icon: 'basketball-outline' as const, active: true },
+  { key: 'ncaa_hk', label: 'NCAA Hockey', icon: 'snow-outline' as const, active: true },
+  { key: 'wncaa_hk', label: 'WNCAA Hockey', icon: 'snow-outline' as const, active: true },
+  { key: 'ncaa_bs', label: 'NCAA Baseball', icon: 'baseball-outline' as const, active: true },
+  { key: 'mls', label: 'MLS', icon: 'football-outline' as const, active: false },
+  { key: 'nwsl', label: 'NWSL', icon: 'football-outline' as const, active: false },
+  { key: 'epl', label: 'Premier League', icon: 'football-outline' as const, active: false },
+  { key: 'laliga', label: 'LaLiga', icon: 'football-outline' as const, active: false },
+  { key: 'champions', label: 'Champions League', icon: 'football-outline' as const, active: false },
 ] as const;
 
 const NBA_TEAMS = [
@@ -203,13 +225,70 @@ const MLB_TEAMS = [
   logo: `https://a.espncdn.com/i/teamlogos/mlb/500/${t.abbrev}.png`,
 }));
 
+const WNBA_TEAMS = [
+  { name: 'Atlanta Dream', short: 'Dream', abbrev: 'atl' },
+  { name: 'Chicago Sky', short: 'Sky', abbrev: 'chi' },
+  { name: 'Connecticut Sun', short: 'Sun', abbrev: 'conn' },
+  { name: 'Dallas Wings', short: 'Wings', abbrev: 'dal' },
+  { name: 'Golden State Valkyries', short: 'Valkyries', abbrev: 'gs' },
+  { name: 'Indiana Fever', short: 'Fever', abbrev: 'ind' },
+  { name: 'Las Vegas Aces', short: 'Aces', abbrev: 'lv' },
+  { name: 'Los Angeles Sparks', short: 'Sparks', abbrev: 'la' },
+  { name: 'Minnesota Lynx', short: 'Lynx', abbrev: 'min' },
+  { name: 'New York Liberty', short: 'Liberty', abbrev: 'ny' },
+  { name: 'Phoenix Mercury', short: 'Mercury', abbrev: 'phx' },
+  { name: 'Seattle Storm', short: 'Storm', abbrev: 'sea' },
+  { name: 'Washington Mystics', short: 'Mystics', abbrev: 'wsh' },
+].map(t => ({
+  ...t,
+  logo: `https://a.espncdn.com/i/teamlogos/wnba/500/${t.abbrev}.png`,
+}));
+
 /** Get the team array for the selected sport */
-function getTeamsForSport(sport: string | null) {
+function getTeamsForSport(sport: string | null): { name: string; short: string; abbrev: string; logo: string }[] {
   if (sport === 'nfl') return NFL_TEAMS;
   if (sport === 'nhl') return NHL_TEAMS;
   if (sport === 'mlb') return MLB_TEAMS;
-  return NBA_TEAMS; // default
+  if (sport === 'wnba') return WNBA_TEAMS;
+  if (sport === 'nba') return NBA_TEAMS;
+  if (sport === 'ncaa_fb') return NCAAF_TEAMS;
+  if (sport === 'ncaa_bb') return NCAAM_TEAMS;
+  if (sport === 'wncaa_bb') return NCAAW_TEAMS;
+  if (sport === 'ncaa_hk') return NCAAMH_TEAMS;
+  if (sport === 'wncaa_hk') return NCAAWH_TEAMS;
+  if (sport === 'ncaa_bs') return NCAABS_TEAMS;
+  return [];
 }
+
+/** Check if a sport key is a college sport */
+function isCollegeSport(key: string | null): boolean {
+  return !!key && ['ncaa_fb', 'ncaa_bb', 'wncaa_bb', 'ncaa_hk', 'wncaa_hk', 'ncaa_bs'].includes(key);
+}
+
+/** Get conference list for a college sport */
+function getConferencesForSport(sport: string | null): string[] {
+  if (sport === 'ncaa_fb') return NCAAF_TEAMS_CONFERENCES;
+  if (sport === 'ncaa_bb') return NCAAM_TEAMS_CONFERENCES;
+  if (sport === 'wncaa_bb') return NCAAW_TEAMS_CONFERENCES;
+  if (sport === 'ncaa_hk') return NCAAMH_TEAMS_CONFERENCES;
+  if (sport === 'wncaa_hk') return NCAAWH_TEAMS_CONFERENCES;
+  if (sport === 'ncaa_bs') return NCAABS_TEAMS_CONFERENCES;
+  return ['All'];
+}
+
+/** Get clean display label for a sport key */
+function getSportLabel(key: string | null): string {
+  if (!key) return 'NBA';
+  const sport = SUPPORTED_SPORTS.find(s => s.key === key);
+  return sport?.label ?? key.toUpperCase();
+}
+
+/** Map sport UI key to DB league value */
+const SPORT_KEY_TO_LEAGUE: Record<string, string> = {
+  nba: 'NBA', wnba: 'WNBA', nfl: 'NFL', mlb: 'MLB', nhl: 'NHL',
+  ncaa_fb: 'NCAAF', ncaa_bb: 'NCAAM', wncaa_bb: 'NCAAW',
+  ncaa_hk: 'NCAAMH', wncaa_hk: 'NCAAWH', ncaa_bs: 'NCAABS',
+};
 
 /** Compact season badge — checks R1→R2→R3→FIN with ordinal support */
 function getSeasonBadge(seasonType?: number, round?: string): { label: string; color: string } | null {
@@ -242,10 +321,13 @@ export default function AddLogScreen() {
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [selectedEventToLog, setSelectedEventToLog] = useState<any>(null);
 
+  const scrollRef = React.useRef<ScrollView>(null);
+
   // Sports browse state
   const [sportsStep, setSportsStep] = useState<'hub' | 'teams' | 'search'>('hub');
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [teamFilterText, setTeamFilterText] = useState('');
+  const [selectedConference, setSelectedConference] = useState('All');
 
   // Real API search state
   const [searchResults, setSearchResults] = useState<EventSearchResult[]>([]);
@@ -502,7 +584,7 @@ export default function AddLogScreen() {
   };
 
   // ─── Immediate search for team tap (no debounce) ─────────────────────
-  const searchTeamGames = useCallback(async (teamName: string) => {
+  const searchTeamGames = useCallback(async (teamName: string, league?: string) => {
     setActiveSearchQuery(teamName);
     setSearchError(null);
     setHasMore(false);
@@ -510,15 +592,17 @@ export default function AddLogScreen() {
     setSearchResults([]);
     setIsSearching(true);
     try {
-      const response = await api.get<{
-        data: EventSearchResult[];
-        meta: { count: number; query: string; has_more: boolean };
-      }>('/api/events/search', {
+      const params: Record<string, string> = {
         q: teamName,
         event_type: 'sports',
         limit: '100',
         offset: '0',
-      });
+      };
+      if (league) params.league = league;
+      const response = await api.get<{
+        data: EventSearchResult[];
+        meta: { count: number; query: string; has_more: boolean };
+      }>('/api/events/search', params);
       setSearchResults(response.data || []);
       setHasMore(response.meta?.has_more ?? false);
       setCurrentOffset(100);
@@ -802,6 +886,7 @@ export default function AddLogScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
       >
@@ -823,6 +908,7 @@ export default function AddLogScreen() {
                     } else {
                       setSelectedType(type.key);
                       setSportsStep('hub');
+                      scrollRef.current?.scrollTo({ y: 0, animated: false });
                     }
                   }}
                 >
@@ -884,6 +970,9 @@ export default function AddLogScreen() {
                     if (!sport.active) return;
                     setSelectedSport(sport.key);
                     setSportsStep('teams');
+                    setSelectedConference('All');
+                    setTeamFilterText('');
+                    scrollRef.current?.scrollTo({ y: 0, animated: false });
                   }}
                 >
                   <View style={[styles.sportRow, !sport.active && styles.sportRowInactive]}>
@@ -915,19 +1004,78 @@ export default function AddLogScreen() {
             </TouchableOpacity>
 
             <Text style={styles.apiSearchTitle}>
-              {selectedSport?.toUpperCase() ?? 'NBA'} Teams
+              {getSportLabel(selectedSport)} Teams
             </Text>
             <Text style={styles.apiSearchSubtitle}>Tap a team to see their games.</Text>
 
+            {/* Team search bar for college sports */}
+            {isCollegeSport(selectedSport) && (
+              <View style={styles.teamSearchContainer}>
+                <Ionicons name="search" size={16} color={Colors.textMuted} />
+                <TextInput
+                  style={styles.teamSearchInput}
+                  placeholder="Search teams..."
+                  placeholderTextColor={Colors.textMuted}
+                  value={teamFilterText}
+                  onChangeText={setTeamFilterText}
+                  autoCorrect={false}
+                  returnKeyType="done"
+                />
+                {teamFilterText.length > 0 && (
+                  <TouchableOpacity onPress={() => setTeamFilterText('')}>
+                    <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* Conference filter bar for college sports */}
+            {isCollegeSport(selectedSport) && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginTop: 8, marginBottom: 4, marginHorizontal: -16 }}
+                contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+              >
+                {getConferencesForSport(selectedSport).map((conf) => (
+                  <TouchableOpacity
+                    key={conf}
+                    activeOpacity={0.7}
+                    onPress={() => setSelectedConference(conf)}
+                    style={[
+                      styles.conferenceChip,
+                      selectedConference === conf && styles.conferenceChipActive,
+                    ]}
+                  >
+                    <Text style={[
+                      styles.conferenceChipText,
+                      selectedConference === conf && styles.conferenceChipTextActive,
+                    ]}>{conf}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+
             <View style={styles.teamsGrid}>
-              {getTeamsForSport(selectedSport).map((team) => (
+              {(isCollegeSport(selectedSport)
+                ? getTeamsForSport(selectedSport).filter(
+                    (t: any) =>
+                      (selectedConference === 'All' || t.conference === selectedConference) &&
+                      (teamFilterText === '' ||
+                        t.name.toLowerCase().includes(teamFilterText.toLowerCase()) ||
+                        t.short.toLowerCase().includes(teamFilterText.toLowerCase()))
+                  )
+                : getTeamsForSport(selectedSport)
+              ).map((team) => (
                 <TouchableOpacity
-                  key={team.abbrev}
+                  key={`${team.abbrev}-${team.name}`}
                   activeOpacity={0.7}
                   style={[styles.teamTile, { width: teamTileWidth, height: teamTileWidth }]}
                   onPress={() => {
                     setSportsStep('search');
-                    searchTeamGames(team.name);
+                    const dbLeague = selectedSport ? SPORT_KEY_TO_LEAGUE[selectedSport] : undefined;
+                    searchTeamGames(team.name, dbLeague);
+                    scrollRef.current?.scrollTo({ y: 0, animated: false });
                   }}
                 >
                   <Image
@@ -1798,6 +1946,50 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textMuted,
     fontStyle: 'italic',
+  },
+
+  // ── Team search bar ─────────────────────────────────────────────────
+  teamSearchContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 12,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  teamSearchInput: {
+    flex: 1,
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 14,
+    color: Colors.text,
+    padding: 0,
+  },
+
+  // ── Conference filter chips ─────────────────────────────────────────
+  conferenceChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  conferenceChipActive: {
+    backgroundColor: Colors.primaryContainer,
+    borderColor: Colors.primaryContainer,
+  },
+  conferenceChipText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  conferenceChipTextActive: {
+    color: Colors.background,
+    fontFamily: FontFamily.bodySemiBold,
   },
 
   // ── Teams grid ─────────────────────────────────────────────────────

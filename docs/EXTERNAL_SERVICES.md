@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-04-02
 > **Changes:**
+> - 2026-04-02: Six college sports added (NCAAF, NCAAM, NCAAW, NCAAMH, NCAAWH, NCAABS). ESPN college basketball/hockey APIs require single-date queries. `league` query param added to search API for cross-sport filtering. NCAA Softball removed.
 > - 2026-04-02: NHL ingestion implemented via shared ESPN integration. Added NHL sync section. Updated ingestion map.
 > - 2026-03-31: NFL ingestion implemented via shared ESPN integration (`server-lib/espn.ts`). Updated ingestion map to show NFL as MVP. Added NFL sync section.
 > - 2026-03-29: Added Strategy C — client-side ESPN live score fetch for non-completed sports events.
@@ -93,7 +94,14 @@ Nightly cron → Writes final score into DB
 | **Sports (NBA)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
 | **Sports (NFL)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
 | **Sports (NHL)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
-| **Sports (MLB)** | A Pre-Ingest | ESPN API | v1.5 | `events` + `sports_events` |
+| **Sports (MLB)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (WNBA)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (NCAAF)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (NCAAM)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (NCAAW)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (NCAAMH)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (NCAAWH)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
+| **Sports (NCAABS)** | A Pre-Ingest | ESPN API | **Implemented** | `events` + `sports_events` |
 | **Movies** | 🅰️ Pre-Ingest | TMDB | v2.0 | `events` + `movie_events` |
 | **Concerts** | 🅱️ On-Demand | Ticketmaster Discovery | v2.0 | `events` + `concert_events` |
 | **Restaurants** | 🅱️ On-Demand | Google Places / Foursquare | v2.0 | `events` + `restaurant_events` |
@@ -133,6 +141,13 @@ Nightly cron → Writes final score into DB
 | NFL | `sync-nfl.ts` | `upsertESPNGame(..., config)` | `football/nfl` |
 | NHL | `sync-nhl.ts` | `upsertESPNGame(..., config)` | `hockey/nhl` |
 | MLB | `sync-mlb.ts` | `upsertESPNGame(..., config)` | `baseball/mlb` |
+| WNBA | `sync-wnba.ts` | `upsertESPNGame(..., config)` | `basketball/wnba` |
+| NCAAF | `sync-ncaaf.ts` | `upsertESPNGame(..., config)` | `football/college-football` |
+| NCAAM | `sync-ncaam.ts` | `upsertESPNGame(..., config)` | `basketball/mens-college-basketball` |
+| NCAAW | `sync-ncaaw.ts` | `upsertESPNGame(..., config)` | `basketball/womens-college-basketball` |
+| NCAAMH | `sync-ncaamh.ts` | `upsertESPNGame(..., config)` | `hockey/mens-college-hockey` |
+| NCAAWH | `sync-ncaawh.ts` | `upsertESPNGame(..., config)` | `hockey/womens-college-hockey` |
+| NCAABS | `sync-ncaabs.ts` | `upsertESPNGame(..., config)` | `baseball/college-baseball` |
 | `status.type.state` ("post" / "in" / "pre") | `status` | `events` |
 | `home_team.city` | `venue_city` | `events` |
 | `home_team.id` | `home_team_id` | `sports_events` |

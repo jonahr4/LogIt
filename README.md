@@ -38,7 +38,7 @@ People track the events they attend in Notes, spreadsheets, photos, or memory. T
 | 📡 **Feed** | See your activity and discover what others are logging |
 | 🔒 **Privacy Controls** | Each log can be public, friends-only, or private |
 | 🏟️ **Venue Enrichment** | Auto-populated venue photos and coordinates via Wikimedia + Nominatim |
-| 🏈 **Multi-Sport** | NBA, NFL, and NHL supported, with a scalable pattern for adding more leagues |
+| 🏈 **Multi-Sport** | NBA, NFL, NHL, MLB, WNBA + 6 NCAA sports (Football, Basketball M/W, Hockey M/W, Baseball) |
 | 🛠️ **Admin Portal** | Static HTML dashboard for viewing venue and game data with filters |
 
 ---
@@ -52,7 +52,7 @@ People track the events they attend in Notes, spreadsheets, photos, or memory. T
 | **Database** | [Supabase](https://supabase.com/) (Postgres + Row Level Security) |
 | **Auth** | [Firebase Authentication](https://firebase.google.com/docs/auth) (Google + Apple Sign-In) |
 | **API / Cron** | [Vercel](https://vercel.com/) (serverless functions + scheduled cron jobs) |
-| **Sports Data** | [ESPN API](https://site.api.espn.com/) (NBA, NFL, NHL — scoreboard + team data) |
+| **Sports Data** | [ESPN API](https://site.api.espn.com/) (NBA, NFL, NHL, MLB, WNBA + 6 NCAA leagues) |
 | **Venue Media** | [Nominatim](https://nominatim.org/) (geocoding) + [Wikimedia Commons](https://commons.wikimedia.org/) (images) |
 | **Language** | TypeScript |
 
@@ -173,14 +173,14 @@ All planning and reference docs live in [`docs/`](./docs/):
 | Phase | Focus |
 |---|---|
 | **MVP (v1.0)** | Auth, NBA game search, log creation with photos, logbook, event detail, feed |
-| **v1.5** | Multi-sport (NFL ✅, NHL ✅, MLB), friend system, stats dashboard, map view |
+| **v1.5** | Multi-sport (NFL ✅, NHL ✅, MLB ✅, WNBA ✅, 6 NCAA ✅), friend system, stats, map view |
 | **v2.0** | Shared attendance, event discovery & reviews, comments/reactions, beyond sports |
 
 ---
 
 ## Status
 
-🟢 **MVP core complete** — Auth, onboarding, full UI (Spatial Green v2 design), NBA + NFL + NHL game sync from ESPN, Supabase-backed event search with fuzzy matching, log creation with companions, personal logbook with sort/filter, venue auto-enrichment, and admin data portal.
+🟢 **MVP core complete** — Auth, onboarding, full UI (Spatial Green v2 design), 11 sports leagues syncing from ESPN (NBA, NFL, NHL, MLB, WNBA + 6 NCAA), Supabase-backed event search with fuzzy matching and league filtering, log creation with companions, personal logbook with sort/filter, venue auto-enrichment, and admin data portal.
 
 ---
 
@@ -188,6 +188,8 @@ All planning and reference docs live in [`docs/`](./docs/):
 
 | Date | Update |
 |---|---|
+| 2026-04-02 | College sports — 6 NCAA leagues (NCAAF, NCAAM, NCAAW, NCAAMH, NCAAWH, NCAABS) with conference filter bar, team search, and league-scoped search API |
+| 2026-04-02 | WNBA integration — sync + backfill + 13 WNBA teams in browse UI, cron at 6:20 AM UTC |
 | 2026-04-02 | MLB integration — sync + backfill + 30 MLB teams in browse UI, cron at 6:10 AM UTC |
 | 2026-04-02 | NHL integration — sync + backfill + 32 NHL teams in browse UI, cron at 6:10 AM UTC |
 | 2026-03-31 | Season metadata — `season_type` + playoff `round` tracking, multi-sport box score, team browse with season headers |

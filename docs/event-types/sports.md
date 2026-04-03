@@ -309,7 +309,7 @@ https://a.espncdn.com/i/teamlogos/{sport}/500/{abbrev}.png
 | NFL | `5 6 * * *` (6:05 AM) |
 | NHL | `10 6 * * *` (6:10 AM) |
 | MLB | `15 6 * * *` (6:15 AM) |
-| MLB | `15 6 * * *` (6:15 AM) |
+| WNBA | `20 6 * * *` (6:20 AM) |
 
 ---
 
@@ -319,7 +319,19 @@ https://a.espncdn.com/i/teamlogos/{sport}/500/{abbrev}.png
 - [x] **NFL** — `sync-nfl.ts` (2026-03-31)
 - [x] **MLB** — `sync-mlb.ts` (2026-04-02)
 - [x] **NHL** — `sync-nhl.ts` (2026-04-02)
-- [ ] MLS
+- [ ] **WNBA** — `sync-wnba.ts` (2026-04-02)
+- [ ] **NCAA Football** — `football/college-football`
+- [ ] **NCAA Basketball** — `basketball/mens-college-basketball`
+- [ ] **WNCAA Basketball** — `basketball/womens-college-basketball`
+- [ ] **NCAA Hockey** — `hockey/mens-college-hockey`
+- [ ] **WNCAA Hockey** — `hockey/womens-college-hockey`
+- [ ] **NCAA Baseball** — `baseball/college-baseball`
+- [ ] **NCAA Softball** — `baseball/college-softball`
+- [ ] **MLS** — `soccer/usa.1`
+- [ ] **NWSL** — `soccer/usa.nwsl`
+- [ ] **English Premier League** — `soccer/eng.1`
+- [ ] **Spanish LaLiga** — `soccer/esp.1`
+- [ ] **UEFA Champions League** — `soccer/uefa.champions`
 - [ ] Premier League
 
 ---

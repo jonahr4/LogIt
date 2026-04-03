@@ -81,7 +81,7 @@ export type EventDetail = {
 const FILTER_CHIPS = ['All', 'Sports', 'Movies', 'Concerts', 'Restaurants', 'Nightlife'] as const;
 
 const SUB_FILTERS: Record<string, string[]> = {
-  Sports: ['All', 'NBA', 'NFL', 'MLB', 'NHL'],
+  Sports: ['All', 'NBA', 'WNBA', 'NFL', 'MLB', 'NHL', 'NCAAF', 'NCAAM', 'NCAAW', 'NCAAMH', 'NCAAWH', 'NCAABS'],
   Movies: ['All', 'Theater', 'Streaming'],
   Concerts: ['All', 'Stadium', 'Intimate'],
   Restaurants: ['All', '$', '$$', '$$$', '$$$$'],
@@ -330,7 +330,7 @@ export default function LogbookScreen() {
     // Main Filter
     if (activeFilter !== 'All') {
       result = result.filter(e => {
-        if (activeFilter === 'Sports') return ['NBA', 'NFL', 'MLB', 'NHL'].includes(e.eventType);
+        if (activeFilter === 'Sports') return ['NBA', 'WNBA', 'NFL', 'MLB', 'NHL', 'NCAAF', 'NCAAM', 'NCAAW', 'NCAAMH', 'NCAAWH', 'NCAABS'].includes(e.eventType);
         if (activeFilter === 'Movies') return e.eventType === 'Movie';
         if (activeFilter === 'Concerts') return e.eventType === 'Concert';
         if (activeFilter === 'Restaurants') return e.eventType === 'Restaurant';

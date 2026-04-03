@@ -1,6 +1,9 @@
 # Log It — Feature Roadmap
 
 > **Last updated:** 2026-04-02
+> - 2026-04-02: Six college sports implemented (NCAAF, NCAAM, NCAAW, NCAAMH, NCAAWH, NCAABS) with conference-based team grids, search bar, and backfill scripts. NCAA Softball removed.
+> - 2026-04-02: WNBA support added — sync, backfill, 13-team browse UI, cron at 6:20 AM UTC.
+> - 2026-04-02: Added WNBA, college sports, and global soccer leagues to future planning.
 > - 2026-04-02: MLB support added — sync, backfill, 30-team browse UI, cron at 6:15 AM UTC.
 > - 2026-04-02: Merged restaurants & nightlife into "Dining & Nightlife". Added theater event type. Custom logs planned with real venue tagging via Google Places.
 > - 2026-04-02: NHL support added — sync, backfill, 32-team browse UI, cron at 6:10 AM UTC.
@@ -143,8 +146,20 @@ gantt
 
 ### 12. Additional Sports
 - [x] Add NFL support (ESPN API — `api/cron/sync-nfl.ts`, `api/cron/backfill-nfl.ts`, `server-lib/nfl-venues.ts`)
-- [ ] Add MLB support (ESPN API)
+- [x] Add MLB support (ESPN API — `api/cron/sync-mlb.ts`, `api/cron/backfill-mlb.ts`, `server-lib/mlb-venues.ts`)
 - [x] Add NHL support (ESPN API — `api/cron/sync-nhl.ts`, `api/cron/backfill-nhl.ts`, `server-lib/nhl-venues.ts`)
+- [x] Add WNBA support (ESPN API — `api/cron/sync-wnba.ts`, `api/cron/backfill-wnba.ts`, `server-lib/wnba-venues.ts`)
+- [x] Add NCAA Football support (ESPN API — `api/cron/sync-ncaaf.ts`, `api/scripts/backfill-ncaaf.ts`)
+- [x] Add NCAA Men's Basketball support (ESPN API — `api/cron/sync-ncaam.ts`, `api/scripts/backfill-ncaam.ts`)
+- [x] Add NCAA Women's Basketball support (ESPN API — `api/cron/sync-ncaaw.ts`, `api/scripts/backfill-ncaaw.ts`)
+- [x] Add NCAA Men's Hockey support (ESPN API — `api/cron/sync-ncaamh.ts`, `api/scripts/backfill-ncaamh.ts`)
+- [x] Add NCAA Women's Hockey support (ESPN API — `api/cron/sync-ncaawh.ts`, `api/scripts/backfill-ncaawh.ts`)
+- [x] Add NCAA Baseball support (ESPN API — `api/cron/sync-ncaabs.ts`, `api/scripts/backfill-ncaabs.ts`)
+- [ ] Add English Premier League support
+- [ ] Add Spanish LaLiga support
+- [ ] Add UEFA Champions League support
+- [ ] Add MLS support
+- [ ] Add NWSL support
 - [ ] Multi-sport filter in logbook and feed
 
 ---

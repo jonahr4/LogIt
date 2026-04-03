@@ -21,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const { q, event_type, date_from, date_to, limit: limitParam } = req.query;
+  const { q, event_type, date_from, date_to, limit: limitParam, league } = req.query;
 
   const searchQuery = typeof q === 'string' ? q.trim() : '';
   if (!searchQuery) {
@@ -57,13 +57,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const leagueFilter = (league && typeof league === 'string') ? league.trim() : '';
+
+    // When filtering by league, fetch more results so post-filter has enough to work with
+    const fetchLimit = leagueFilter ? 500 : limit + 1;
+
     // Call the multi-field search Postgres function using the primary token
     const { data: rows, error } = await supabase.rpc('search_events', {
       search_term: primaryToken,
       event_type_filter: (event_type && typeof event_type === 'string') ? event_type : null,
       date_from_filter: (date_from && typeof date_from === 'string') ? date_from : null,
       date_to_filter: (date_to && typeof date_to === 'string') ? date_to : null,
-      result_limit: limit + 1,  // fetch one extra to detect has_more
+      result_limit: fetchLimit,
       result_offset: offset,
     });
 
@@ -86,18 +91,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           )
         `)
         .order('event_date', { ascending: false })
-        .range(offset, offset + limit);
+        .range(offset, offset + (leagueFilter ? 499 : limit));
 
       // Apply ILIKE for each token (all must match somewhere in title)
       for (const token of tokens) {
         query = query.ilike('title', `%${token}%`);
       }
 
+      // If league filter, also filter in the query
+      if (leagueFilter) {
+        query = query.eq('sports_events.league', leagueFilter);
+      }
+
       const { data: fallbackEvents, error: fallbackError } = await query;
       if (fallbackError) throw fallbackError;
 
-      const hasMore = (fallbackEvents?.length || 0) > limit;
-      const pageData = (fallbackEvents || []).slice(0, limit);
+      let fallbackFiltered = fallbackEvents || [];
+      // Double-check league filter on formatted results
+      if (leagueFilter) {
+        fallbackFiltered = fallbackFiltered.filter((e: any) => {
+          const se = Array.isArray(e.sports_events) ? e.sports_events[0] : e.sports_events;
+          return se && se.league === leagueFilter;
+        });
+      }
+
+      const hasMore = fallbackFiltered.length > limit;
+      const pageData = fallbackFiltered.slice(0, limit);
       return res.status(200).json({
         data: pageData.map(formatFallbackEvent),
         meta: { count: pageData.length, query: searchQuery, offset, has_more: hasMore },
@@ -105,7 +124,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Post-filter RPC results to require all secondary tokens match
-    const filtered = (rows || []).filter(matchesAllTokens);
+    let filtered = (rows || []).filter(matchesAllTokens);
+
+    // Post-filter by league if specified
+    if (leagueFilter) {
+      filtered = filtered.filter((row: any) => row.league === leagueFilter);
+    }
+
     const hasMore = filtered.length > limit;
     const formatted = filtered.slice(0, limit).map(formatRpcRow);
 

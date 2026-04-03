@@ -120,7 +120,7 @@ function useLiveScore(event: EventDetail | null) {
   useEffect(() => {
     if (!event) { setLiveScore(null); return; }
     const t = event.eventType?.toLowerCase() || '';
-    const isSports = ['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t);
+    const isSports = ['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t);
     const isCompleted = event.status?.toUpperCase() === 'FINAL';
     if (!isSports || isCompleted || !event.external_id) { setLiveScore(null); return; }
 
@@ -370,7 +370,7 @@ function getTopSection(
   isFetching?: boolean,
 ) {
   const t = event.eventType?.toLowerCase() || '';
-  if (['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t))
+  if (['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t))
     return <SportsTop event={event} liveScore={liveScore} isFetching={isFetching} />;
   if (['movie', 'film'].includes(t))
     return <MovieTop event={event} />;
@@ -707,7 +707,7 @@ function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetai
   }, []);
 
   const eventTypeLower = event.eventType?.toLowerCase() || '';
-  const isSportsType = ['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(eventTypeLower);
+  const isSportsType = ['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(eventTypeLower);
   const isMovie = ['movie', 'film'].includes(eventTypeLower);
   const isConcert = ['concert', 'music', 'live music'].includes(eventTypeLower);
   const isRestaurant = ['restaurant', 'dining'].includes(eventTypeLower);
@@ -1113,7 +1113,7 @@ function BoxScoreSection({ event }: { event: EventDetail }) {
 function getEventIcon(eventType?: string): React.ComponentProps<typeof Ionicons>['name'] {
   if (!eventType || typeof eventType !== 'string') return 'calendar-outline';
   const lower = eventType.toLowerCase();
-  if (lower.includes('nba') || lower.includes('basketball') || lower.includes('sports')) return 'basketball-outline';
+  if (lower.includes('nba') || lower.includes('wnba') || lower.includes('ncaa') || lower.includes('basketball') || lower.includes('sports')) return 'basketball-outline';
   if (lower.includes('nfl') || lower.includes('football')) return 'american-football-outline';
   if (lower.includes('mlb') || lower.includes('baseball')) return 'baseball-outline';
   if (lower.includes('nhl') || lower.includes('hockey')) return 'snow-outline';

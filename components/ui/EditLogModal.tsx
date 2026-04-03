@@ -353,7 +353,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
 
     const t = effectiveType.toLowerCase();
 
-    if (['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t)) {
+    if (['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t)) {
       data.sport = sport;
       data.league = league;
       data.season = season;
@@ -830,7 +830,7 @@ function HalfStarRating({
 
 function EditTopSection({ effectiveType, event, title, setTitle, canEditCanonical, venue, venueCity, venueState, date }: any) {
   const t = effectiveType?.toLowerCase() || '';
-  if (['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t) && event?.homeTeamName) {
+  if (['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t) && event?.homeTeamName) {
     return <SportsEditTop event={event} venue={venue} venueCity={venueCity} venueState={venueState} date={date} />;
   }
   return (
@@ -1102,7 +1102,7 @@ const editTopStyles = StyleSheet.create({
 function TypeSpecificInputs(props: any) {
   const t = props.type?.toLowerCase() || '';
 
-  if (['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t)) {
+  if (['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t)) {
     return <SportsEditSection {...props} />;
   }
   if (['movie', 'film'].includes(t)) {
@@ -1379,7 +1379,7 @@ function DashedLine() {
 
 function getEventIcon(eventType?: string): React.ComponentProps<typeof Ionicons>['name'] {
   const lower = eventType?.toLowerCase() || '';
-  if (lower.includes('nba') || lower.includes('basketball') || lower.includes('sports')) return 'basketball-outline';
+  if (lower.includes('nba') || lower.includes('wnba') || lower.includes('ncaa') || lower.includes('basketball') || lower.includes('sports')) return 'basketball-outline';
   if (lower.includes('nfl') || lower.includes('football')) return 'american-football-outline';
   if (lower.includes('mlb') || lower.includes('baseball')) return 'baseball-outline';
   if (lower.includes('nhl') || lower.includes('hockey')) return 'snow-outline';
@@ -1392,7 +1392,7 @@ function getEventIcon(eventType?: string): React.ComponentProps<typeof Ionicons>
 
 function getTypeLabel(type: string): string {
   const t = type.toLowerCase();
-  if (['nba', 'nfl', 'mlb', 'nhl', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t)) return 'Sports Event';
+  if (['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t)) return 'Sports Event';
   if (['movie', 'film'].includes(t)) return 'Movie';
   if (['concert', 'music', 'live music'].includes(t)) return 'Concert';
   if (['restaurant', 'dining'].includes(t)) return 'Restaurant';
@@ -1403,7 +1403,7 @@ function getTypeLabel(type: string): string {
 function getPlaceholder(type: string, field: string): string {
   const t = type.toLowerCase();
   if (field === 'title') {
-    if (['nba', 'nfl', 'mlb', 'nhl', 'sports'].includes(t)) return 'Celtics vs Lakers';
+    if (['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports'].includes(t)) return 'Celtics vs Lakers';
     if (['movie', 'film'].includes(t)) return 'Dune: Part Two';
     if (['concert', 'music'].includes(t)) return 'SZA';
     if (['restaurant', 'dining'].includes(t)) return 'Carbone';

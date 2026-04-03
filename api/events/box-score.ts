@@ -16,10 +16,17 @@ import { getSupabaseAdmin } from '../../server-lib/supabase-admin';
 
 const LEAGUE_PATHS: Record<string, string> = {
   NBA: 'basketball/nba',
+  WNBA: 'basketball/wnba',
   NFL: 'football/nfl',
   MLB: 'baseball/mlb',
   NHL: 'hockey/nhl',
   MLS: 'soccer/usa.1',
+  NCAAF: 'football/college-football',
+  NCAAM: 'basketball/mens-college-basketball',
+  NCAAW: 'basketball/womens-college-basketball',
+  NCAAMH: 'hockey/mens-college-hockey',
+  NCAAWH: 'hockey/womens-college-hockey',
+  NCAABS: 'baseball/college-baseball',
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
