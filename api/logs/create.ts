@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isAuthenticated = await verifyAuth(authReq, res);
   if (!isAuthenticated) return;
 
-  const { event_id, notes, privacy, rating, photos, companions } = req.body;
+  const { event_id, notes, privacy, rating, photos, companions, rooted_team } = req.body;
 
   // Validate required fields
   if (!event_id) {
@@ -123,6 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         privacy: privacy || user.default_privacy || 'public',
         rating: rating ? Number(rating) : null,
         photos: photos || [],
+        rooted_team: rooted_team || null,
       })
       .select()
       .single();

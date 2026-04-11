@@ -85,6 +85,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ available: false });
     }
 
+    // Check if any team actually has player stats (college hockey/baseball often have empty statistics)
+    const hasAnyStats = data.boxscore.players.some((teamData: any) =>
+      (teamData.statistics || []).some((sg: any) => (sg.athletes || []).length > 0)
+    );
+    if (!hasAnyStats) {
+      return res.status(200).json({ available: false });
+    }
+
     // Generic parser — works for any sport's boxscore.players structure
     const formattedTeams = data.boxscore.players.map((teamData: any) => {
       if (!teamData.statistics || teamData.statistics.length === 0) return null;

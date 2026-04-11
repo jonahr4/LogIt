@@ -1,7 +1,8 @@
 # Log It — API Design
 
-> **Last updated:** 2026-04-02
+> **Last updated:** 2026-04-11
 > **Changes:**
+> - 2026-04-11: Added `rooted_team` field to `POST /logs/create` and `POST /logs/update` request bodies. Added `rooted_team` to `GET /logs/mine` response. Box score endpoint now returns `available: false` for leagues with no ESPN player data (college hockey, baseball).
 > - 2026-04-02: Added `league` query parameter to `GET /events/search` for filtering results by league (e.g., NCAAM vs NCAAF for shared college teams).
 > - 2026-03-31: Added `season_type` and `round` to sports `type_metadata` response. Box score endpoint refactored for multi-sport (dynamic sport/league lookup from DB). Added `round` to search fuzzy ILIKE fields.
 > - 2026-03-30: Added `POST/DELETE /api/logs/photos` for photo metadata management (actual upload goes client->Firebase Storage directly). Removed stale `photo_urls` from log create request body.
@@ -276,6 +277,7 @@ All event responses share a **common base shape** with a `type_metadata` object 
   "notes": "Incredible game, went to OT!",
   "privacy": "public",
   "rating": 5,
+  "rooted_team": "home",
   "companions": [
     { "user_id": "usr_002", "name": "Mike" },
     { "name": "My dad" }

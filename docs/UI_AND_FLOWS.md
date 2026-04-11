@@ -1,7 +1,8 @@
 # Log It — UI Design & User Flows
 
-> **Last updated:** 2026-04-01
+> **Last updated:** 2026-04-11
 > **Changes:**
+> - 2026-04-11: Added "MY TEAM" inline selector to EditLogModal rating row for sports events (two team logo pills, tap to pick/deselect). W/L badge in logbook now based on user's rooted team instead of home team. No W/L shown if no team selected. League badges display NCAAMB/NCAAWB via UI mapping while internal keys remain NCAAM/NCAAW.
 > - 2026-04-02: Added season type badges (PRE/R1/R2/R3/FIN) to logbook and add-log cards. Reordered logbook metadata row: league → stars → privacy → companions (left), season badge + W/L (right-aligned).
 > - 2026-04-01: EditLogModal overhauled — polymorphic top sections (team logos/scores for sports, hero title for others), venue background image, reordered bottom (Rating+Privacy → Notes → Photos → Type-specific → Companions → Actions). Photos now work during creation. Edit→Detail return flow: saving edits reopens EventDetailModal with updated data.
 > - 2026-03-31: Redesigned team browse: season-grouped inline headers ("2025-26", "2024-25"), phase sub-dividers (preseason/postseason), client-side filter bar, 100-result initial load with deduped Load More. Documented success checkmark animation.
@@ -103,6 +104,7 @@ The power-user screen — your complete history.
   - **Past Events:** Grouped chronologically with sleek `MONTH YEAR` text dividers.
 - Each entry: event title, date, venue
 - **Bottom metadata row (left→right):** league tag, star rating, privacy icon, companion count — then right-aligned: **season badge** (PRE/R1/R2/R3/FIN with game number) + W/L result
+- W/L is based on the user's **rooted team** (selected in EditLogModal). If no team is selected, no W/L badge is shown.
 - Season badges only appear for non-regular-season games (preseason=green, playoffs=orange, finals=gold)
 
 **Design Direction:**
@@ -190,6 +192,7 @@ Ticket-style modal matching the Event Detail Modal design language, used for bot
 | Order | Section | Details |
 |---|---|---|
 | 1 | ⭐ Rating + Privacy | Half-star rating (left) + privacy icon pills (right) on same row |
+| 1a | 🏟️ My Team (sports) | Inline with label — two team logo pills (short names, e.g. "Terriers"), tap to select rooted team. Tap again to deselect. Green glow on selected. Determines W/L badge in logbook. |
 | 2 | 📝 Notes | Multiline input with icon section header |
 | 3 | 📸 Photos | Horizontal scroll with add button, works in both create and edit modes |
 | 4 | 🔧 Type-specific | Sports: sport/league/season/teams/scores. Movie: director/genre/runtime/cast/watched-at. Concert: artist/tour/opener/setlist. Restaurant: cuisine/price. Nightlife: venue type/vibe/dress/music/price |

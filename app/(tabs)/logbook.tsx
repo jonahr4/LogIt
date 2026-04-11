@@ -88,6 +88,12 @@ const SUB_FILTERS: Record<string, string[]> = {
   Nightlife: ['All', 'Club', 'Bar', 'Lounge'],
 };
 
+/** User-facing display labels for league codes that differ from internal DB values */
+const LEAGUE_DISPLAY: Record<string, string> = {
+  NCAAM: 'NCAAMB',
+  NCAAW: 'NCAAWB',
+};
+
 /** Compute a human-readable relative time string from a timestamp */
 function getTimeAgo(dateStr: string): string {
   const now = new Date();
@@ -233,6 +239,7 @@ function mapLogToEventDetail(log: any): EventDetail {
     companions: log.companions,
     photos: log.photos || [],
     external_id: event.external_id,
+    rootedTeam: log.rooted_team || null,
   };
 }
 
@@ -304,6 +311,7 @@ export default function LogbookScreen() {
         privacy: updatedData.privacy,
         rating: updatedData.rating,
         companions: updatedData.companions,
+        rooted_team: (updatedData as any).rootedTeam,
       });
       // Merge edits into the event and reopen the detail modal
       const updatedEvent = { ...editingLog, ...updatedData };
@@ -427,7 +435,13 @@ export default function LogbookScreen() {
     const isSports = !!(entry.homeTeamName || entry.awayTeamName);
     const displayTitle = isSports ? shortSportsTitle(entry) : entry.title;
     const hasScore = isSports && entry.homeScore !== undefined && entry.awayScore !== undefined && !isUpcoming(entry);
-    const isWin = hasScore && entry.homeScore! > entry.awayScore!;
+    const rootedTeam = (entry as any).rootedTeam as 'home' | 'away' | null;
+    const showWL = hasScore && !!rootedTeam;
+    const isWin = showWL && (
+      rootedTeam === 'home'
+        ? entry.homeScore! > entry.awayScore!
+        : entry.awayScore! > entry.homeScore!
+    );
 
     return (
       <TouchableOpacity key={entry.id} activeOpacity={0.8} onPress={() => setSelectedEvent(entry)}>
@@ -483,7 +497,7 @@ export default function LogbookScreen() {
               {/* Left side: league → stars → privacy → companions */}
               {isSports && entry.eventType && (
                 <View style={styles.leagueTag}>
-                  <Text style={styles.leagueTagText}>{entry.eventType}</Text>
+                  <Text style={styles.leagueTagText}>{LEAGUE_DISPLAY[entry.eventType] || entry.eventType}</Text>
                 </View>
               )}
               {entry.rating !== undefined && (
@@ -508,7 +522,7 @@ export default function LogbookScreen() {
               )}
 
               {/* Right side: W/L (pushed right) */}
-              {isSports && hasScore && (
+              {isSports && showWL && (
                 <Text style={[styles.entryResult, isWin ? styles.entryResultWin : styles.entryResultLoss, { marginLeft: 'auto' as any }]}>
                   {isWin ? 'W' : 'L'}
                 </Text>
@@ -615,7 +629,7 @@ export default function LogbookScreen() {
                  style={[styles.subChip, activeSubFilter === subChip && styles.subChipActive]}
                  activeOpacity={0.7}
                >
-                 <Text style={[styles.subChipText, activeSubFilter === subChip && styles.subChipTextActive]}>{subChip}</Text>
+                 <Text style={[styles.subChipText, activeSubFilter === subChip && styles.subChipTextActive]}>{LEAGUE_DISPLAY[subChip] || subChip}</Text>
                </TouchableOpacity>
             ))}
           </ScrollView>

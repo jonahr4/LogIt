@@ -21,6 +21,7 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  Dimensions,
   type GestureResponderEvent,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -87,6 +88,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
   const [note, setNote] = useState('');
   const [rating, setRating] = useState(0);
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public');
+  const [rootedTeam, setRootedTeam] = useState<'home' | 'away' | null>(null);
   const [companionInput, setCompanionInput] = useState('');
   const [companions, setCompanions] = useState<Array<{ name: string }>>([]);
 
@@ -157,6 +159,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       setHomeScore(event.homeScore?.toString() || '');
       setAwayScore(event.awayScore?.toString() || '');
       setStatus(event.status || '');
+      setRootedTeam(event.rootedTeam || null);
       // Movie
       setDirector(event.director || '');
       setGenre(event.genre || '');
@@ -182,7 +185,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
     } else {
       // Reset for create mode
       setTitle(''); setVenue(''); setVenueCity(''); setVenueState('');
-      setDate(''); setNote(''); setRating(0); setPrivacy('public');
+      setDate(''); setNote(''); setRating(0); setPrivacy('public'); setRootedTeam(null);
       setCompanions([]); setCompanionInput('');
       setSport(''); setLeague(''); setSeason('');
       setHomeTeamName(''); setAwayTeamName('');
@@ -362,6 +365,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       data.homeScore = homeScore ? parseInt(homeScore) : undefined;
       data.awayScore = awayScore ? parseInt(awayScore) : undefined;
       data.status = status;
+      (data as any).rootedTeam = rootedTeam;
     }
 
     if (['movie', 'film'].includes(t)) {
@@ -568,6 +572,70 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
                       ))}
                     </View>
                   </View>
+
+                  {/* ── My Team selector (sports only) ── */}
+                  {event?.homeTeamName && event?.awayTeamName && (() => {
+                    const shortName = (full: string) => full.trim().split(' ').pop() || full;
+                    const pillMaxW = (Dimensions.get('window').width - 80) / 2.3;
+                    return (
+                      <>
+                        <View style={styles.divider} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <Text style={[styles.miniLabel, { marginBottom: 0 }]}>MY TEAM</Text>
+                          {/* Away team pill */}
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => setRootedTeam(rootedTeam === 'away' ? null : 'away')}
+                            style={[
+                              styles.teamPill,
+                              rootedTeam === 'away' && styles.teamPillActive,
+                              { maxWidth: pillMaxW },
+                            ]}
+                          >
+                            {event.awayTeamLogo ? (
+                              <Image source={{ uri: event.awayTeamLogo }} style={styles.teamPillLogo} resizeMode="contain" />
+                            ) : (
+                              <Ionicons name="shirt-outline" size={16} color={rootedTeam === 'away' ? Colors.primaryContainer : Colors.textMuted} />
+                            )}
+                            <Text
+                              style={[styles.teamPillText, rootedTeam === 'away' && styles.teamPillTextActive]}
+                              numberOfLines={1}
+                            >
+                              {shortName(event.awayTeamName)}
+                            </Text>
+                          </TouchableOpacity>
+
+                          {/* Home team pill */}
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => setRootedTeam(rootedTeam === 'home' ? null : 'home')}
+                            style={[
+                              styles.teamPill,
+                              rootedTeam === 'home' && styles.teamPillActive,
+                              { maxWidth: pillMaxW },
+                            ]}
+                          >
+                            {event.homeTeamLogo ? (
+                              <Image source={{ uri: event.homeTeamLogo }} style={styles.teamPillLogo} resizeMode="contain" />
+                            ) : (
+                              <Ionicons name="shirt-outline" size={16} color={rootedTeam === 'home' ? Colors.primaryContainer : Colors.textMuted} />
+                            )}
+                            <Text
+                              style={[styles.teamPillText, rootedTeam === 'home' && styles.teamPillTextActive]}
+                              numberOfLines={1}
+                            >
+                              {shortName(event.homeTeamName)}
+                            </Text>
+                          </TouchableOpacity>
+
+                          {/* Neutral indicator */}
+                          {!rootedTeam && (
+                            <Text style={{ fontFamily: FontFamily.bodyMedium, fontSize: 11, color: Colors.textMuted, fontStyle: 'italic' }}>Tap to pick</Text>
+                          )}
+                        </View>
+                      </>
+                    );
+                  })()}
 
                   <View style={styles.divider} />
 
@@ -1683,6 +1751,34 @@ const styles = StyleSheet.create({
   privacyPillActive: {
     backgroundColor: 'rgba(0, 255, 194, 0.1)',
     borderColor: 'rgba(0, 255, 194, 0.3)',
+  },
+  teamPill: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  teamPillActive: {
+    backgroundColor: 'rgba(0, 255, 194, 0.1)',
+    borderColor: 'rgba(0, 255, 194, 0.35)',
+  },
+  teamPillLogo: {
+    width: 20,
+    height: 20,
+  },
+  teamPillText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    color: Colors.textMuted,
+    flexShrink: 1,
+  },
+  teamPillTextActive: {
+    color: Colors.primaryContainer,
   },
   sectionHeader: {
     flexDirection: 'row' as const,

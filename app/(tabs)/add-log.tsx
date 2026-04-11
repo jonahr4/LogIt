@@ -56,18 +56,13 @@ const SUPPORTED_SPORTS = [
   { key: 'nfl', label: 'NFL', icon: 'american-football-outline' as const, active: true },
   { key: 'mlb', label: 'MLB', icon: 'baseball-outline' as const, active: true },
   { key: 'nhl', label: 'NHL', icon: 'snow-outline' as const, active: true },
-  // College sports — no team arrays (too many teams, search-based)
+  // College sports
   { key: 'ncaa_fb', label: 'NCAA Football', icon: 'american-football-outline' as const, active: true },
   { key: 'ncaa_bb', label: 'NCAA Basketball', icon: 'basketball-outline' as const, active: true },
   { key: 'wncaa_bb', label: 'WNCAA Basketball', icon: 'basketball-outline' as const, active: true },
   { key: 'ncaa_hk', label: 'NCAA Hockey', icon: 'snow-outline' as const, active: true },
   { key: 'wncaa_hk', label: 'WNCAA Hockey', icon: 'snow-outline' as const, active: true },
   { key: 'ncaa_bs', label: 'NCAA Baseball', icon: 'baseball-outline' as const, active: true },
-  { key: 'mls', label: 'MLS', icon: 'football-outline' as const, active: false },
-  { key: 'nwsl', label: 'NWSL', icon: 'football-outline' as const, active: false },
-  { key: 'epl', label: 'Premier League', icon: 'football-outline' as const, active: false },
-  { key: 'laliga', label: 'LaLiga', icon: 'football-outline' as const, active: false },
-  { key: 'champions', label: 'Champions League', icon: 'football-outline' as const, active: false },
 ] as const;
 
 const NBA_TEAMS = [
@@ -316,6 +311,27 @@ function getSeasonBadge(seasonType?: number, round?: string): { label: string; c
   return { label: `POST${gs}`, color: '#fb923c' };
 }
 
+/** Independent component to safely manage Image render vs fallback state */
+function TeamLogo({ team }: { team: { abbrev: string; logo: string } }) {
+  const [error, setError] = useState(false);
+  return (
+    <View style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}>
+      {error ? (
+        <View style={[styles.logoFallback, { position: 'absolute', width: 36, height: 36 }]}>
+          <Text style={styles.logoFallbackText}>{team.abbrev}</Text>
+        </View>
+      ) : (
+        <Image
+          source={{ uri: team.logo }}
+          style={styles.teamLogo}
+          resizeMode="contain"
+          onError={() => setError(true)}
+        />
+      )}
+    </View>
+  );
+}
+
 export default function AddLogScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [activeSearchQuery, setActiveSearchQuery] = useState('');
@@ -500,6 +516,7 @@ export default function AddLogScreen() {
         privacy: data.privacy || 'public',
         rating: data.rating || null,
         companions: data.companions || [],
+        rooted_team: (data as any).rootedTeam || null,
       });
       const newLogId = response.id;
 
@@ -1078,11 +1095,7 @@ export default function AddLogScreen() {
                     scrollRef.current?.scrollTo({ y: 0, animated: false });
                   }}
                 >
-                  <Image
-                    source={{ uri: team.logo }}
-                    style={styles.teamLogo}
-                    resizeMode="contain"
-                  />
+                  <TeamLogo team={team} />
                   <Text style={styles.teamShortName} numberOfLines={1}>{team.short}</Text>
                 </TouchableOpacity>
               ))}
@@ -1436,7 +1449,7 @@ export default function AddLogScreen() {
                               </View>
                               {/* Date · venue · league */}
                               <Text style={styles.apiResultSub} numberOfLines={1}>
-                                {dateStr}{event.venue_name ? ` · ${event.venue_name}` : ''}{meta?.league ? ` · ${meta.league}` : ''}
+                                {dateStr}{event.venue_name ? ` · ${event.venue_name}` : ''}{meta?.league ? ` · ${({NCAAM:'NCAAMB',NCAAW:'NCAAWB'} as Record<string,string>)[meta.league] || meta.league}` : ''}
                               </Text>
                             </View>
                           </>

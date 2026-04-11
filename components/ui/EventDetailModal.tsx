@@ -88,6 +88,13 @@ export type EventDetail = {
   venueState?: string;
   external_id?: string;
   pendingPhotos?: string[];  // local URIs for photos selected during create mode
+  rootedTeam?: 'home' | 'away' | null;
+}
+
+/** User-facing display labels for league codes */
+const LEAGUE_DISPLAY: Record<string, string> = {
+  NCAAM: 'NCAAMB',
+  NCAAW: 'NCAAWB',
 };
 
 interface Props {
@@ -914,8 +921,8 @@ function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetai
 
       <View style={styles.divider} />
 
-      {/* ── Sports: Box Score Tab ── */}
-      {isSportsType && (
+      {/* ── Sports: Box Score Tab (hidden for college hockey/baseball — ESPN has no data) ── */}
+      {isSportsType && !['NCAAMH', 'NCAAWH', 'NCAABS'].includes(event.league || event.eventType || '') && (
         <BoxScoreSection event={event} />
       )}
 
@@ -924,7 +931,7 @@ function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetai
       <View style={styles.chipsRow}>
         <InfoChip
           icon={getEventIcon(event.eventType)}
-          label={event.season ? `${event.eventType} • ${event.season}` : event.eventType}
+          label={event.season ? `${LEAGUE_DISPLAY[event.eventType] || event.eventType} • ${event.season}` : (LEAGUE_DISPLAY[event.eventType] || event.eventType)}
         />
         {event.season_type === 1 && (
           <InfoChip icon="flag-outline" label="Preseason" color="#4ade80" />
@@ -1022,7 +1029,8 @@ function BoxScoreSection({ event }: { event: EventDetail }) {
     setIsLoadingBS(true);
     setBsError(null);
     try {
-      const league = (event as any).league || 'NBA';
+      const meta = (event as any).type_metadata;
+      const league = meta?.league || (event as any).league || 'NBA';
       const data = await api.get<any>(`/api/events/box-score?external_id=${extId}&league=${league}`);
       if (!data.available) {
         setBsError('Box score not available yet');

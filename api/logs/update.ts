@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isAuthenticated = await verifyAuth(authReq, res);
   if (!isAuthenticated) return;
 
-  const { log_id, notes, privacy, rating, photos, companions } = req.body;
+  const { log_id, notes, privacy, rating, photos, companions, rooted_team } = req.body;
 
   if (!log_id) {
     return res.status(422).json({
@@ -55,6 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         privacy: privacy || 'public',
         rating: rating || null,
         photos: photos || [],
+        rooted_team: rooted_team !== undefined ? (rooted_team || null) : undefined,
       })
       .eq('id', log_id);
 

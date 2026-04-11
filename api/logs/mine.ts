@@ -44,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         privacy,
         rating,
         photos,
+        rooted_team,
         logged_at,
         events (
           id,
@@ -143,6 +144,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         privacy: log.privacy,
         rating: log.rating,
         photos: photosMap[log.id] || [],
+        rooted_team: log.rooted_team || null,
         logged_at: log.logged_at,
         companions: companionsMap[log.id] || [],
         event: event ? {

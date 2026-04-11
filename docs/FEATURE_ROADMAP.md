@@ -1,6 +1,7 @@
 # Log It — Feature Roadmap
 
-> **Last updated:** 2026-04-02
+> **Last updated:** 2026-04-11
+> - 2026-04-11: Added "My Team" selector to Edit/Create log modal — users pick which team they rooted for, W/L badges now reflect that choice instead of defaulting to home team. No team selected = no W/L shown. Reverted internal naming from NCAAMB/NCAAWB back to NCAAM/NCAAW with UI-only display mapping. Hidden box score for college hockey & baseball (ESPN has no player data). Removed soccer from supported sports.
 > - 2026-04-02: Six college sports implemented (NCAAF, NCAAM, NCAAW, NCAAMH, NCAAWH, NCAABS) with conference-based team grids, search bar, and backfill scripts. NCAA Softball removed.
 > - 2026-04-02: WNBA support added — sync, backfill, 13-team browse UI, cron at 6:20 AM UTC.
 > - 2026-04-02: Added WNBA, college sports, and global soccer leagues to future planning.

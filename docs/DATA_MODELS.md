@@ -1,7 +1,8 @@
 # Log It — Data Models
 
-> **Last updated:** 2026-03-31
+> **Last updated:** 2026-04-11
 > **Changes:**
+> - 2026-04-11: Added `rooted_team` column to `user_event_logs` (migration 019). Users can now pick which team they rooted for — W/L badge logic uses this instead of defaulting to home team. Reverted internal league identifiers back to NCAAM/NCAAW (UI-only display maps these to NCAAMB/NCAAWB). Hidden box score for college hockey/baseball (ESPN has no data).
 > - 2026-03-31: Added `season_type` and `round` columns to `sports_events` (migration 015). Added anon UPDATE policy on `venues` (migration 014). Updated ERD and entity details.
 > - 2026-03-31: Added anon SELECT policies on `events` and `sports_events` (migration 013) for admin portal access. Updated Venue entity to reflect auto-enrichment via Nominatim + Wikimedia Commons.
 > - 2026-03-30: Added `log_photos` table (migration 012). Replaced stale `string[] photos` column on `user_event_logs` with proper FK relationship to `log_photos`. Updated ERD.
@@ -124,6 +125,7 @@ erDiagram
         string notes
         enum privacy "public | friends | private"
         float rating
+        string rooted_team "home | away | null"
         timestamp logged_at
         timestamp updated_at
     }
@@ -227,7 +229,7 @@ Each child table has a **1:1 relationship** with `events` via `event_id` foreign
 |---|---|---|
 | `event_id` | UUID (FK → events) | Primary key, references base event |
 | `sport` | enum | `basketball`, `baseball`, `football`, `hockey` |
-| `league` | string | `NBA`, `MLB`, `NFL`, `NHL` |
+| `league` | string | `NBA`, `WNBA`, `MLB`, `NFL`, `NHL`, `NCAAF`, `NCAAM`, `NCAAW`, `NCAAMH`, `NCAAWH`, `NCAABS` |
 | `season` | string | e.g., `2025-26` |
 | `season_type` | int | ESPN type: `1` (preseason), `2` (regular), `3` (postseason), `4` (offseason), `5` (all-star) |
 | `round` | string (nullable) | Playoff round name (e.g., "NBA Finals", "Super Bowl") |
@@ -303,7 +305,8 @@ The user's personal attendance record for an event.
 | `event_id` | UUID (FK) | Which event (nullable for manual entries) |
 | `notes` | string | User's personal notes |
 | `privacy` | enum | `public`, `friends`, `private` |
-| `rating` | int | Optional 1-5 rating of the experience |
+| `rating` | float | Optional 0.5–5 rating of the experience (half-star increments) |
+| `rooted_team` | string (nullable) | Which team the user rooted for: `home`, `away`, or `null`. Determines W/L badge display. |
 | `photos` | string[] | Optional photo URLs |
 | `logged_at` | timestamp | When the user created this log |
 | `updated_at` | timestamp | Last edit |
