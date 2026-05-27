@@ -25,6 +25,7 @@ import { Typography, FontFamily } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EventDetailModal } from '@/components/ui/EventDetailModal';
 import { EditLogModal } from '@/components/ui/EditLogModal';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { api } from '@/lib/api';
@@ -555,15 +556,9 @@ export default function LogbookScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <PageHeader title="Logbook" />
       {/* FIXED HEADER - does not scroll */}
       <View style={styles.stickyHeader}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.title}>Logbook</Text>
-            <Text style={styles.subtitle}>{entries.length} events logged</Text>
-          </View>
-        </View>
 
         {/* Search bar */}
         <GlassCard borderRadius={16} style={styles.searchBar}>

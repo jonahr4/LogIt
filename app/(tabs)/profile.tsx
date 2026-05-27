@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/colors';
 import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 import { useAuthStore } from '@/store/authStore';
 
@@ -439,17 +440,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
 
-      {/* Header row */}
-      <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity
-          style={styles.gearButton}
-          onPress={() => setSettingsVisible(true)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name={'settings-outline' as const} size={22} color={Colors.text} />
-        </TouchableOpacity>
-      </View>
+      <PageHeader title="Profile" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}

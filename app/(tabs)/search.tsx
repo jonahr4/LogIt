@@ -19,6 +19,7 @@ import { Colors, Shadows } from '@/constants/colors';
 import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EventDetailModal, type EventDetail } from '@/components/ui/EventDetailModal';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 // ─── Filter chips ──────────────────────────────────────────────────────────────
 
@@ -252,10 +253,7 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Explore</Text>
-      </View>
+      <PageHeader title="Explore" />
 
       <ScrollView
         style={styles.scroll}

@@ -35,6 +35,7 @@ import {
 import { Typography, FontFamily } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EditLogModal } from '@/components/ui/EditLogModal';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { api } from '@/lib/api';
 import type { EventSearchResult } from '@/types/event';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -903,11 +904,7 @@ export default function AddLogScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header — only shown on type selection screen */}
-      {!selectedType && (
-        <View style={styles.pageHeader}>
-          <Text style={styles.title}>Log New</Text>
-        </View>
-      )}
+      {!selectedType && <PageHeader title="Log New" />}
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.scrollContent}

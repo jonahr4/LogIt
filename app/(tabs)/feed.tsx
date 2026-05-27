@@ -10,12 +10,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   Image,
-  Animated,
-  Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/colors';
@@ -24,6 +20,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { OrbBackground } from '@/components/ui/OrbBackground';
 import { EditLogModal } from '@/components/ui/EditLogModal';
 import { EventDetailModal, type EventDetail } from '@/components/ui/EventDetailModal';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 import { useAuthStore } from '@/store/authStore';
 
@@ -291,38 +288,13 @@ const MOCK_CARDS: MockCard[] = [
 
 export default function FeedScreen() {
   const { user } = useAuthStore();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<FeedTab>('Following');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
   const [editEvent, setEditEvent] = useState<EventDetail | null>(null);
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  const userInitial = (user?.first_name?.[0] || user?.display_name?.[0] || user?.username?.[0] || '?').toUpperCase();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.brandText}>LogIt</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => setShowNotifications(!showNotifications)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name={'notifications-outline' as const} size={20} color={Colors.textMuted} />
-            {/* Unread badge dot */}
-            <View style={styles.unreadDot} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => router.push('/(tabs)/profile')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.headerAvatarText}>{userInitial}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <PageHeader title="LogIt" />
 
       <ScrollView
         style={styles.scroll}
@@ -377,10 +349,6 @@ export default function FeedScreen() {
         }}
       />
 
-      {/* Notifications dropdown overlay */}
-      {showNotifications && (
-        <NotificationsDropdown onClose={() => setShowNotifications(false)} />
-      )}
     </SafeAreaView>
   );
 }
@@ -458,216 +426,10 @@ function FeedCard({
   );
 }
 
-/* ── Notifications Modal ── */
-
-const MOCK_NOTIFICATIONS = [
-  { id: '1', icon: 'basketball-outline' as const, text: 'Celtics vs Lakers starts in 2 hours!', time: '2h ago', color: '#FF8A3D' },
-  { id: '2', icon: 'camera-outline' as const, text: 'How was the game last night? Add a log!', time: '5h ago', color: '#679cff' },
-  { id: '3', icon: 'person-add-outline' as const, text: '@sarah tagged you as a companion', time: '1d ago', color: '#00FFC2' },
-  { id: '4', icon: 'flame-outline' as const, text: '3 friends also logged Celtics vs Lakers', time: '1d ago', color: '#ac89ff' },
-  { id: '5', icon: 'trophy-outline' as const, text: "You've logged 10 events! 🎉", time: '3d ago', color: '#facc15' },
-  { id: '6', icon: 'heart-outline' as const, text: '@mike liked your Dune review', time: '3d ago', color: '#ff716c' },
-];
-
-function NotificationsDropdown({ onClose }: { onClose: () => void }) {
-  return (
-    <>
-      {/* Backdrop */}
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={notifStyles.backdrop} />
-      </TouchableWithoutFeedback>
-
-      {/* Dropdown panel */}
-      <View style={notifStyles.dropdown}>
-        {/* Header */}
-        <View style={notifStyles.header}>
-          <Text style={notifStyles.title}>Notifications</Text>
-          <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
-            <Ionicons name={'close' as const} size={18} color={Colors.textMuted} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Items */}
-        <ScrollView
-          style={notifStyles.scrollArea}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
-          {MOCK_NOTIFICATIONS.map((item) => (
-            <TouchableOpacity key={item.id} style={notifStyles.row} activeOpacity={0.6}>
-              <View style={notifStyles.iconWrap}>
-                <View style={[notifStyles.dot, { backgroundColor: item.color }]} />
-                <View style={[notifStyles.iconCircle, { borderColor: `${item.color}30` }]}>
-                  <Ionicons name={item.icon} size={16} color={item.color} />
-                </View>
-              </View>
-              <Text style={notifStyles.text} numberOfLines={2}>
-                {item.text}
-              </Text>
-              <Text style={notifStyles.time}>{item.time}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Footer */}
-        <TouchableOpacity style={notifStyles.footer} activeOpacity={0.7}>
-          <Text style={notifStyles.footerText}>View All Notifications</Text>
-        </TouchableOpacity>
-      </View>
-    </>
-  );
-}
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const notifStyles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    zIndex: 90,
-  },
-  dropdown: {
-    position: 'absolute',
-    top: 4,
-    right: 16,
-    width: SCREEN_WIDTH - 48,
-    maxHeight: 420,
-    backgroundColor: Colors.glass,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    overflow: 'hidden',
-    zIndex: 100,
-    // Shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.glassBorder,
-  },
-  title: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: Colors.text,
-    letterSpacing: 0.3,
-  },
-  scrollArea: {
-    maxHeight: 320,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    gap: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
-  },
-  iconWrap: {
-    position: 'relative',
-  },
-  dot: {
-    position: 'absolute',
-    top: -1,
-    left: -1,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    zIndex: 1,
-  },
-  iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.glassSurface,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    flex: 1,
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 12,
-    color: Colors.text,
-    lineHeight: 17,
-  },
-  time: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 9,
-    letterSpacing: 1,
-    color: Colors.textMuted,
-  },
-  footer: {
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: Colors.glassBorder,
-  },
-  footerText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 12,
-    color: Colors.primaryContainer,
-    letterSpacing: 0.3,
-  },
-});
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.glassBorder,
-  },
-  brandText: {
-    ...Typography.pageHeader,
-    color: Colors.text,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.glass,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  unreadDot: {
-    position: 'absolute',
-    top: 8,
-    right: 9,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: '#ff716c',
-    borderWidth: 1.5,
-    borderColor: Colors.glass,
-  },
-  headerAvatarText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: Colors.primaryContainer,
   },
   scroll: {
     flex: 1,
