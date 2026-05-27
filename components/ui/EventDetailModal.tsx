@@ -383,10 +383,10 @@ function getTopSection(
     return <MovieTop event={event} />;
   if (['concert', 'music', 'live music'].includes(t))
     return <ConcertTop event={event} />;
-  if (['restaurant', 'dining'].includes(t))
-    return <RestaurantTop event={event} />;
-  if (['nightlife', 'bar', 'club', 'lounge'].includes(t))
-    return <NightlifeTop event={event} />;
+  if (['food_drinks', 'restaurant', 'dining', 'nightlife', 'bar', 'club', 'lounge'].includes(t))
+    return <FoodDrinksTop event={event} />;
+  if (['theater', 'theatre', 'broadway'].includes(t))
+    return <TheaterTop event={event} />;
   return <CustomTop event={event} />;
 }
 
@@ -582,19 +582,31 @@ function ConcertTop({ event }: { event: EventDetail }) {
   );
 }
 
-function RestaurantTop({ event }: { event: EventDetail }) {
+function FoodDrinksTop({ event }: { event: EventDetail }) {
   return (
     <View style={styles.topContent}>
       <TimeAgoBadge timeAgo={event.timeAgo} />
 
       <Text style={styles.genericTitle}>{event.title}</Text>
 
-      {/* Cuisine + price row */}
+      {/* Cuisine + venue type + vibe + price pills */}
       <View style={styles.movieMetaRow}>
         {event.cuisine && (
           <View style={styles.movieMetaPill}>
             <Ionicons name="restaurant-outline" size={12} color={Colors.textMuted} />
             <Text style={styles.movieMetaPillText}>{event.cuisine}</Text>
+          </View>
+        )}
+        {event.venueType && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="wine-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.venueType}</Text>
+          </View>
+        )}
+        {event.vibe && (
+          <View style={styles.movieMetaPill}>
+            <Ionicons name="sparkles-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{event.vibe}</Text>
           </View>
         )}
         {event.priceLevel && (
@@ -609,42 +621,30 @@ function RestaurantTop({ event }: { event: EventDetail }) {
   );
 }
 
-function NightlifeTop({ event }: { event: EventDetail }) {
+function TheaterTop({ event }: { event: EventDetail }) {
   return (
     <View style={styles.topContent}>
       <TimeAgoBadge timeAgo={event.timeAgo} />
 
       <Text style={styles.genericTitle}>{event.title}</Text>
 
-      {/* Venue type + vibe pills */}
       <View style={styles.movieMetaRow}>
-        {event.venueType && (
+        {(event as any).showType && (
           <View style={styles.movieMetaPill}>
-            <Ionicons name="wine-outline" size={12} color={Colors.textMuted} />
-            <Text style={styles.movieMetaPillText}>{event.venueType}</Text>
+            <Ionicons name="ticket-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{(event as any).showType}</Text>
           </View>
         )}
-        {event.vibe && (
+        {(event as any).performer && (
           <View style={styles.movieMetaPill}>
-            <Ionicons name="sparkles-outline" size={12} color={Colors.textMuted} />
-            <Text style={styles.movieMetaPillText}>{event.vibe}</Text>
+            <Ionicons name="person-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{(event as any).performer}</Text>
           </View>
         )}
-        {event.musicGenre && (
+        {(event as any).seatSection && (
           <View style={styles.movieMetaPill}>
-            <Ionicons name="musical-notes-outline" size={12} color={Colors.textMuted} />
-            <Text style={styles.movieMetaPillText}>{event.musicGenre}</Text>
-          </View>
-        )}
-        {event.dressCode && (
-          <View style={styles.movieMetaPill}>
-            <Ionicons name="shirt-outline" size={12} color={Colors.textMuted} />
-            <Text style={styles.movieMetaPillText}>{event.dressCode}</Text>
-          </View>
-        )}
-        {event.priceLevel && (
-          <View style={[styles.movieMetaPill, styles.pricePill]}>
-            <Text style={styles.priceText}>{event.priceLevel}</Text>
+            <Ionicons name="grid-outline" size={12} color={Colors.textMuted} />
+            <Text style={styles.movieMetaPillText}>{(event as any).seatSection}</Text>
           </View>
         )}
       </View>
@@ -717,8 +717,8 @@ function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetai
   const isSportsType = ['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(eventTypeLower);
   const isMovie = ['movie', 'film'].includes(eventTypeLower);
   const isConcert = ['concert', 'music', 'live music'].includes(eventTypeLower);
-  const isRestaurant = ['restaurant', 'dining'].includes(eventTypeLower);
-  const isNightlife = ['nightlife', 'bar', 'club', 'lounge'].includes(eventTypeLower);
+  const isFoodDrinks = ['food_drinks', 'restaurant', 'dining', 'nightlife', 'bar', 'club', 'lounge'].includes(eventTypeLower);
+  const isTheater = ['theater', 'theatre', 'broadway'].includes(eventTypeLower);
 
   return (
     <View style={styles.bottomContent}>
@@ -768,27 +768,30 @@ function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetai
         </>
       )}
 
-      {/* ── Restaurant: Detail chips ── */}
-      {isRestaurant && (event.cuisine || event.priceLevel) && (
+      {/* ── Food & Drinks: Detail chips ── */}
+      {isFoodDrinks && (event.cuisine || event.priceLevel || event.venueType || event.vibe || event.musicGenre) && (
         <>
-          <Text style={styles.miniLabel}>RESTAURANT DETAILS</Text>
+          <Text style={styles.miniLabel}>FOOD & DRINKS DETAILS</Text>
           <View style={styles.chipsRow}>
             {event.cuisine && <InfoChip icon="restaurant-outline" label={event.cuisine} />}
+            {event.venueType && <InfoChip icon="wine-outline" label={event.venueType} />}
+            {event.vibe && <InfoChip icon="sparkles-outline" label={event.vibe} />}
+            {event.musicGenre && <InfoChip icon="musical-notes-outline" label={event.musicGenre} />}
+            {event.dressCode && <InfoChip icon="shirt-outline" label={event.dressCode} />}
             {event.priceLevel && <InfoChip icon="cash-outline" label={event.priceLevel} />}
           </View>
           <View style={styles.divider} />
         </>
       )}
 
-      {/* ── Nightlife: Vibe + details ── */}
-      {isNightlife && (event.venueType || event.vibe || event.musicGenre || event.dressCode) && (
+      {/* ── Theater: Show details ── */}
+      {isTheater && ((event as any).showType || (event as any).performer || (event as any).seatSection) && (
         <>
-          <Text style={styles.miniLabel}>VENUE DETAILS</Text>
+          <Text style={styles.miniLabel}>THEATER DETAILS</Text>
           <View style={styles.chipsRow}>
-            {event.venueType && <InfoChip icon="wine-outline" label={event.venueType} />}
-            {event.vibe && <InfoChip icon="sparkles-outline" label={event.vibe} />}
-            {event.musicGenre && <InfoChip icon="musical-notes-outline" label={event.musicGenre} />}
-            {event.dressCode && <InfoChip icon="shirt-outline" label={event.dressCode} />}
+            {(event as any).showType && <InfoChip icon="ticket-outline" label={(event as any).showType} />}
+            {(event as any).performer && <InfoChip icon="person-outline" label={(event as any).performer} />}
+            {(event as any).seatSection && <InfoChip icon="grid-outline" label={(event as any).seatSection} />}
           </View>
           <View style={styles.divider} />
         </>
@@ -821,7 +824,7 @@ function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetai
                   >
                     <Image
                       source={{ uri }}
-                      style={isNightlife ? styles.photoLarge : styles.photo}
+                      style={isFoodDrinks ? styles.photoLarge : styles.photo}
                     />
                   </TouchableOpacity>
                 );
@@ -1127,8 +1130,9 @@ function getEventIcon(eventType?: string): React.ComponentProps<typeof Ionicons>
   if (lower.includes('nhl') || lower.includes('hockey')) return 'snow-outline';
   if (lower.includes('movie') || lower.includes('film')) return 'film-outline';
   if (lower.includes('concert') || lower.includes('music')) return 'musical-notes-outline';
-  if (lower.includes('restaurant') || lower.includes('dining')) return 'restaurant-outline';
-  if (lower.includes('nightlife') || lower.includes('club') || lower.includes('bar')) return 'wine-outline';
+  if (lower.includes('food') || lower.includes('drink') || lower.includes('restaurant') || lower.includes('dining')) return 'restaurant-outline';
+  if (lower.includes('nightlife') || lower.includes('club') || lower.includes('bar')) return 'restaurant-outline';
+  if (lower.includes('theater') || lower.includes('theatre') || lower.includes('broadway')) return 'ticket-outline';
   return 'calendar-outline';
 }
 

@@ -41,7 +41,9 @@ function getSecondaryPill(card: MockCard): { text: string; color: string } | nul
   if (t === 'movie' && card.runtime) return { text: `${card.runtime} min`, color: '#679cff' };
   if (t === 'concert' && card.genre) return { text: card.genre, color: '#ac89ff' };
   if (t === 'restaurant' && card.priceLevel) return { text: card.priceLevel, color: '#facc15' };
+  if ((t === 'food_drinks' || t === 'food & drinks') && card.priceLevel) return { text: card.priceLevel, color: '#facc15' };
   if (t === 'nightlife' && card.vibe) return { text: card.vibe, color: '#00FFC2' };
+  if ((t === 'theater' || t === 'theatre') && (card as any).showType) return { text: (card as any).showType, color: '#ac89ff' };
   return null;
 }
 
@@ -204,7 +206,7 @@ const MOCK_CARDS: MockCard[] = [
       { name: 'Marcus', avatar: 'https://i.pravatar.cc/100?img=11' },
     ],
   },
-  // ── Restaurant ──
+  // ── Food & Drinks (merged restaurant + nightlife) ──
   {
     id: '6',
     user: { name: '@emma', avatar: 'https://i.pravatar.cc/100?img=20' },
@@ -215,10 +217,11 @@ const MOCK_CARDS: MockCard[] = [
     venueCity: 'New York',
     venueState: 'NY',
     date: 'Mar 12, 2026',
-    eventType: 'Restaurant',
+    eventType: 'Food & Drinks',
     eventIcon: 'restaurant-outline',
     cuisine: 'Italian-American',
     priceLevel: '$$$$',
+    venueType: 'Restaurant',
     privacy: 'public',
     rating: 4,
     note: 'Finally got a reservation. The spicy rigatoni lived up to the hype. Veal parm was unreal. Definitely going back.',
@@ -230,36 +233,29 @@ const MOCK_CARDS: MockCard[] = [
       { name: 'Tom', avatar: 'https://i.pravatar.cc/100?img=22' },
     ],
   },
-  // ── Nightlife ──
+  // ── Theater ──
   {
     id: '7',
     user: { name: '@jake', avatar: 'https://i.pravatar.cc/100?img=15' },
-    timeAgo: '12 hours ago',
-    image: 'https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?q=80&w=800&auto=format&fit=crop',
-    title: 'Marquee NYC',
-    venue: 'Marquee New York',
+    timeAgo: '2 days ago',
+    image: 'https://images.unsplash.com/photo-1503095396549-807759245b35?q=80&w=800&auto=format&fit=crop',
+    title: 'Hamilton',
+    venue: 'Richard Rodgers Theatre',
     venueCity: 'New York',
     venueState: 'NY',
-    date: 'Mar 14, 2026',
-    eventType: 'Nightlife',
-    eventIcon: 'wine-outline',
-    venueType: 'Club',
-    vibe: 'High-Energy',
-    dressCode: 'Smart Casual',
-    musicGenre: 'House / EDM',
-    priceLevel: '$$$',
-    privacy: 'friends',
-    rating: 4,
-    note: 'Incredible night. DJ was spinning house all night. Great energy on the dance floor. VIP was absolutely worth it.',
-    photos: [
-      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=400&auto=format&fit=crop',
-    ],
+    date: 'Mar 10, 2026',
+    eventType: 'Theater',
+    eventIcon: 'ticket-outline',
+    showName: 'Hamilton',
+    showType: 'Musical',
+    performer: 'Broadway Cast',
+    seatSection: 'Orchestra',
+    privacy: 'public',
+    rating: 5,
+    note: 'Absolutely incredible. The Act 2 opener gave me chills. Orchestra seats were worth every penny. Lin-Manuel is a genius.',
     companions: [
       { name: 'Alex', avatar: 'https://i.pravatar.cc/100?img=1' },
       { name: 'Maya', avatar: 'https://i.pravatar.cc/100?img=9' },
-      { name: 'Chris' },
     ],
   },
   // ── Custom ──

@@ -27,8 +27,8 @@ const TYPE_FILTERS = [
   { key: 'sports', label: 'Sports', icon: 'basketball-outline' as const },
   { key: 'movie', label: 'Movies', icon: 'film-outline' as const },
   { key: 'concert', label: 'Concerts', icon: 'musical-notes-outline' as const },
-  { key: 'restaurant', label: 'Dining', icon: 'restaurant-outline' as const },
-  { key: 'nightlife', label: 'Nightlife', icon: 'wine-outline' as const },
+  { key: 'food_drinks', label: 'Food & Drinks', icon: 'restaurant-outline' as const },
+  { key: 'theater', label: 'Theater', icon: 'ticket-outline' as const },
 ] as const;
 
 // ─── Trending / mock data ──────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ const TRENDING_EVENTS: EventDetail[] = [
   {
     id: 'trend-4',
     title: 'Carbone',
-    eventType: 'restaurant',
+    eventType: 'food_drinks',
     date: 'Mar 18, 2026',
     venue: 'Carbone',
     venueCity: 'New York',
@@ -126,7 +126,7 @@ const FRIENDS_POPULAR: (EventDetail & { friendNames: string[] })[] = [
   {
     id: 'friend-3',
     title: 'L\'Artusi',
-    eventType: 'restaurant',
+    eventType: 'food_drinks',
     date: 'Mar 21, 2026',
     venue: 'L\'Artusi',
     venueCity: 'New York',
@@ -152,8 +152,8 @@ export default function SearchScreen() {
         if (activeFilter === 'sports') return ['nba', 'nfl', 'mlb', 'nhl', 'sports'].includes(t);
         if (activeFilter === 'movie') return ['movie', 'film'].includes(t);
         if (activeFilter === 'concert') return ['concert', 'music'].includes(t);
-        if (activeFilter === 'restaurant') return ['restaurant', 'dining'].includes(t);
-        if (activeFilter === 'nightlife') return ['nightlife', 'bar', 'club'].includes(t);
+        if (activeFilter === 'food_drinks') return ['food_drinks', 'restaurant', 'dining', 'nightlife', 'bar', 'club'].includes(t);
+        if (activeFilter === 'theater') return ['theater', 'theatre', 'broadway'].includes(t);
         return true;
       });
 
@@ -348,8 +348,8 @@ function getTypeIcon(eventType?: string): React.ComponentProps<typeof Ionicons>[
   if (['nba', 'nfl', 'mlb', 'nhl', 'sports'].includes(t)) return 'basketball-outline';
   if (['movie', 'film'].includes(t)) return 'film-outline';
   if (['concert', 'music'].includes(t)) return 'musical-notes-outline';
-  if (['restaurant', 'dining'].includes(t)) return 'restaurant-outline';
-  if (['nightlife', 'bar', 'club'].includes(t)) return 'wine-outline';
+  if (['food_drinks', 'restaurant', 'dining', 'nightlife', 'bar', 'club'].includes(t)) return 'restaurant-outline';
+  if (['theater', 'theatre', 'broadway'].includes(t)) return 'ticket-outline';
   return 'create-outline';
 }
 

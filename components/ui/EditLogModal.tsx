@@ -121,16 +121,19 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
   const [setlistInput, setSetlistInput] = useState('');
   const [setlist, setSetlist] = useState<string[]>([]);
 
-  // Restaurant
+  // Food & Drinks (merged restaurant + nightlife)
   const [cuisine, setCuisine] = useState('');
   const [priceLevel, setPriceLevel] = useState('');
-
-  // Nightlife
   const [venueType, setVenueType] = useState('');
   const [vibe, setVibe] = useState('');
   const [dressCode, setDressCode] = useState('');
   const [musicGenre, setMusicGenre] = useState('');
-  const [nightlifePriceLevel, setNightlifePriceLevel] = useState('');
+
+  // Theater
+  const [showName, setShowName] = useState('');
+  const [performer, setPerformer] = useState('');
+  const [seatSection, setSeatSection] = useState('');
+  const [showType, setShowType] = useState('');
 
   // ─── Pre-fill from event (edit mode) ─────────────────────────────────
   useEffect(() => {
@@ -173,15 +176,18 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       setOpener(event.opener || '');
       setConcertGenre(event.genre || '');
       setSetlist(event.setlist || []);
-      // Restaurant
+      // Food & Drinks
       setCuisine(event.cuisine || '');
       setPriceLevel(event.priceLevel || '');
-      // Nightlife
       setVenueType(event.venueType || '');
       setVibe(event.vibe || '');
       setDressCode(event.dressCode || '');
       setMusicGenre(event.musicGenre || '');
-      setNightlifePriceLevel(event.priceLevel || '');
+      // Theater
+      setShowName(event.showName || '');
+      setPerformer(event.performer || '');
+      setSeatSection(event.seatSection || '');
+      setShowType(event.showType || '');
     } else {
       // Reset for create mode
       setTitle(''); setVenue(''); setVenueCity(''); setVenueState('');
@@ -195,8 +201,8 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       setArtist(''); setTourName(''); setOpener('');
       setConcertGenre(''); setSetlist([]); setSetlistInput('');
       setCuisine(''); setPriceLevel('');
-      setVenueType(''); setVibe(''); setDressCode('');
-      setMusicGenre(''); setNightlifePriceLevel('');
+      setVenueType(''); setVibe(''); setDressCode(''); setMusicGenre('');
+      setShowName(''); setPerformer(''); setSeatSection(''); setShowType('');
       setPhotos([]);
     }
   }, [event]);
@@ -385,17 +391,20 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       data.setlist = setlist;
     }
 
-    if (['restaurant', 'dining'].includes(t)) {
+    if (['food_drinks', 'restaurant', 'dining', 'nightlife', 'bar', 'club', 'lounge'].includes(t)) {
       data.cuisine = cuisine;
       data.priceLevel = priceLevel;
-    }
-
-    if (['nightlife', 'bar', 'club', 'lounge'].includes(t)) {
       data.venueType = venueType;
       data.vibe = vibe;
       data.dressCode = dressCode;
       data.musicGenre = musicGenre;
-      data.priceLevel = nightlifePriceLevel;
+    }
+
+    if (['theater'].includes(t)) {
+      (data as any).showName = showName;
+      (data as any).performer = performer;
+      (data as any).seatSection = seatSection;
+      (data as any).showType = showType;
     }
 
     onSave(data);
@@ -731,7 +740,10 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
                     vibe={vibe} setVibe={setVibe}
                     dressCode={dressCode} setDressCode={setDressCode}
                     musicGenre={musicGenre} setMusicGenre={setMusicGenre}
-                    nightlifePriceLevel={nightlifePriceLevel} setNightlifePriceLevel={setNightlifePriceLevel}
+                    showName={showName} setShowName={setShowName}
+                    performer={performer} setPerformer={setPerformer}
+                    seatSection={seatSection} setSeatSection={setSeatSection}
+                    showType={showType} setShowType={setShowType}
                   />
 
                   <View style={styles.divider} />
@@ -1179,11 +1191,11 @@ function TypeSpecificInputs(props: any) {
   if (['concert', 'music', 'live music'].includes(t)) {
     return <ConcertEditSection {...props} />;
   }
-  if (['restaurant', 'dining'].includes(t)) {
-    return <RestaurantEditSection {...props} />;
+  if (['food_drinks', 'restaurant', 'dining', 'nightlife', 'bar', 'club', 'lounge'].includes(t)) {
+    return <FoodDrinksEditSection {...props} />;
   }
-  if (['nightlife', 'bar', 'club', 'lounge'].includes(t)) {
-    return <NightlifeEditSection {...props} />;
+  if (['theater'].includes(t)) {
+    return <TheaterEditSection {...props} />;
   }
   return null; // Custom — no extra fields
 }
@@ -1327,35 +1339,12 @@ function ConcertEditSection(props: any) {
   );
 }
 
-function RestaurantEditSection(props: any) {
+function FoodDrinksEditSection(props: any) {
   return (
     <View style={styles.typeSection}>
-      <Text style={styles.typeSectionLabel}>RESTAURANT DETAILS</Text>
+      <Text style={styles.typeSectionLabel}>FOOD & DRINKS DETAILS</Text>
 
       <LabeledInput label="CUISINE" value={props.cuisine} onChangeText={props.setCuisine} placeholder="Italian, Japanese, etc." editable={props.canEditCanonical} />
-
-      <Text style={styles.miniLabel}>PRICE LEVEL</Text>
-      <View style={styles.segmentedRow}>
-        {PRICE_LEVELS.map((level) => (
-          <TouchableOpacity
-            key={level}
-            onPress={() => props.setPriceLevel(level)}
-            style={[styles.segmentButton, styles.priceSegment, props.priceLevel === level && styles.priceSegmentActive, !props.canEditCanonical && { opacity: 0.5 }]}
-            activeOpacity={0.7}
-            disabled={!props.canEditCanonical}
-          >
-            <Text style={[styles.priceSegmentText, props.priceLevel === level && styles.priceSegmentTextActive]}>{level}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function NightlifeEditSection(props: any) {
-  return (
-    <View style={styles.typeSection}>
-      <Text style={styles.typeSectionLabel}>VENUE DETAILS</Text>
 
       <Text style={styles.miniLabel}>VENUE TYPE</Text>
       <View style={styles.segmentedRow}>
@@ -1388,11 +1377,37 @@ function NightlifeEditSection(props: any) {
         {PRICE_LEVELS.map((level) => (
           <TouchableOpacity
             key={level}
-            onPress={() => props.setNightlifePriceLevel(level)}
-            style={[styles.segmentButton, styles.priceSegment, props.nightlifePriceLevel === level && styles.priceSegmentActive]}
+            onPress={() => props.setPriceLevel(level)}
+            style={[styles.segmentButton, styles.priceSegment, props.priceLevel === level && styles.priceSegmentActive]}
             activeOpacity={0.7}
           >
-            <Text style={[styles.priceSegmentText, props.nightlifePriceLevel === level && styles.priceSegmentTextActive]}>{level}</Text>
+            <Text style={[styles.priceSegmentText, props.priceLevel === level && styles.priceSegmentTextActive]}>{level}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function TheaterEditSection(props: any) {
+  return (
+    <View style={styles.typeSection}>
+      <Text style={styles.typeSectionLabel}>THEATER DETAILS</Text>
+
+      <LabeledInput label="SHOW NAME" value={props.showName} onChangeText={props.setShowName} placeholder="Hamilton" editable={props.canEditCanonical} />
+      <LabeledInput label="PERFORMER / COMPANY" value={props.performer} onChangeText={props.setPerformer} placeholder="Lin-Manuel Miranda" editable={props.canEditCanonical} />
+      <LabeledInput label="SEAT SECTION" value={props.seatSection} onChangeText={props.setSeatSection} placeholder="Orchestra, Mezzanine..." />
+
+      <Text style={styles.miniLabel}>SHOW TYPE</Text>
+      <View style={styles.segmentedRow}>
+        {['Musical', 'Play', 'Comedy', 'Opera', 'Ballet', 'Standup'].map((opt) => (
+          <TouchableOpacity
+            key={opt}
+            onPress={() => props.setShowType(opt)}
+            style={[styles.segmentButton, props.showType === opt && styles.segmentButtonActive]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.segmentText, props.showType === opt && styles.segmentTextActive]}>{opt}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -1453,8 +1468,9 @@ function getEventIcon(eventType?: string): React.ComponentProps<typeof Ionicons>
   if (lower.includes('nhl') || lower.includes('hockey')) return 'snow-outline';
   if (lower.includes('movie') || lower.includes('film')) return 'film-outline';
   if (lower.includes('concert') || lower.includes('music')) return 'musical-notes-outline';
-  if (lower.includes('restaurant') || lower.includes('dining')) return 'restaurant-outline';
-  if (lower.includes('nightlife') || lower.includes('club') || lower.includes('bar')) return 'wine-outline';
+  if (lower.includes('food') || lower.includes('drink') || lower.includes('restaurant') || lower.includes('dining')) return 'restaurant-outline';
+  if (lower.includes('nightlife') || lower.includes('club') || lower.includes('bar')) return 'restaurant-outline';
+  if (lower.includes('theater') || lower.includes('theatre') || lower.includes('broadway')) return 'ticket-outline';
   return 'calendar-outline';
 }
 
@@ -1463,8 +1479,8 @@ function getTypeLabel(type: string): string {
   if (['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports', 'basketball', 'football', 'baseball', 'hockey'].includes(t)) return 'Sports Event';
   if (['movie', 'film'].includes(t)) return 'Movie';
   if (['concert', 'music', 'live music'].includes(t)) return 'Concert';
-  if (['restaurant', 'dining'].includes(t)) return 'Restaurant';
-  if (['nightlife', 'bar', 'club', 'lounge'].includes(t)) return 'Night Out';
+  if (['food_drinks', 'restaurant', 'dining', 'nightlife', 'bar', 'club', 'lounge'].includes(t)) return 'Food & Drinks';
+  if (['theater', 'theatre', 'broadway'].includes(t)) return 'Theater';
   return 'Experience';
 }
 
@@ -1474,8 +1490,8 @@ function getPlaceholder(type: string, field: string): string {
     if (['nba', 'wnba', 'nfl', 'mlb', 'nhl', 'ncaaf', 'ncaam', 'ncaaw', 'ncaamh', 'ncaawh', 'ncaabs', 'sports'].includes(t)) return 'Celtics vs Lakers';
     if (['movie', 'film'].includes(t)) return 'Dune: Part Two';
     if (['concert', 'music'].includes(t)) return 'SZA';
-    if (['restaurant', 'dining'].includes(t)) return 'Carbone';
-    if (['nightlife', 'bar', 'club'].includes(t)) return 'Marquee NYC';
+    if (['food_drinks', 'restaurant', 'dining', 'nightlife', 'bar', 'club'].includes(t)) return 'Carbone';
+    if (['theater', 'theatre'].includes(t)) return 'Hamilton';
     return 'Graduation Day';
   }
   return '';

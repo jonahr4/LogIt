@@ -63,9 +63,15 @@ export type EventDetail = {
   // Concert
   artist?: string;
   
-  // Restaurant / Nightlife
+  // Food & Drinks
   priceLevel?: string;
   cuisine?: string;
+  venueType?: string;
+  vibe?: string;
+
+  // Theater
+  showName?: string;
+  showType?: string;
   
   // Universal Metadata
   privacy?: 'public' | 'friends' | 'private';
@@ -78,14 +84,14 @@ export type EventDetail = {
 };
 
 // --- Constants ---
-const FILTER_CHIPS = ['All', 'Sports', 'Movies', 'Concerts', 'Restaurants', 'Nightlife'] as const;
+const FILTER_CHIPS = ['All', 'Sports', 'Movies', 'Concerts', 'Food & Drinks', 'Theater'] as const;
 
 const SUB_FILTERS: Record<string, string[]> = {
   Sports: ['All', 'NBA', 'WNBA', 'NFL', 'MLB', 'NHL', 'NCAAF', 'NCAAM', 'NCAAW', 'NCAAMH', 'NCAAWH', 'NCAABS'],
   Movies: ['All', 'Theater', 'Streaming'],
   Concerts: ['All', 'Stadium', 'Intimate'],
-  Restaurants: ['All', '$', '$$', '$$$', '$$$$'],
-  Nightlife: ['All', 'Club', 'Bar', 'Lounge'],
+  'Food & Drinks': ['All', '$', '$$', '$$$', '$$$$'],
+  Theater: ['All', 'Musical', 'Play', 'Comedy', 'Standup'],
 };
 
 /** User-facing display labels for league codes that differ from internal DB values */
@@ -341,8 +347,8 @@ export default function LogbookScreen() {
         if (activeFilter === 'Sports') return ['NBA', 'WNBA', 'NFL', 'MLB', 'NHL', 'NCAAF', 'NCAAM', 'NCAAW', 'NCAAMH', 'NCAAWH', 'NCAABS'].includes(e.eventType);
         if (activeFilter === 'Movies') return e.eventType === 'Movie';
         if (activeFilter === 'Concerts') return e.eventType === 'Concert';
-        if (activeFilter === 'Restaurants') return e.eventType === 'Restaurant';
-        if (activeFilter === 'Nightlife') return e.eventType === 'Nightlife';
+        if (activeFilter === 'Food & Drinks') return ['Food & Drinks', 'food_drinks', 'Restaurant', 'Nightlife'].includes(e.eventType);
+        if (activeFilter === 'Theater') return e.eventType === 'Theater';
         return true;
       });
     }
@@ -352,7 +358,8 @@ export default function LogbookScreen() {
       result = result.filter(e => {
         if (activeFilter === 'Sports') return e.eventType === activeSubFilter;
         if (activeFilter === 'Movies') return e.watchedAt === activeSubFilter;
-        if (activeFilter === 'Restaurants' || activeFilter === 'Nightlife') return e.priceLevel === activeSubFilter;
+        if (activeFilter === 'Food & Drinks') return e.priceLevel === activeSubFilter;
+        if (activeFilter === 'Theater') return e.showType?.toLowerCase() === activeSubFilter.toLowerCase();
         return true;
       });
     }

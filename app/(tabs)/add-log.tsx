@@ -45,8 +45,8 @@ const EVENT_TYPES = [
   { key: 'sports', icon: 'basketball-outline' as const, label: 'Sports' },
   { key: 'movie', icon: 'film-outline' as const, label: 'Movies' },
   { key: 'concert', icon: 'musical-notes-outline' as const, label: 'Concerts' },
-  { key: 'restaurant', icon: 'restaurant-outline' as const, label: 'Restaurants' },
-  { key: 'nightlife', icon: 'wine-outline' as const, label: 'Nightlife' },
+  { key: 'food_drinks', icon: 'restaurant-outline' as const, label: 'Food &\nDrinks' },
+  { key: 'theater', icon: 'ticket-outline' as const, label: 'Theater' },
   { key: 'custom', icon: 'create-outline' as const, label: 'Custom' },
 ] as const;
 
@@ -1332,7 +1332,11 @@ export default function AddLogScreen() {
             })() : (
               <>
                 <Text style={styles.apiSearchTitle}>
-                  {`Find your ${EVENT_TYPES.find(t => t.key === selectedType)?.label.slice(0, -1) ?? ''}`}
+                  {selectedType === 'theater' ? 'Find your show'
+                    : selectedType === 'food_drinks' ? 'Find your spot'
+                    : selectedType === 'concert' ? 'Find your concert'
+                    : selectedType === 'movie' ? 'Find your movie'
+                    : 'Find your event'}
                 </Text>
                 <Text style={styles.apiSearchSubtitle}>
                   Search our database to log the exact event you attended.

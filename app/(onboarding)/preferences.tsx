@@ -18,8 +18,8 @@ const EVENT_TYPE_CONFIG: Record<EventType, { icon: keyof typeof Ionicons.glyphMa
   sports: { icon: 'american-football-outline', label: 'Sports', description: 'Games, matches, races' },
   movie: { icon: 'film-outline', label: 'Movies', description: 'Theater screenings' },
   concert: { icon: 'musical-notes-outline', label: 'Concerts', description: 'Shows, festivals, tours' },
-  restaurant: { icon: 'restaurant-outline', label: 'Restaurants', description: 'Dining experiences' },
-  nightlife: { icon: 'wine-outline', label: 'Nightlife', description: 'Bars, clubs, nights out' },
+  food_drinks: { icon: 'restaurant-outline', label: 'Food & Drinks', description: 'Restaurants, bars, nights out' },
+  theater: { icon: 'ticket-outline', label: 'Theater', description: 'Broadway, plays, comedy' },
   manual: { icon: 'create-outline', label: 'Custom', description: 'Anything else' },
 };
 
