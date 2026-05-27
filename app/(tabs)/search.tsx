@@ -36,6 +36,9 @@ const TYPE_FILTERS = [
 const TRENDING_EVENTS: EventDetail[] = [
   {
     id: 'trend-1',
+    user: { name: '@jonah', avatar: '' },
+    timeAgo: '2h ago',
+    note: '',
     title: 'Celtics vs Lakers',
     eventType: 'NBA',
     date: 'Mar 26, 2026',
@@ -51,6 +54,9 @@ const TRENDING_EVENTS: EventDetail[] = [
   },
   {
     id: 'trend-2',
+    user: { name: '@alex', avatar: '' },
+    timeAgo: '5h ago',
+    note: '',
     title: 'Dune: Part Two',
     eventType: 'movie',
     date: 'Mar 22, 2026',
@@ -64,6 +70,9 @@ const TRENDING_EVENTS: EventDetail[] = [
   },
   {
     id: 'trend-3',
+    user: { name: '@maya', avatar: '' },
+    timeAgo: '1d ago',
+    note: '',
     title: 'SZA — SOS Tour',
     eventType: 'concert',
     date: 'Mar 20, 2026',
@@ -76,6 +85,9 @@ const TRENDING_EVENTS: EventDetail[] = [
   },
   {
     id: 'trend-4',
+    user: { name: '@emma', avatar: '' },
+    timeAgo: '2d ago',
+    note: '',
     title: 'Carbone',
     eventType: 'food_drinks',
     date: 'Mar 18, 2026',
@@ -90,11 +102,48 @@ const TRENDING_EVENTS: EventDetail[] = [
 
 const RECENT_SEARCHES = ['Celtics', 'SZA', 'Carbone NYC', 'IMAX near me', 'Rooftop bars'];
 
+// ─── Top Rated mock data ───────────────────────────────────────────────────────
+
+const TOP_RATED = [
+  { id: 'top-1', title: 'Hamilton', eventType: 'theater', venue: 'Richard Rodgers Theatre', city: 'New York', state: 'NY', rating: 4.9, logCount: 234, icon: 'ticket-outline' as const },
+  { id: 'top-2', title: 'Kendrick Lamar — GNX Tour', eventType: 'concert', venue: 'SoFi Stadium', city: 'Los Angeles', state: 'CA', rating: 4.8, logCount: 189, icon: 'musical-notes-outline' as const },
+  { id: 'top-3', title: 'Celtics vs Warriors', eventType: 'NBA', venue: 'TD Garden', city: 'Boston', state: 'MA', rating: 4.8, logCount: 156, icon: 'basketball-outline' as const },
+  { id: 'top-4', title: 'Oppenheimer', eventType: 'movie', venue: 'AMC IMAX', city: 'New York', state: 'NY', rating: 4.7, logCount: 312, icon: 'film-outline' as const },
+  { id: 'top-5', title: 'Carbone', eventType: 'food_drinks', venue: 'Carbone', city: 'New York', state: 'NY', rating: 4.9, logCount: 87, icon: 'restaurant-outline' as const },
+];
+
+const RANK_COLORS = ['#facc15', '#c0c0c0', '#cd7f32', Colors.textMuted, Colors.textMuted];
+
+// ─── Categories mock data ──────────────────────────────────────────────────────
+
+const CATEGORIES = [
+  { name: 'Sports', icon: 'basketball-outline' as const, count: '12.4k events', color: '#FF8A3D' },
+  { name: 'Movies', icon: 'film-outline' as const, count: '8.2k events', color: '#679cff' },
+  { name: 'Concerts', icon: 'musical-notes-outline' as const, count: '5.7k events', color: '#ac89ff' },
+  { name: 'Dining', icon: 'restaurant-outline' as const, count: '3.1k events', color: '#facc15' },
+  { name: 'Theater', icon: 'ticket-outline' as const, count: '1.8k events', color: '#ff716c' },
+  { name: 'Custom', icon: 'create-outline' as const, count: '924 events', color: '#00FFC2' },
+];
+
+// ─── Venues Near You mock data ─────────────────────────────────────────────────
+
+const VENUES_NEARBY = [
+  { id: 'v1', name: 'TD Garden', city: 'Boston', state: 'MA', logs: 47, rating: 4.6, icon: 'basketball-outline' as const },
+  { id: 'v2', name: 'Madison Square Garden', city: 'New York', state: 'NY', logs: 83, rating: 4.8, icon: 'basketball-outline' as const },
+  { id: 'v3', name: 'AMC Lincoln Square', city: 'New York', state: 'NY', logs: 31, rating: 4.3, icon: 'film-outline' as const },
+  { id: 'v4', name: 'Carbone', city: 'New York', state: 'NY', logs: 22, rating: 4.9, icon: 'restaurant-outline' as const },
+  { id: 'v5', name: 'SoFi Stadium', city: 'Los Angeles', state: 'CA', logs: 64, rating: 4.5, icon: 'american-football-outline' as const },
+  { id: 'v6', name: 'Fenway Park', city: 'Boston', state: 'MA', logs: 55, rating: 4.7, icon: 'baseball-outline' as const },
+];
+
 // ─── Popular with friends mock data ────────────────────────────────────────────
 
 const FRIENDS_POPULAR: (EventDetail & { friendNames: string[] })[] = [
   {
     id: 'friend-1',
+    user: { name: '@jake', avatar: '' },
+    timeAgo: '1d ago',
+    note: '',
     title: 'Celtics vs Knicks',
     eventType: 'NBA',
     date: 'Mar 25, 2026',
@@ -111,6 +160,9 @@ const FRIENDS_POPULAR: (EventDetail & { friendNames: string[] })[] = [
   },
   {
     id: 'friend-2',
+    user: { name: '@emma', avatar: '' },
+    timeAgo: '2d ago',
+    note: '',
     title: 'Oppenheimer',
     eventType: 'movie',
     date: 'Mar 23, 2026',
@@ -125,10 +177,13 @@ const FRIENDS_POPULAR: (EventDetail & { friendNames: string[] })[] = [
   },
   {
     id: 'friend-3',
-    title: 'L\'Artusi',
+    user: { name: '@jake', avatar: '' },
+    timeAgo: '3d ago',
+    note: '',
+    title: "L'Artusi",
     eventType: 'food_drinks',
     date: 'Mar 21, 2026',
-    venue: 'L\'Artusi',
+    venue: "L'Artusi",
     venueCity: 'New York',
     venueState: 'NY',
     rating: 5,
@@ -136,6 +191,44 @@ const FRIENDS_POPULAR: (EventDetail & { friendNames: string[] })[] = [
     priceLevel: '$$$',
     friendNames: ['Jake', 'Emma', 'Mike', 'Rachel'],
   },
+  {
+    id: 'friend-4',
+    user: { name: '@sarah', avatar: '' },
+    timeAgo: '4d ago',
+    note: '',
+    title: 'Wicked',
+    eventType: 'theater',
+    date: 'Mar 19, 2026',
+    venue: 'Gershwin Theatre',
+    venueCity: 'New York',
+    venueState: 'NY',
+    rating: 5,
+    friendNames: ['Sarah', 'Alex', 'Maya'],
+  },
+  {
+    id: 'friend-5',
+    user: { name: '@mike', avatar: '' },
+    timeAgo: '5d ago',
+    note: '',
+    title: 'Chiefs vs Bills',
+    eventType: 'NFL',
+    date: 'Mar 16, 2026',
+    venue: 'Arrowhead Stadium',
+    venueCity: 'Kansas City',
+    venueState: 'MO',
+    rating: 4,
+    friendNames: ['Mike', 'Jake'],
+  },
+];
+
+// ─── Friends' Recent Activity mock data ────────────────────────────────────────
+
+const FRIENDS_ACTIVITY = [
+  { id: 'act-1', friend: 'Jake', initial: 'J', event: 'Celtics vs Knicks', type: 'NBA', rating: 4, note: 'Incredible atmosphere at the Garden tonight. Tatum went off...', time: '2h ago', color: '#FF8A3D' },
+  { id: 'act-2', friend: 'Emma', initial: 'E', event: 'Carbone', type: 'food_drinks', rating: 5, note: 'Best Italian in NYC, hands down. The spicy rigatoni is a must...', time: '5h ago', color: '#facc15' },
+  { id: 'act-3', friend: 'Sarah', initial: 'S', event: 'Dune: Part Two', type: 'movie', rating: 5, note: 'IMAX was absolutely worth it. Villeneuve is a genius...', time: '8h ago', color: '#679cff' },
+  { id: 'act-4', friend: 'Mike', initial: 'M', event: 'SZA — SOS Tour', type: 'concert', rating: 5, note: "Best concert I've ever been to. Her vocals were insane live...", time: '1d ago', color: '#ac89ff' },
+  { id: 'act-5', friend: 'Alex', initial: 'A', event: 'Hamilton', type: 'theater', rating: 5, note: 'Act 2 opener gave me actual chills. Orchestra seats worth it...', time: '2d ago', color: '#ff716c' },
 ];
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -282,7 +375,92 @@ export default function SearchScreen() {
           )}
         </View>
 
-        {/* Popular with Friends */}
+        {/* ⭐ Top Rated */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>⭐ TOP RATED</Text>
+          {TOP_RATED.map((item, index) => (
+            <GlassCard key={item.id} borderRadius={16} style={styles.resultCard}>
+              <View style={styles.resultLeft}>
+                <View style={[styles.rankCircle, { borderColor: RANK_COLORS[index] || Colors.textMuted }]}>
+                  <Text style={[styles.rankText, { color: RANK_COLORS[index] || Colors.textMuted }]}>
+                    #{index + 1}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.resultInfo}>
+                <Text style={styles.resultTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.resultMeta}>
+                  {item.venue} · {item.city}, {item.state}
+                </Text>
+              </View>
+              <View style={styles.resultRight}>
+                <View style={styles.logCountBadge}>
+                  <Ionicons name={'people-outline' as const} size={12} color={Colors.primaryContainer} />
+                  <Text style={styles.logCountText}>{item.logCount}</Text>
+                </View>
+                <View style={styles.ratingRow}>
+                  <Ionicons name={'star' as const} size={12} color="#facc15" />
+                  <Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
+                </View>
+              </View>
+            </GlassCard>
+          ))}
+        </View>
+
+        {/* 🎯 Categories */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>🎯 CATEGORIES</Text>
+          <View style={styles.categoriesGrid}>
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity key={cat.name} activeOpacity={0.7} style={styles.categoryCardWrapper}>
+                <GlassCard borderRadius={16} style={styles.categoryCard}>
+                  <View style={[styles.categoryAccent, { backgroundColor: cat.color }]} />
+                  <View style={styles.categoryContent}>
+                    <View style={[styles.categoryIconCircle, { backgroundColor: `${cat.color}18` }]}>
+                      <Ionicons name={cat.icon} size={24} color={cat.color} />
+                    </View>
+                    <Text style={styles.categoryName}>{cat.name}</Text>
+                    <Text style={styles.categoryCount}>{cat.count}</Text>
+                  </View>
+                </GlassCard>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* 📍 Venues Near You */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>📍 VENUES NEAR YOU</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.venueScroll}
+          >
+            {VENUES_NEARBY.map((venue) => (
+              <GlassCard key={venue.id} borderRadius={16} style={styles.venueCard}>
+                <View style={styles.venueIconRow}>
+                  <View style={styles.venueIconCircle}>
+                    <Ionicons name={venue.icon} size={20} color={Colors.primaryContainer} />
+                  </View>
+                </View>
+                <Text style={styles.venueName} numberOfLines={1}>{venue.name}</Text>
+                <Text style={styles.venueLocation}>{venue.city}, {venue.state}</Text>
+                <View style={styles.venueBottom}>
+                  <View style={styles.venueLogBadge}>
+                    <Ionicons name={'bookmark-outline' as const} size={10} color={Colors.primaryContainer} />
+                    <Text style={styles.venueLogText}>{venue.logs} logs</Text>
+                  </View>
+                  <View style={styles.venueRating}>
+                    <Ionicons name={'star' as const} size={10} color="#facc15" />
+                    <Text style={styles.venueRatingText}>{venue.rating.toFixed(1)}</Text>
+                  </View>
+                </View>
+              </GlassCard>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* 👥 Popular with Friends */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>👥 POPULAR WITH FRIENDS</Text>
 
@@ -326,6 +504,44 @@ export default function SearchScreen() {
                 </View>
               </GlassCard>
             </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* 🎬 Friends' Recent Activity */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>🎬 FRIENDS' RECENT ACTIVITY</Text>
+
+          {FRIENDS_ACTIVITY.map((activity) => (
+            <GlassCard key={activity.id} borderRadius={16} style={styles.activityCard}>
+              <View style={styles.activityHeader}>
+                <View style={[styles.activityAvatar, { borderColor: `${activity.color}60` }]}>
+                  <Text style={[styles.activityAvatarText, { color: activity.color }]}>
+                    {activity.initial}
+                  </Text>
+                </View>
+                <View style={styles.activityHeaderInfo}>
+                  <Text style={styles.activityFriendText}>
+                    <Text style={styles.activityFriendName}>{activity.friend}</Text>
+                    {' '}logged{' '}
+                    <Text style={styles.activityEventName}>{activity.event}</Text>
+                  </Text>
+                  <Text style={styles.activityTime}>{activity.time}</Text>
+                </View>
+              </View>
+              <View style={styles.activityBody}>
+                <View style={styles.activityStars}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Ionicons
+                      key={`star-${i}`}
+                      name={i < activity.rating ? 'star' as const : 'star-outline' as const}
+                      size={12}
+                      color={i < activity.rating ? '#facc15' : Colors.textMuted}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.activityNote} numberOfLines={1}>{activity.note}</Text>
+              </View>
+            </GlassCard>
           ))}
         </View>
 
@@ -390,8 +606,8 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontFamily: FontFamily.regular,
-    fontSize: FontSize.body,
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: FontSize.base,
     color: Colors.text,
     padding: 0,
   },
@@ -418,10 +634,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(45, 212, 191, 0.3)',
   },
   filterChipText: {
-    fontFamily: FontFamily.medium,
+    fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
     color: Colors.textMuted,
-    letterSpacing: LetterSpacing.button,
+    letterSpacing: LetterSpacing.wide,
   },
   filterChipTextActive: {
     color: Colors.primaryContainer,
@@ -432,7 +648,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionLabel: {
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 11,
     color: Colors.textMuted,
     letterSpacing: 1.5,
@@ -457,7 +673,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   recentChipText: {
-    fontFamily: FontFamily.regular,
+    fontFamily: FontFamily.bodyRegular,
     fontSize: 13,
     color: Colors.textSecondary,
   },
@@ -484,17 +700,17 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   resultTitle: {
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
     color: Colors.text,
   },
   resultMeta: {
-    fontFamily: FontFamily.regular,
+    fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
     color: Colors.textSecondary,
   },
   resultDate: {
-    fontFamily: FontFamily.regular,
+    fontFamily: FontFamily.bodyRegular,
     fontSize: 11,
     color: Colors.textMuted,
   },
@@ -522,7 +738,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   ratingText: {
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
     color: '#facc15',
   },
@@ -538,6 +754,122 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textMuted,
     textAlign: 'center',
+  },
+
+  // Rank circle (Top Rated)
+  rankCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankText: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 16,
+  },
+
+  // Categories grid
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  categoryCardWrapper: {
+    width: '48%' as any,
+  },
+  categoryCard: {
+    padding: 0,
+    overflow: 'hidden',
+    flexDirection: 'row',
+  },
+  categoryAccent: {
+    width: 4,
+  },
+  categoryContent: {
+    flex: 1,
+    padding: 16,
+    gap: 8,
+  },
+  categoryIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryName: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.text,
+  },
+  categoryCount: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.textMuted,
+  },
+
+  // Venues
+  venueScroll: {
+    gap: 10,
+  },
+  venueCard: {
+    width: 160,
+    padding: 16,
+    gap: 8,
+  },
+  venueIconRow: {
+    marginBottom: 4,
+  },
+  venueIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  venueName: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  venueLocation: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.textMuted,
+  },
+  venueBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  venueLogBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
+  },
+  venueLogText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 9,
+    color: Colors.primaryContainer,
+  },
+  venueRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  venueRatingText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    color: '#facc15',
   },
 
   // Friend cards
@@ -562,13 +894,75 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   friendAvatarText: {
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 9,
     color: Colors.primaryContainer,
   },
   friendText: {
-    fontFamily: FontFamily.regular,
+    fontFamily: FontFamily.bodyRegular,
     fontSize: 11,
     color: Colors.textMuted,
+  },
+
+  // Activity cards (Friends' Recent Activity)
+  activityCard: {
+    padding: 14,
+    gap: 10,
+    marginBottom: 10,
+  },
+  activityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  activityAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityAvatarText: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 14,
+  },
+  activityHeaderInfo: {
+    flex: 1,
+  },
+  activityFriendText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  activityFriendName: {
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.text,
+  },
+  activityEventName: {
+    fontFamily: FontFamily.bodySemiBold,
+    color: Colors.text,
+  },
+  activityTime: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  activityBody: {
+    paddingLeft: 46,
+    gap: 4,
+  },
+  activityStars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  activityNote: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
   },
 });

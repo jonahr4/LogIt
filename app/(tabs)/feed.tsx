@@ -11,6 +11,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -290,15 +292,26 @@ export default function FeedScreen() {
   const [activeTab, setActiveTab] = useState<FeedTab>('Following');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
   const [editEvent, setEditEvent] = useState<EventDetail | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const userInitial = (user?.first_name?.[0] || user?.display_name?.[0] || user?.username?.[0] || '?').toUpperCase();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.brandText}>LogIt</Text>
-        <TouchableOpacity style={styles.themeButton}>
-          <Ionicons name="notifications-outline" size={22} color={Colors.textMuted} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.themeButton}
+            onPress={() => setShowNotifications(true)}
+          >
+            <Ionicons name={'notifications-outline' as const} size={22} color={Colors.textMuted} />
+          </TouchableOpacity>
+          <View style={styles.headerAvatar}>
+            <Text style={styles.headerAvatarText}>{userInitial}</Text>
+          </View>
+        </View>
       </View>
 
       <ScrollView
@@ -352,6 +365,11 @@ export default function FeedScreen() {
           console.log('Saved log:', data);
           setEditEvent(null);
         }}
+      />
+
+      <NotificationsModal
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
       />
     </SafeAreaView>
   );
@@ -430,6 +448,148 @@ function FeedCard({
   );
 }
 
+/* ── Notifications Modal ── */
+
+const MOCK_NOTIFICATIONS = [
+  { id: '1', icon: 'basketball-outline' as const, text: 'Celtics vs Lakers starts in 2 hours!', time: '2h ago', color: '#FF8A3D' },
+  { id: '2', icon: 'camera-outline' as const, text: 'How was the game last night? Add a log!', time: '5h ago', color: '#679cff' },
+  { id: '3', icon: 'person-add-outline' as const, text: '@sarah tagged you as a companion', time: '1d ago', color: '#00FFC2' },
+  { id: '4', icon: 'flame-outline' as const, text: '3 friends also logged Celtics vs Lakers', time: '1d ago', color: '#ac89ff' },
+  { id: '5', icon: 'trophy-outline' as const, text: "You've logged 10 events! 🎉", time: '3d ago', color: '#facc15' },
+  { id: '6', icon: 'heart-outline' as const, text: '@mike liked your Dune review', time: '3d ago', color: '#ff716c' },
+];
+
+function NotificationsModal({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={notifStyles.container}>
+        {/* Header */}
+        <View style={notifStyles.header}>
+          <Text style={notifStyles.title}>Notifications</Text>
+          <TouchableOpacity onPress={onClose} style={notifStyles.closeButton}>
+            <Ionicons name={'close' as const} size={22} color={Colors.text} />
+          </TouchableOpacity>
+        </View>
+
+        {/* List */}
+        <FlatList
+          data={MOCK_NOTIFICATIONS}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={notifStyles.listContent}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <GlassCard borderRadius={20} style={notifStyles.card}>
+              <View style={notifStyles.row}>
+                <View style={notifStyles.iconWrap}>
+                  <View style={[notifStyles.dot, { backgroundColor: item.color }]} />
+                  <View style={[notifStyles.iconCircle, { borderColor: `${item.color}30` }]}>
+                    <Ionicons name={item.icon} size={18} color={item.color} />
+                  </View>
+                </View>
+                <Text style={notifStyles.text} numberOfLines={2}>
+                  {item.text}
+                </Text>
+                <Text style={notifStyles.time}>{item.time}</Text>
+              </View>
+            </GlassCard>
+          )}
+        />
+      </View>
+    </Modal>
+  );
+}
+
+const notifStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.glassBorder,
+  },
+  title: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 20,
+    color: Colors.text,
+    letterSpacing: -0.3,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listContent: {
+    padding: 16,
+    gap: 10,
+  },
+  card: {
+    padding: 0,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  iconWrap: {
+    position: 'relative',
+  },
+  dot: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    zIndex: 1,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.glassSurface,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  text: {
+    flex: 1,
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.text,
+    lineHeight: 19,
+  },
+  time: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: Colors.textMuted,
+  },
+});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -450,6 +610,11 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     color: Colors.text,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   themeButton: {
     width: 40,
     height: 40,
@@ -459,6 +624,21 @@ const styles = StyleSheet.create({
     borderColor: Colors.glassBorder,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerAvatarText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.primaryContainer,
   },
   scroll: {
     flex: 1,

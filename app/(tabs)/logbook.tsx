@@ -555,17 +555,8 @@ export default function LogbookScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={() => fetchLogs(true)}
-            tintColor={Colors.primaryContainer}
-          />
-        }
-      >
+      {/* FIXED HEADER - does not scroll */}
+      <View style={styles.stickyHeader}>
         {/* Header */}
         <View style={styles.headerRow}>
           <View>
@@ -641,7 +632,20 @@ export default function LogbookScreen() {
             ))}
           </ScrollView>
         )}
+      </View>
 
+      {/* SCROLLABLE CONTENT - only entries */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => fetchLogs(true)}
+            tintColor={Colors.primaryContainer}
+          />
+        }
+      >
         {/* List Controls */}
         <View style={styles.listControls}>
           <Text style={styles.resultsText}>{filteredAndSortedEntries.length} Results</Text>
@@ -751,9 +755,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
+  stickyHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.glassBorder,
+  },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 24,
+    paddingTop: 8,
     gap: 16,
   },
   headerRow: {
