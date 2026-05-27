@@ -902,13 +902,17 @@ export default function AddLogScreen() {
   // ─── DEFAULT LAYOUT (type grid, sports hub, teams, generic search) ──
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header — only shown on type selection screen */}
+      {!selectedType && (
+        <View style={styles.pageHeader}>
+          <Text style={styles.title}>Log New</Text>
+        </View>
+      )}
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={true}
       >
-        {/* Header — only shown on type selection screen */}
-        {!selectedType && <Text style={styles.title}>Log New</Text>}
 
         {/* ── TYPE GRID ─────────────────────────────────────────────── */}
         {!selectedType ? (
@@ -1575,6 +1579,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 24,
     gap: 20,
+  },
+  pageHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.glassBorder,
   },
   title: {
     ...Typography.pageHeader,

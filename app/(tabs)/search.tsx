@@ -578,7 +578,9 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 4,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.glassBorder,
   },
   headerTitle: {
     ...Typography.pageHeader,

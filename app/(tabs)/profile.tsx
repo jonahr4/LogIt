@@ -586,6 +586,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.glassBorder,
   },
   headerTitle: {
     ...Typography.pageHeader,
