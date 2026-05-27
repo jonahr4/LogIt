@@ -10,10 +10,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Image,
-  Modal,
-  FlatList,
+  Animated,
+  Dimensions,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/colors';
@@ -289,6 +291,7 @@ const MOCK_CARDS: MockCard[] = [
 
 export default function FeedScreen() {
   const { user } = useAuthStore();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<FeedTab>('Following');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
   const [editEvent, setEditEvent] = useState<EventDetail | null>(null);
@@ -303,14 +306,21 @@ export default function FeedScreen() {
         <Text style={styles.brandText}>LogIt</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity
-            style={styles.themeButton}
-            onPress={() => setShowNotifications(true)}
+            style={styles.headerButton}
+            onPress={() => setShowNotifications(!showNotifications)}
+            activeOpacity={0.7}
           >
-            <Ionicons name={'notifications-outline' as const} size={22} color={Colors.textMuted} />
+            <Ionicons name={'notifications-outline' as const} size={20} color={Colors.textMuted} />
+            {/* Unread badge dot */}
+            <View style={styles.unreadDot} />
           </TouchableOpacity>
-          <View style={styles.headerAvatar}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => router.push('/(tabs)/profile')}
+            activeOpacity={0.7}
+          >
             <Text style={styles.headerAvatarText}>{userInitial}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -367,10 +377,10 @@ export default function FeedScreen() {
         }}
       />
 
-      <NotificationsModal
-        visible={showNotifications}
-        onClose={() => setShowNotifications(false)}
-      />
+      {/* Notifications dropdown overlay */}
+      {showNotifications && (
+        <NotificationsDropdown onClose={() => setShowNotifications(false)} />
+      )}
     </SafeAreaView>
   );
 }
@@ -459,117 +469,125 @@ const MOCK_NOTIFICATIONS = [
   { id: '6', icon: 'heart-outline' as const, text: '@mike liked your Dune review', time: '3d ago', color: '#ff716c' },
 ];
 
-function NotificationsModal({
-  visible,
-  onClose,
-}: {
-  visible: boolean;
-  onClose: () => void;
-}) {
+function NotificationsDropdown({ onClose }: { onClose: () => void }) {
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View style={notifStyles.container}>
+    <>
+      {/* Backdrop */}
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={notifStyles.backdrop} />
+      </TouchableWithoutFeedback>
+
+      {/* Dropdown panel */}
+      <View style={notifStyles.dropdown}>
         {/* Header */}
         <View style={notifStyles.header}>
           <Text style={notifStyles.title}>Notifications</Text>
-          <TouchableOpacity onPress={onClose} style={notifStyles.closeButton}>
-            <Ionicons name={'close' as const} size={22} color={Colors.text} />
+          <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+            <Ionicons name={'close' as const} size={18} color={Colors.textMuted} />
           </TouchableOpacity>
         </View>
 
-        {/* List */}
-        <FlatList
-          data={MOCK_NOTIFICATIONS}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={notifStyles.listContent}
+        {/* Items */}
+        <ScrollView
+          style={notifStyles.scrollArea}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <GlassCard borderRadius={20} style={notifStyles.card}>
-              <View style={notifStyles.row}>
-                <View style={notifStyles.iconWrap}>
-                  <View style={[notifStyles.dot, { backgroundColor: item.color }]} />
-                  <View style={[notifStyles.iconCircle, { borderColor: `${item.color}30` }]}>
-                    <Ionicons name={item.icon} size={18} color={item.color} />
-                  </View>
+          bounces={false}
+        >
+          {MOCK_NOTIFICATIONS.map((item) => (
+            <TouchableOpacity key={item.id} style={notifStyles.row} activeOpacity={0.6}>
+              <View style={notifStyles.iconWrap}>
+                <View style={[notifStyles.dot, { backgroundColor: item.color }]} />
+                <View style={[notifStyles.iconCircle, { borderColor: `${item.color}30` }]}>
+                  <Ionicons name={item.icon} size={16} color={item.color} />
                 </View>
-                <Text style={notifStyles.text} numberOfLines={2}>
-                  {item.text}
-                </Text>
-                <Text style={notifStyles.time}>{item.time}</Text>
               </View>
-            </GlassCard>
-          )}
-        />
+              <Text style={notifStyles.text} numberOfLines={2}>
+                {item.text}
+              </Text>
+              <Text style={notifStyles.time}>{item.time}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Footer */}
+        <TouchableOpacity style={notifStyles.footer} activeOpacity={0.7}>
+          <Text style={notifStyles.footerText}>View All Notifications</Text>
+        </TouchableOpacity>
       </View>
-    </Modal>
+    </>
   );
 }
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 const notifStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    zIndex: 90,
+  },
+  dropdown: {
+    position: 'absolute',
+    top: 4,
+    right: 16,
+    width: SCREEN_WIDTH - 48,
+    maxHeight: 420,
+    backgroundColor: Colors.glass,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    overflow: 'hidden',
+    zIndex: 100,
+    // Shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.glassBorder,
   },
   title: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 20,
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
     color: Colors.text,
-    letterSpacing: -0.3,
+    letterSpacing: 0.3,
   },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.glass,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listContent: {
-    padding: 16,
-    gap: 10,
-  },
-  card: {
-    padding: 0,
+  scrollArea: {
+    maxHeight: 320,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
   },
   iconWrap: {
     position: 'relative',
   },
   dot: {
     position: 'absolute',
-    top: -2,
-    left: -2,
-    width: 8,
-    height: 8,
+    top: -1,
+    left: -1,
+    width: 7,
+    height: 7,
     borderRadius: 4,
     zIndex: 1,
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: Colors.glassSurface,
     borderWidth: 1,
     alignItems: 'center',
@@ -578,15 +596,27 @@ const notifStyles = StyleSheet.create({
   text: {
     flex: 1,
     fontFamily: FontFamily.bodyMedium,
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.text,
-    lineHeight: 19,
+    lineHeight: 17,
   },
   time: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 10,
-    letterSpacing: 1.5,
+    fontSize: 9,
+    letterSpacing: 1,
     color: Colors.textMuted,
+  },
+  footer: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: Colors.glassBorder,
+  },
+  footerText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    color: Colors.primaryContainer,
+    letterSpacing: 0.3,
   },
 });
 
@@ -605,17 +635,15 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.glassBorder,
   },
   brandText: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 22,
-    letterSpacing: -0.5,
+    ...Typography.pageHeader,
     color: Colors.text,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
-  themeButton: {
+  headerButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -625,19 +653,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.glass,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
+  unreadDot: {
+    position: 'absolute',
+    top: 8,
+    right: 9,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#ff716c',
+    borderWidth: 1.5,
+    borderColor: Colors.glass,
   },
   headerAvatarText: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 13,
+    fontSize: 14,
     color: Colors.primaryContainer,
   },
   scroll: {

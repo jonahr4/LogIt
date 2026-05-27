@@ -581,8 +581,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   headerTitle: {
-    ...Typography.h2,
-    fontSize: 28,
+    ...Typography.pageHeader,
     color: Colors.text,
   },
   scroll: {

@@ -68,8 +68,13 @@
 - [ ] **Placeholder content** — since we won't have users at launch, build good placeholders that hint at what the social features will look like
 - [ ] **Implement last** — this is one of the last things to build since it depends on friend system + user base
 
+### UI Polish
+- [ ] **Logbook sticky header height** — search bar still feels a bit high/different from other pages. Needs fine-tuning to match the visual rhythm of feed/explore headers
+- [ ] **Feed sticky header** — lock the tab pills so they don't scroll (deferred — too much UI tweaking)
+
 ---
 
 ## 📝 Notes
 - The food/drinks + theater uncommitted work from April is saved in `~/Desktop/Workspace/LogIt-old/` — bring those changes over when ready
 - Feed mock cards (`MOCK_CARDS` in `feed.tsx`) serve as design templates for different event type cards — preserve them as reference even after real data is wired up
+- **Typography.pageHeader** — all page title text must use `Typography.pageHeader` from `constants/typography.ts` (28px, headlineExtraBold, -0.5 letter-spacing). This ensures consistent header sizing across all tab screens.

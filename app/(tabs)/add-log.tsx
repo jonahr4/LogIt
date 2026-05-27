@@ -32,7 +32,7 @@ import {
   NCAABS_TEAMS, NCAABS_TEAMS_CONFERENCES,
   type CollegeTeam,
 } from '@/data/college-teams';
-import { FontFamily } from '@/constants/typography';
+import { Typography, FontFamily } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EditLogModal } from '@/components/ui/EditLogModal';
 import { api } from '@/lib/api';
@@ -1577,9 +1577,7 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   title: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 36,
-    letterSpacing: -1,
+    ...Typography.pageHeader,
     color: Colors.text,
     paddingLeft: 4,
   },

@@ -588,8 +588,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerTitle: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 28,
+    ...Typography.pageHeader,
     color: Colors.text,
   },
   gearButton: {

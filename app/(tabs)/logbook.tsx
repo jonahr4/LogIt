@@ -773,9 +773,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   title: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 36,
-    letterSpacing: -1,
+    ...Typography.pageHeader,
     color: Colors.text,
   },
   subtitle: {

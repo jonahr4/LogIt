@@ -101,4 +101,15 @@ export const Typography = {
     fontSize: FontSize.sm,
     lineHeight: FontSize.sm * LineHeight.normal,
   },
+
+  /**
+   * Standard page header — use this for all top-level tab screen titles.
+   * Ensures consistent sizing across Feed, Logbook, Explore, Profile, Add Log.
+   * Usage: <Text style={{ ...Typography.pageHeader, color: Colors.text }}>Title</Text>
+   */
+  pageHeader: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 28,
+    letterSpacing: LetterSpacing.tight,
+  },
 } as const;
