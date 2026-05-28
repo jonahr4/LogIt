@@ -71,7 +71,9 @@ People track the events they attend in Notes, spreadsheets, photos, or memory. T
 │   │   └── profile.tsx         # User profile
 │   └── _layout.tsx             # Root layout with auth guard
 ├── components/                 # Reusable UI components
-│   ├── ui/                     # GlassCard, EventDetailModal, EditLogModal, etc.
+│   ├── ui/                     # GlassCard, EventDetailModal, EditLogModal,
+│   │                           # SharedModal, SettingsModal, SocialModal,
+│   │                           # PageHeader, etc.
 │   └── ...
 ├── server-lib/                 # Shared server utilities
 │   ├── espn.ts                 # Shared ESPN fetch/parse/upsert for all sports
@@ -180,7 +182,7 @@ All planning and reference docs live in [`docs/`](./docs/):
 
 ## Status
 
-🟢 **MVP core complete** — Auth, onboarding, full UI (Spatial Green v2 design), 11 sports leagues syncing from ESPN (NBA, NFL, NHL, MLB, WNBA + 6 NCAA), Supabase-backed event search with fuzzy matching and league filtering, log creation with companions, personal logbook with sort/filter, venue auto-enrichment, and admin data portal.
+🟢 **MVP core complete** — Auth, onboarding, full UI (Spatial Green v2 design with unified SharedModal system), 11 sports leagues syncing from ESPN (NBA, NFL, NHL, MLB, WNBA + 6 NCAA), Supabase-backed event search with fuzzy matching and league filtering, log creation with companions, personal logbook with sort/filter, venue auto-enrichment, Letterboxd-style profile with Top 4 + stats + highlights, global settings + social modals accessible from every screen, and admin data portal.
 
 ---
 
@@ -188,7 +190,7 @@ All planning and reference docs live in [`docs/`](./docs/):
 
 | Date | Update |
 |---|---|
-| 2026-04-02 | College sports — 6 NCAA leagues (NCAAF, NCAAM, NCAAW, NCAAMH, NCAAWH, NCAABS) with conference filter bar, team search, and league-scoped search API |
+| 2026-05-28 | UI refactor — SharedModal unified modal system, global PageHeader (settings + social on all screens), Letterboxd-style profile (Top 4, stats, highlights), sticky headers on feed/logbook/explore, SettingsModal + SocialModal + StatDetailModal all using SharedModal shell |
 | 2026-04-02 | WNBA integration — sync + backfill + 13 WNBA teams in browse UI, cron at 6:20 AM UTC |
 | 2026-04-02 | MLB integration — sync + backfill + 30 MLB teams in browse UI, cron at 6:10 AM UTC |
 | 2026-04-02 | NHL integration — sync + backfill + 32 NHL teams in browse UI, cron at 6:10 AM UTC |

@@ -10,16 +10,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { FontFamily, LetterSpacing } from '@/constants/typography';
 import { SocialModal } from '@/components/ui/SocialModal';
+import { SettingsModal } from '@/components/ui/SettingsModal';
 
 interface Props {
   title: string;
+  rightAction?: React.ReactNode;
 }
 
 const ORANGE = '#FF8A3D';
 const GLOW_GREEN = 'rgba(45, 212, 191,';
 
-export function PageHeader({ title }: Props) {
+export function PageHeader({ title, rightAction }: Props) {
   const [showSocial, setShowSocial] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   return (
     <>
@@ -47,8 +50,16 @@ export function PageHeader({ title }: Props) {
           </View>
         </View>
 
-        {/* Right — social */}
+        {/* Right — settings + social */}
         <View style={[styles.side, styles.sideRight]}>
+          {rightAction}
+          <TouchableOpacity
+            style={styles.socialButton}
+            onPress={() => setShowSettings(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name={'settings-outline' as const} size={18} color={Colors.textMuted} />
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.socialButton}
             onPress={() => setShowSocial(true)}
@@ -61,6 +72,7 @@ export function PageHeader({ title }: Props) {
       </View>
 
       <SocialModal visible={showSocial} onClose={() => setShowSocial(false)} />
+      <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
     </>
   );
 }
@@ -79,6 +91,9 @@ const styles = StyleSheet.create({
   },
   sideRight: {
     alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
   },
   pageTitle: {
     fontFamily: FontFamily.bodySemiBold,

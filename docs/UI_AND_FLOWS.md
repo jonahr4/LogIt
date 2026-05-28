@@ -1,14 +1,14 @@
 # Log It — UI Design & User Flows
 
-> **Last updated:** 2026-04-11
+> **Last updated:** 2026-05-28
 > **Changes:**
+> - 2026-05-28: Major UI refactor — SharedModal unified modal system, PageHeader now has settings gear + social icon on ALL screens, profile redesigned (Letterboxd-style: Top 4, stats row, event breakdown, highlights grid), SocialModal/SettingsModal/StatDetailModal all use SharedModal shell, feed/logbook/explore sticky headers, explore page expanded with Top Rated/Categories/Venues Near You sections
 > - 2026-04-11: Added "MY TEAM" inline selector to EditLogModal rating row for sports events (two team logo pills, tap to pick/deselect). W/L badge in logbook now based on user's rooted team instead of home team. No W/L shown if no team selected. League badges display NCAAMB/NCAAWB via UI mapping while internal keys remain NCAAM/NCAAW.
 > - 2026-04-02: Added season type badges (PRE/R1/R2/R3/FIN) to logbook and add-log cards. Reordered logbook metadata row: league → stars → privacy → companions (left), season badge + W/L (right-aligned).
 > - 2026-04-01: EditLogModal overhauled — polymorphic top sections (team logos/scores for sports, hero title for others), venue background image, reordered bottom (Rating+Privacy → Notes → Photos → Type-specific → Companions → Actions). Photos now work during creation. Edit→Detail return flow: saving edits reopens EventDetailModal with updated data.
 > - 2026-03-31: Redesigned team browse: season-grouped inline headers ("2025-26", "2024-25"), phase sub-dividers (preseason/postseason), client-side filter bar, 100-result initial load with deduped Load More. Documented success checkmark animation.
 > - 2026-03-29: Documented sports browse flow (Sports Hub -> Teams grid -> pre-filled search) in Add Log. Updated search to note pagination/load more and multi-word token search.
 > - 2026-03-29: Fixed stale Ball Don't Lie reference in Add Log search to ESPN.
-
 > - 2026-03-29: Fully documented the implementation of Logbook's dynamic timeline layout, including Upcoming vs Past grouping, monthly dividers, and days-remaining pills.
 > - 2026-03-28: Added Search/Explore tab for discovering events logged by other users. Added Edit/Create Log Modal with type-specific input sections for all 6 event types. Updated navigation graph with search and edit log flows.
 
@@ -35,8 +35,21 @@ graph TB
     Search --> UserProfile
     SearchGame --> ConfirmLog["Confirm & Add Notes"]
     ConfirmLog --> LogSuccess["Success → Logbook"]
-    Profile --> Settings["Settings"]
-    Profile --> FriendsList["Friends List"]
+
+    subgraph GlobalModals["Global Modals (via PageHeader)"]
+        SettingsModal["⚙️ Settings Modal"]
+        SocialModal["👥 Social Modal"]
+    end
+
+    Feed -.-> SettingsModal
+    Feed -.-> SocialModal
+    Logbook -.-> SettingsModal
+    Logbook -.-> SocialModal
+    Search -.-> SettingsModal
+    Search -.-> SocialModal
+    Profile -.-> SettingsModal
+    Profile -.-> SocialModal
+    Profile --> StatModals["Stat Detail Modals"]
 ```
 
 ---
@@ -62,9 +75,9 @@ graph TB
 | **Search Game** | Add Log | Find a game from the database |
 | **Confirm Log** | Search Game | Add notes, set privacy, confirm |
 | **Other User Profile** | Feed | View another user's public logs |
-| **Settings** | Profile | Account, privacy defaults, notifications |
-| **Friends List** | Profile | Manage friends |
-| **Notifications** | Bell icon / Profile | Reminders, post-event prompts, friend activity |
+| **Settings Modal** | PageHeader (all screens) | Account, privacy, notifications, preferences, support |
+| **Social Modal** | PageHeader (all screens) | Notifications + Friends (tabs) |
+| **Stat Detail Modals** | Profile stats row | Events, Venues, Teams, Friends detail lists |
 | **Onboarding** | First launch | Account creation + team selection |
 
 ---
@@ -76,14 +89,15 @@ graph TB
 The default screen when opening the app.
 
 **Layout:**
-- Tab selector at top: `Everyone` · `You` · `Friends`
+- **PageHeader:** "Feed" title (left), "LogIt" brand with timeline dots (center), settings gear + social icon (right)
+- **Sticky header:** `Global` · `Following` · `You` tab pills with bottom border — stays fixed while feed scrolls
 - Scrollable list of log cards
 - Each card shows: user avatar, name, event title, teams, date, venue
 - Tapping a card → Event Detail
 
 **Behavior:**
-- `Friends` tab stays visible even when empty — prompts invite/add-friend flows to drive growth
-- Privacy controls filter what appears (public logs only in `Everyone`)
+- `Following` tab stays visible even when empty — prompts invite/add-friend flows to drive growth
+- Privacy controls filter what appears (public logs only in `Global`)
 - Pull-to-refresh
 
 **Empty States:**
@@ -269,12 +283,20 @@ The rich view of a single game.
 
 ### 5. Profile
 
-**Layout:**
-- Avatar, display name, username
-- Bio
-- Quick stats row: `47 games` · `12 venues` · `8 teams`
-- Recent logs (last 3-5)
-- Links to: Settings, Friends, Full Logbook
+Compact Letterboxd-inspired layout. All modals use SharedModal shell.
+
+**Layout (top to bottom):**
+1. **PageHeader** — "Profile" title (left), "LogIt" brand (center), gear + social icons (right)
+2. **Compact header** — 56px avatar with teal ring (left), display name + `@username · Member since 2026` (right)
+3. **Top 4** — Horizontal scroll of 4 pinned favorite events as glass cards (icon, title, star rating). "Edit" link in section header
+4. **Stats row** — `15 Events · 5 Venues · 3 Teams · 3 Friends` in a glass card. Each stat is tappable → opens StatDetailModal showing full list
+5. **Event Breakdown** — Bar chart by type (Sports/Movies/Concerts/Dining) with colored fill bars and counts
+6. **Highlights** — 2×2 grid of glass stat cards (🔥 streak, 📍 most visited, ⭐ avg rating, 🎫 first log)
+7. **Action buttons** — "Share Profile" / "Edit Profile" thin outline buttons
+
+**StatDetailModal:** Uses SharedModal shell. Shows glass-card rows with colored icons, titles, subtitles, and rating pills or count text.
+
+**Component:** [`profile.tsx`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/app/(tabs)/profile.tsx)
 
 ---
 
@@ -352,7 +374,8 @@ Interactive HTML mockups live in [`docs/ui-reference/`](./ui-reference/). Open i
 - **Cards** — Primary UI pattern for logs and events
 - **Glass Cards** — Semi-transparent with backdrop blur for selected/featured items
 - **Chips** — Rounded-full filter buttons with icons
-- **Bottom Sheet** — For filter panels, quick actions
+- **SharedModal** — Unified modal shell for ALL modals. Dark overlay, glass card with BlurView, drag handle, header (title + close button), scrollable content. Exports building blocks: `ModalRow`, `ModalSectionCard`, `ModalSectionHeader`, `ModalDivider`, `ModalPill`, `ModalRightText`. Component: [`SharedModal.tsx`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/components/ui/SharedModal.tsx)
+- **PageHeader** — Shared header for all tab screens. Left: page title. Center: "LogIt" brand with glow + timeline dots. Right: settings gear + social icon (both open modals). Component: [`PageHeader.tsx`](file:///Users/jonahrothman/Desktop/Workspace/LogIt/components/ui/PageHeader.tsx)
 - **Bottom Nav** — Rounded top corners, backdrop blur, glow on active item
 - **Floating Action Button** — Gradient primary, visible on mobile only
 - **Skeleton Loading** — For feed and logbook

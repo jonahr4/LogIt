@@ -1,6 +1,6 @@
 # LogIt — To-Do List
 
-> Last updated: May 27, 2026
+> Last updated: May 28, 2026
 
 ---
 
@@ -9,7 +9,7 @@
 ### Feed
 - [ ] **Get feed working with real data** — build `/api/logs/global` endpoint
 - [ ] **Keep mock cards as design templates** — don't delete `MOCK_CARDS` in `feed.tsx`, use them as reference for different event type card layouts
-- [ ] **Sticky header** — lock the "Global / Following / You" tab selector so it doesn't scroll down with the feed content. It should scroll up (collapse), but the feed should scroll independently beneath it
+- [x] **Sticky header** — ✅ Tab pills now in a fixed sticky header with bottom border, matching other tabs
 
 ### Social
 - [ ] **Simple friend integration** — basic friend system (MVP scope)
@@ -32,9 +32,9 @@
 > **Why:** Users who are Celtics fans go to lots of Celtics games. If they forget to select "My Team" once, they lose the W/L badge. This auto-fills it so they don't have to think about it.
 
 ### Navigation & UI Polish
-- [ ] **Notifications bell (top right)** — currently does nothing. Hardcode placeholder functionality for now
-- [ ] **Profile/Account settings button** — add a settings/gear icon in the top right of the profile screen
-- [ ] **Logbook sticky header** — consider the same sticky header pattern as the feed
+- [x] **Notifications bell (top right)** — ✅ Social icon in PageHeader opens SocialModal (notifications + friends). Available on ALL screens
+- [x] **Profile/Account settings button** — ✅ Gear icon in PageHeader opens SettingsModal. Available on ALL screens
+- [x] **Logbook sticky header** — ✅ Implemented sticky header with search bar + filter chips
 - [ ] **Improve "Already Logged" button** — polish the button shown when an event has already been logged
 - [ ] **Fix statuses in EditLogModal** — game statuses are displaying lowercase (e.g. "final" instead of "Final"). Capitalize/format them properly
 
@@ -69,8 +69,13 @@
 - [ ] **Implement last** — this is one of the last things to build since it depends on friend system + user base
 
 ### UI Polish
-- [ ] **Logbook sticky header height** — search bar still feels a bit high/different from other pages. Needs fine-tuning to match the visual rhythm of feed/explore headers
-- [ ] **Feed sticky header** — lock the tab pills so they don't scroll (deferred — too much UI tweaking)
+- [x] **Logbook sticky header height** — ✅ Unified pill/chip heights and letter-spacing across all tabs
+- [x] **Feed sticky header** — ✅ Tab pills now in sticky header matching other tabs
+- [x] **Unified modal system** — ✅ SharedModal component provides one visual shell (dark overlay, glass card, drag handle) for all modals. SocialModal, SettingsModal, and StatDetailModal all use it. Change style once → updates everywhere
+- [x] **Profile redesign** — ✅ Compact Letterboxd-style layout: avatar header, Top 4 pinned events, tappable stats row, event breakdown bars, highlights grid (streak/most visited/avg rating/first log), action buttons
+- [x] **SocialModal full width** — ✅ Reduced padding to match settings width, centered tab pill spacing
+- [x] **Settings on all screens** — ✅ Gear icon in PageHeader (available on Feed, Logbook, Explore, Profile). SettingsModal extracted to shared component
+- [x] **SettingsModal restyled** — ✅ Now uses SharedModal shell (dark overlay, glass card, drag handle) matching SocialModal
 
 ---
 
@@ -78,3 +83,4 @@
 - The food/drinks + theater uncommitted work from April is saved in `~/Desktop/Workspace/LogIt-old/` — bring those changes over when ready
 - Feed mock cards (`MOCK_CARDS` in `feed.tsx`) serve as design templates for different event type cards — preserve them as reference even after real data is wired up
 - **Typography.pageHeader** — all page title text must use `Typography.pageHeader` from `constants/typography.ts` (28px, headlineExtraBold, -0.5 letter-spacing). This ensures consistent header sizing across all tab screens.
+- **SharedModal architecture** — `components/ui/SharedModal.tsx` is the single source of truth for modal appearance. It exports `SharedModal` (shell) plus building blocks: `ModalRow`, `ModalSectionCard`, `ModalSectionHeader`, `ModalDivider`, `ModalPill`, `ModalRightText`. All modals must use it.

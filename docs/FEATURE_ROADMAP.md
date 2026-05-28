@@ -1,6 +1,7 @@
 # Log It — Feature Roadmap
 
-> **Last updated:** 2026-04-11
+> **Last updated:** 2026-05-28
+> - 2026-05-28: Unified modal system (SharedModal), global PageHeader with settings + social icons on ALL screens, profile redesigned (Letterboxd-style with Top 4, stats, highlights), sticky headers on feed/logbook/explore, SocialModal/SettingsModal/StatDetailModal refactored to SharedModal shell.
 > - 2026-04-11: Added "My Team" selector to Edit/Create log modal — users pick which team they rooted for, W/L badges now reflect that choice instead of defaulting to home team. No team selected = no W/L shown. Reverted internal naming from NCAAMB/NCAAWB back to NCAAM/NCAAW with UI-only display mapping. Hidden box score for college hockey & baseball (ESPN has no player data). Removed soccer from supported sports.
 > - 2026-04-02: Six college sports implemented (NCAAF, NCAAM, NCAAW, NCAAMH, NCAAWH, NCAABS) with conference-based team grids, search bar, and backfill scripts. NCAA Softball removed.
 > - 2026-04-02: WNBA support added — sync, backfill, 13-team browse UI, cron at 6:20 AM UTC.
@@ -62,10 +63,15 @@ gantt
 - [x] Default privacy selection
 
 ### 2. UI & Mock Data Foundation
-- [x] **Search / Explore:** Tab UI, search bar, type filter chips, trending events, recent searches, browse by category grid
-- [x] **Personal Logbook:** Unified list UI, top counts, animated horizontal scroll filters, custom drop-down event sorting
-- [x] **Feed Cards:** Polymorphic layout, type-specific secondary pills (score for sports, runtime for movies, price for dining)
+- [x] **Search / Explore:** Tab UI, search bar, type filter chips, trending events, recent searches, browse by category grid, Top Rated section, Venues Near You horizontal scroll, Popular with Friends
+- [x] **Personal Logbook:** Unified list UI, top counts, animated horizontal scroll filters, custom drop-down event sorting, sticky header with search + filter chips
+- [x] **Feed Cards:** Polymorphic layout, type-specific secondary pills (score for sports, runtime for movies, price for dining), sticky header with Global/Following/You tab pills
 - [x] **Event Detail Page:** Ticket-style modal, dynamic headers, user attendance badge, photo gallery, type-specific bottom content panels
+- [x] **Unified Modal System:** SharedModal component provides glass card shell (dark overlay, BlurView, drag handle, header) for all modals. Building blocks: ModalRow, ModalSectionCard, ModalSectionHeader, ModalDivider, ModalPill, ModalRightText
+- [x] **Global PageHeader:** Shared header for all tab screens — page title (left), LogIt brand with timeline dots (center), settings gear + social icon (right)
+- [x] **Settings Modal:** Full settings hub (Account, Privacy, Notifications, Preferences, Data & Storage, Support, About, Danger Zone) accessible from any screen
+- [x] **Social Modal:** Notifications + Friends tabs with search, friend requests, suggestions. Accessible from any screen
+- [x] **Profile Redesign:** Compact Letterboxd-style layout — Top 4 pinned events, tappable stats row with detail modals, event breakdown bar chart, highlights grid
 
 ### 3. Backend: Event Data & Search
 - [x] Implement robust full-text search querying our Supabase `events` table (pre-ingested via cron)

@@ -1,8 +1,3 @@
-/**
- * LogIt — Profile Screen
- * Spatial Green v2: Avatar, stats hero, settings menu
- */
-
 import React, { useState } from 'react';
 import {
   View,
@@ -11,790 +6,440 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Modal,
-  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Shadows } from '@/constants/colors';
-import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
+import { Colors } from '@/constants/colors';
+import { FontFamily, LetterSpacing } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PageHeader } from '@/components/ui/PageHeader';
-
+import { SharedModal } from '@/components/ui/SharedModal';
 import { useAuthStore } from '@/store/authStore';
 
-/* ─── Settings Modal ─────────────────────────────────────────────────── */
+/* ─── Mock data for stat modals ──────────────────────────────────────── */
 
-type SettingsRowProps = {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  subtitle?: string;
-  rightElement?: React.ReactNode;
-  onPress?: () => void;
-  danger?: boolean;
-};
+const MOCK_EVENTS = [
+  { title: 'Celtics vs Lakers', type: 'NBA', date: 'Mar 26, 2026', rating: 5, icon: 'basketball-outline' as const, color: '#FF8A3D' },
+  { title: 'Dune: Part Two', type: 'Movie', date: 'Mar 22, 2026', rating: 5, icon: 'film-outline' as const, color: '#679cff' },
+  { title: 'SZA — SOS Tour', type: 'Concert', date: 'Mar 20, 2026', rating: 5, icon: 'musical-notes-outline' as const, color: '#ac89ff' },
+  { title: 'Carbone', type: 'Dining', date: 'Mar 18, 2026', rating: 5, icon: 'restaurant-outline' as const, color: '#facc15' },
+  { title: 'Pack vs Trojans', type: 'NCAABS', date: 'Mar 15, 2026', rating: 4, icon: 'basketball-outline' as const, color: '#FF8A3D' },
+];
 
-function SettingsRow({ icon, label, subtitle, rightElement, onPress, danger }: SettingsRowProps) {
+const MOCK_VENUES = [
+  { name: 'TD Garden', city: 'Boston, MA', logs: 4, icon: 'basketball-outline' as const, color: '#FF8A3D' },
+  { name: 'AMC Lincoln Square', city: 'New York, NY', logs: 2, icon: 'film-outline' as const, color: '#679cff' },
+  { name: 'SoFi Stadium', city: 'Los Angeles, CA', logs: 1, icon: 'american-football-outline' as const, color: '#ac89ff' },
+  { name: 'Carbone', city: 'New York, NY', logs: 1, icon: 'restaurant-outline' as const, color: '#facc15' },
+];
+
+const MOCK_TEAMS = [
+  { name: 'Boston Celtics', league: 'NBA', logs: 3, color: '#00854A' },
+  { name: 'NC State Wolfpack', league: 'NCAABS', logs: 2, color: '#CC0000' },
+  { name: 'New England Patriots', league: 'NFL', logs: 1, color: '#002244' },
+];
+
+const MOCK_FRIENDS_LIST = [
+  { name: 'Jake Wilson', username: '@jake', initial: 'J', color: '#FF8A3D', mutualEvents: 3 },
+  { name: 'Emma Davis', username: '@emma', initial: 'E', color: '#facc15', mutualEvents: 2 },
+  { name: 'Sarah Kim', username: '@sarah', initial: 'S', color: '#00FFC2', mutualEvents: 5 },
+];
+
+const EVENT_TYPE_BARS = [
+  { type: 'Sports', count: 8, total: 15, color: '#FF8A3D', icon: 'basketball-outline' as const },
+  { type: 'Movies', count: 4, total: 15, color: '#679cff', icon: 'film-outline' as const },
+  { type: 'Concerts', count: 2, total: 15, color: '#ac89ff', icon: 'musical-notes-outline' as const },
+  { type: 'Dining', count: 1, total: 15, color: '#facc15', icon: 'restaurant-outline' as const },
+];
+
+/* ─── Stat Detail Modal ──────────────────────────────────────────────── */
+
+type StatModalType = 'events' | 'venues' | 'teams' | 'friends' | null;
+
+const STAT_TITLES: Record<string, string> = { events: 'All Events', venues: 'Venues', teams: 'Teams', friends: 'Friends' };
+
+function StatDetailModal({ type, onClose }: { type: StatModalType; onClose: () => void }) {
   return (
-    <TouchableOpacity
-      style={modalStyles.row}
-      onPress={onPress}
-      activeOpacity={0.6}
+    <SharedModal
+      visible={!!type}
+      onClose={onClose}
+      title={type ? STAT_TITLES[type] : ''}
+      scrollPadding={{ paddingHorizontal: 16, paddingTop: 12 }}
     >
-      <View style={modalStyles.rowLeft}>
-        <View
-          style={[
-            modalStyles.iconCircle,
-            danger && modalStyles.iconCircleDanger,
-          ]}
-        >
-          <Ionicons
-            name={icon}
-            size={20}
-            color={danger ? Colors.error : Colors.textMuted}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text
-            style={[
-              modalStyles.rowLabel,
-              danger && { color: Colors.error },
-            ]}
-          >
-            {label}
-          </Text>
-          {subtitle ? (
-            <Text style={modalStyles.rowSubtitle}>{subtitle}</Text>
-          ) : null}
-        </View>
-      </View>
-      {rightElement ?? (
-        <Ionicons
-          name={'chevron-forward' as const}
-          size={18}
-          color={Colors.textMuted}
-        />
-      )}
-    </TouchableOpacity>
-  );
-}
-
-function SettingsDivider() {
-  return <View style={modalStyles.divider} />;
-}
-
-function SectionHeader({ title }: { title: string }) {
-  return <Text style={modalStyles.sectionHeader}>{title}</Text>;
-}
-
-function SettingsModal({
-  visible,
-  onClose,
-}: {
-  visible: boolean;
-  onClose: () => void;
-}) {
-  // Privacy toggles
-  const [profileVisibility, setProfileVisibility] = useState(true);
-  const [allowFriendRequests, setAllowFriendRequests] = useState(true);
-  const [showActivityStatus, setShowActivityStatus] = useState(true);
-
-  // Notification toggles
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [eventReminders, setEventReminders] = useState(true);
-  const [friendRequests, setFriendRequests] = useState(true);
-  const [commentsReactions, setCommentsReactions] = useState(false);
-  const [postEventPrompts, setPostEventPrompts] = useState(true);
-  const [weeklyRecap, setWeeklyRecap] = useState(false);
-
-  const renderSwitch = (value: boolean, onValueChange: (v: boolean) => void) => (
-    <Switch
-      value={value}
-      onValueChange={onValueChange}
-      trackColor={{
-        false: 'rgba(255,255,255,0.1)',
-        true: 'rgba(0, 255, 194, 0.35)',
-      }}
-      thumbColor="#ffffff"
-      ios_backgroundColor="rgba(255,255,255,0.1)"
-    />
-  );
-
-  const renderPill = (label: string) => (
-    <View style={modalStyles.valuePill}>
-      <Text style={modalStyles.valuePillText}>{label}</Text>
-    </View>
-  );
-
-  const renderRightText = (text: string) => (
-    <Text style={modalStyles.rightText}>{text}</Text>
-  );
-
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View style={modalStyles.container}>
-        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-          {/* Header */}
-          <View style={modalStyles.header}>
-            <Text style={modalStyles.headerTitle}>Settings</Text>
-            <TouchableOpacity
-              style={modalStyles.closeButton}
-              onPress={onClose}
-              activeOpacity={0.7}
-            >
-              <Ionicons name={'close' as const} size={22} color={Colors.text} />
-            </TouchableOpacity>
+      <View style={sm.list}>
+        {type === 'events' && MOCK_EVENTS.map((e, i) => (
+          <View key={i} style={sm.row}>
+            <View style={[sm.rowIcon, { backgroundColor: `${e.color}18` }]}>
+              <Ionicons name={e.icon} size={18} color={e.color} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={sm.rowTitle}>{e.title}</Text>
+              <Text style={sm.rowSub}>{e.type} · {e.date}</Text>
+            </View>
+            <View style={sm.ratingPill}>
+              <Ionicons name="star" size={11} color="#facc15" />
+              <Text style={sm.ratingText}>{e.rating}.0</Text>
+            </View>
           </View>
+        ))}
 
-          <ScrollView
-            contentContainerStyle={modalStyles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Account & Profile */}
-            <SectionHeader title="Account & Profile" />
-            <View style={modalStyles.sectionCard}>
-              <SettingsRow icon={'person-circle-outline' as const} label="Edit Profile" />
-              <SettingsDivider />
-              <SettingsRow icon={'mail-outline' as const} label="Change Email" />
-              <SettingsDivider />
-              <SettingsRow icon={'key-outline' as const} label="Change Password" />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'link-outline' as const}
-                label="Linked Accounts"
-                subtitle="Google, Apple"
-              />
+        {type === 'venues' && MOCK_VENUES.map((v, i) => (
+          <View key={i} style={sm.row}>
+            <View style={[sm.rowIcon, { backgroundColor: `${v.color}18` }]}>
+              <Ionicons name={v.icon} size={18} color={v.color} />
             </View>
-
-            {/* Privacy */}
-            <SectionHeader title="Privacy" />
-            <View style={modalStyles.sectionCard}>
-              <SettingsRow
-                icon={'shield-outline' as const}
-                label="Default Privacy"
-                rightElement={renderPill('Public')}
-              />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'eye-outline' as const}
-                label="Profile Visibility"
-                rightElement={renderSwitch(profileVisibility, setProfileVisibility)}
-              />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'person-add-outline' as const}
-                label="Allow Friend Requests"
-                rightElement={renderSwitch(allowFriendRequests, setAllowFriendRequests)}
-              />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'radio-outline' as const}
-                label="Show Activity Status"
-                rightElement={renderSwitch(showActivityStatus, setShowActivityStatus)}
-              />
+            <View style={{ flex: 1 }}>
+              <Text style={sm.rowTitle}>{v.name}</Text>
+              <Text style={sm.rowSub}>{v.city}</Text>
             </View>
+            <Text style={sm.countText}>{v.logs} logs</Text>
+          </View>
+        ))}
 
-            {/* Notifications */}
-            <SectionHeader title="Notifications" />
-            <View style={modalStyles.sectionCard}>
-              <SettingsRow
-                icon={'notifications-outline' as const}
-                label="Push Notifications"
-                rightElement={renderSwitch(pushNotifications, setPushNotifications)}
-              />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'alarm-outline' as const}
-                label="Event Reminders"
-                rightElement={renderSwitch(eventReminders, setEventReminders)}
-              />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'people-outline' as const}
-                label="Friend Requests"
-                rightElement={renderSwitch(friendRequests, setFriendRequests)}
-              />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'chatbubble-outline' as const}
-                label="Comments & Reactions"
-                rightElement={renderSwitch(commentsReactions, setCommentsReactions)}
-              />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'camera-outline' as const}
-                label="Post-Event Prompts"
-                rightElement={renderSwitch(postEventPrompts, setPostEventPrompts)}
-              />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'calendar-outline' as const}
-                label="Weekly Recap"
-                rightElement={renderSwitch(weeklyRecap, setWeeklyRecap)}
-              />
+        {type === 'teams' && MOCK_TEAMS.map((t, i) => (
+          <View key={i} style={sm.row}>
+            <View style={[sm.rowIcon, { backgroundColor: `${t.color}25` }]}>
+              <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: t.color }} />
             </View>
-
-            {/* Preferences */}
-            <SectionHeader title="Preferences" />
-            <View style={modalStyles.sectionCard}>
-              <SettingsRow
-                icon={'flag-outline' as const}
-                label="My Teams"
-                subtitle="Manage your favorite teams"
-              />
-              <SettingsDivider />
-              <SettingsRow icon={'heart-outline' as const} label="Favorite Event Types" />
-              <SettingsDivider />
-              <SettingsRow icon={'globe-outline' as const} label="Units & Format" />
+            <View style={{ flex: 1 }}>
+              <Text style={sm.rowTitle}>{t.name}</Text>
+              <Text style={sm.rowSub}>{t.league}</Text>
             </View>
+            <Text style={sm.countText}>{t.logs} logs</Text>
+          </View>
+        ))}
 
-            {/* Data & Storage */}
-            <SectionHeader title="Data & Storage" />
-            <View style={modalStyles.sectionCard}>
-              <SettingsRow icon={'trash-outline' as const} label="Clear Cache" />
-              <SettingsDivider />
-              <SettingsRow icon={'download-outline' as const} label="Export My Data" />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'pie-chart-outline' as const}
-                label="Storage Usage"
-                subtitle="12.3 MB"
-              />
+        {type === 'friends' && MOCK_FRIENDS_LIST.map((f, i) => (
+          <View key={i} style={sm.row}>
+            <View style={[sm.avatar, { backgroundColor: `${f.color}25` }]}>
+              <Text style={[sm.avatarInitial, { color: f.color }]}>{f.initial}</Text>
             </View>
-
-            {/* Support */}
-            <SectionHeader title="Support" />
-            <View style={modalStyles.sectionCard}>
-              <SettingsRow icon={'help-circle-outline' as const} label="Help & FAQ" />
-              <SettingsDivider />
-              <SettingsRow icon={'bug-outline' as const} label="Report a Bug" />
-              <SettingsDivider />
-              <SettingsRow icon={'star-outline' as const} label="Rate LogIt" />
-              <SettingsDivider />
-              <SettingsRow icon={'chatbox-outline' as const} label="Contact Us" />
+            <View style={{ flex: 1 }}>
+              <Text style={sm.rowTitle}>{f.name}</Text>
+              <Text style={sm.rowSub}>{f.username}</Text>
             </View>
-
-            {/* About */}
-            <SectionHeader title="About" />
-            <View style={modalStyles.sectionCard}>
-              <SettingsRow icon={'document-text-outline' as const} label="Terms of Service" />
-              <SettingsDivider />
-              <SettingsRow icon={'lock-closed-outline' as const} label="Privacy Policy" />
-              <SettingsDivider />
-              <SettingsRow
-                icon={'information-circle-outline' as const}
-                label="App Version"
-                rightElement={renderRightText('1.0.0 (build 1)')}
-              />
-            </View>
-
-            {/* Danger Zone */}
-            <SectionHeader title="Danger Zone" />
-            <View style={modalStyles.sectionCard}>
-              <SettingsRow
-                icon={'warning-outline' as const}
-                label="Delete Account"
-                danger
-              />
-            </View>
-
-            {/* Bottom spacer */}
-            <View style={{ height: 60 }} />
-          </ScrollView>
-        </SafeAreaView>
+            <Text style={sm.countText}>{f.mutualEvents} mutual</Text>
+          </View>
+        ))}
       </View>
-    </Modal>
+    </SharedModal>
   );
 }
 
-const modalStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.glassBorder,
-  },
-  headerTitle: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 24,
-    color: Colors.text,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.glass,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  sectionHeader: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: Colors.textMuted,
-    textTransform: 'uppercase',
-    marginTop: 24,
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-  sectionCard: {
-    backgroundColor: Colors.glass,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    flex: 1,
-  },
-  iconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconCircleDanger: {
-    backgroundColor: 'rgba(255, 113, 108, 0.1)',
-    borderColor: 'rgba(255, 113, 108, 0.2)',
-  },
-  rowLabel: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: Colors.text,
-    letterSpacing: 0.3,
-  },
-  rowSubtitle: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.glassBorder,
-    marginLeft: 76,
-  },
-  valuePill: {
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 255, 194, 0.3)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  valuePillText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 11,
-    color: Colors.primaryContainer,
-    letterSpacing: 0.5,
-  },
-  rightText: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.textMuted,
-  },
+const BORDER = 'rgba(255, 255, 255, 0.1)';
+
+const sm = StyleSheet.create({
+  list: { gap: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 16, borderWidth: 1, borderColor: BORDER },
+  rowIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.text, letterSpacing: 0.2 },
+  rowSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  ratingPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(250, 204, 21, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
+  ratingText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: '#facc15' },
+  countText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.textMuted },
+  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  avatarInitial: { fontFamily: FontFamily.headlineBold, fontSize: 16 },
 });
 
 /* ─── Profile Screen ─────────────────────────────────────────────────── */
 
 export default function ProfileScreen() {
-  const { user, signOut } = useAuthStore();
-  const [settingsVisible, setSettingsVisible] = useState(false);
+  const { user } = useAuthStore();
+  const [statModal, setStatModal] = useState<StatModalType>(null);
 
   const initials = user?.display_name
     ? user.display_name.charAt(0).toUpperCase()
     : '?';
 
+  const STATS = [
+    { label: 'Events', value: 15, key: 'events' as const },
+    { label: 'Venues', value: 5, key: 'venues' as const },
+    { label: 'Teams', value: 3, key: 'teams' as const },
+    { label: 'Friends', value: 3, key: 'friends' as const },
+  ];
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-
       <PageHeader title="Profile" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile card */}
-        <GlassCard borderRadius={32} style={styles.profileCard}>
-          {/* Avatar */}
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatarRing}>
-              {user?.avatar_url ? (
-                <Image
-                  source={{ uri: user.avatar_url }}
-                  style={styles.avatarImage}
-                />
-              ) : (
-                <View style={styles.avatarFallback}>
-                  <Text style={styles.avatarText}>{initials}</Text>
-                </View>
-              )}
-            </View>
-            <TouchableOpacity style={styles.editButton}>
-              <Ionicons name="pencil" size={16} color={Colors.text} />
-            </TouchableOpacity>
+        {/* ─── Compact profile header ─── */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarRing}>
+            {user?.avatar_url ? (
+              <Image source={{ uri: user.avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarFallback}>
+                <Text style={styles.avatarText}>{initials}</Text>
+              </View>
+            )}
           </View>
-
-          <Text style={styles.displayName}>
-            {user?.display_name || 'User'}
-          </Text>
-          <View style={styles.usernamePill}>
-            <Text style={styles.usernameText}>
-              @{user?.username || 'username'}
+          <View style={styles.infoCol}>
+            <Text style={styles.displayName} numberOfLines={1}>
+              {user?.display_name || 'User'}
+            </Text>
+            <Text style={styles.username}>
+              @{user?.username || 'username'} · Member since 2026
             </Text>
           </View>
-        </GlassCard>
+        </View>
 
-        {/* Stats grid */}
-        <View style={styles.statsGrid}>
-          {/* Total Logs — full width hero */}
-          <GlassCard borderRadius={32} style={styles.totalLogsCard}>
-            <Text style={styles.statLabel}>TOTAL LOGS</Text>
-            <View style={styles.totalLogsRow}>
-              <Text style={styles.totalLogsNumber}>0</Text>
-              <Ionicons
-                name="layers"
-                size={60}
-                color={Colors.primaryContainer}
-                style={styles.totalLogsIcon}
-              />
-            </View>
-          </GlassCard>
+        {/* ─── Top 4 Events ─── */}
+        <View style={styles.sectionWrap}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>TOP 4</Text>
+            <TouchableOpacity activeOpacity={0.7}>
+              <Text style={styles.editLink}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.top4Row}
+          >
+            {TOP_4.map((item, i) => (
+              <TouchableOpacity key={i} style={styles.top4Card} activeOpacity={0.7}>
+                <View style={[styles.top4Icon, { backgroundColor: `${item.color}15` }]}>
+                  <Ionicons name={item.icon} size={24} color={item.color} />
+                </View>
+                <Text style={styles.top4Title} numberOfLines={2}>{item.title}</Text>
+                <View style={styles.top4Rating}>
+                  <Ionicons name="star" size={10} color="#facc15" />
+                  <Text style={styles.top4RatingText}>{item.rating}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
-          {/* Venues */}
-          <GlassCard borderRadius={28} style={styles.statCard}>
-            <Text style={styles.statNumber}>0</Text>
-            <View style={styles.statPill}>
-              <Ionicons name="business-outline" size={12} color={Colors.primaryContainer} />
-              <Text style={styles.statPillText}>VENUES</Text>
-            </View>
-          </GlassCard>
+        {/* ─── Inline stats row ─── */}
+        <View style={styles.statsRow}>
+          {STATS.map((stat) => (
+            <TouchableOpacity
+              key={stat.key}
+              style={styles.statItem}
+              onPress={() => setStatModal(stat.key)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.statNumber}>{stat.value}</Text>
+              <Text style={styles.statLabel}>{stat.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-          {/* Teams */}
-          <GlassCard borderRadius={28} style={styles.statCard}>
-            <Text style={styles.statNumber}>0</Text>
-            <View style={styles.statPill}>
-              <Ionicons name="flag-outline" size={12} color={Colors.primaryContainer} />
-              <Text style={styles.statPillText}>TEAMS</Text>
-            </View>
+        {/* ─── Event type breakdown ─── */}
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionTitle}>EVENT BREAKDOWN</Text>
+          <GlassCard borderRadius={20} style={styles.breakdownCard}>
+            {EVENT_TYPE_BARS.map((bar, i) => (
+              <View key={bar.type}>
+                <View style={styles.barRow}>
+                  <Ionicons name={bar.icon} size={14} color={bar.color} />
+                  <Text style={styles.barLabel}>{bar.type}</Text>
+                  <View style={styles.barTrack}>
+                    <View
+                      style={[
+                        styles.barFill,
+                        {
+                          width: `${Math.max((bar.count / bar.total) * 100, 8)}%`,
+                          backgroundColor: bar.color,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.barCount}>{bar.count}</Text>
+                </View>
+                {i < EVENT_TYPE_BARS.length - 1 && <View style={styles.barDivider} />}
+              </View>
+            ))}
           </GlassCard>
         </View>
 
-        {/* Settings menu */}
-        <GlassCard borderRadius={28} style={styles.settingsCard}>
-          {/* App Settings */}
-          <TouchableOpacity style={styles.settingsRow} onPress={() => setSettingsVisible(true)}>
-            <View style={styles.settingsLeft}>
-              <View style={styles.settingsIconCircle}>
-                <Ionicons name="settings-outline" size={20} color={Colors.textMuted} />
+        {/* ─── Stats Highlights ─── */}
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionTitle}>HIGHLIGHTS</Text>
+          <View style={styles.highlightsGrid}>
+            {STAT_HIGHLIGHTS.map((h, i) => (
+              <View key={i} style={styles.highlightCard}>
+                <Text style={styles.highlightEmoji}>{h.emoji}</Text>
+                <Text style={styles.highlightLabel}>{h.label}</Text>
+                <Text style={styles.highlightValue}>{h.value}</Text>
               </View>
-              <Text style={styles.settingsLabel}>App Settings</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+            ))}
+          </View>
+        </View>
+
+        {/* ─── Action buttons ─── */}
+        <View style={styles.actionsRow}>
+          <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
+            <Ionicons name="share-outline" size={16} color={Colors.primaryContainer} />
+            <Text style={styles.actionBtnText}>Share Profile</Text>
           </TouchableOpacity>
-
-          <View style={styles.settingsDivider} />
-
-          {/* Friends */}
-          <TouchableOpacity style={styles.settingsRow}>
-            <View style={styles.settingsLeft}>
-              <View style={styles.settingsIconCircle}>
-                <Ionicons name="people-outline" size={20} color={Colors.textMuted} />
-              </View>
-              <Text style={styles.settingsLabel}>Friends (0)</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+          <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
+            <Ionicons name="create-outline" size={16} color={Colors.primaryContainer} />
+            <Text style={styles.actionBtnText}>Edit Profile</Text>
           </TouchableOpacity>
+        </View>
 
-          <View style={styles.settingsDivider} />
-
-          {/* Log Out */}
-          <TouchableOpacity style={styles.logoutRow} onPress={signOut}>
-            <View style={styles.settingsLeft}>
-              <View style={styles.logoutIconCircle}>
-                <Ionicons name="log-out-outline" size={20} color={Colors.error} />
-              </View>
-              <Text style={styles.logoutLabel}>Log Out</Text>
-            </View>
-          </TouchableOpacity>
-        </GlassCard>
-
-        {/* Bottom spacer */}
         <View style={{ height: 140 }} />
       </ScrollView>
 
-      {/* Settings Modal */}
-      <SettingsModal
-        visible={settingsVisible}
-        onClose={() => setSettingsVisible(false)}
-      />
+      <StatDetailModal type={statModal} onClose={() => setStatModal(null)} />
     </SafeAreaView>
   );
 }
 
+/* ─── Additional mock data ───────────────────────────────────────────── */
+
+const TOP_4 = [
+  { title: 'Celtics vs Lakers', icon: 'basketball-outline' as const, color: '#FF8A3D', rating: '5.0' },
+  { title: 'Dune: Part Two', icon: 'film-outline' as const, color: '#679cff', rating: '5.0' },
+  { title: 'SZA — SOS Tour', icon: 'musical-notes-outline' as const, color: '#ac89ff', rating: '5.0' },
+  { title: 'Carbone', icon: 'restaurant-outline' as const, color: '#facc15', rating: '4.5' },
+];
+
+// 12 weeks × 7 days — 0=none, 1=one event, 2=two, 3+=three+
+const ACTIVITY_WEEKS: number[][] = [
+  [0,0,1,0,0,0,0], [0,1,0,0,1,0,0], [0,0,0,1,0,0,1], [1,0,0,0,0,1,0],
+  [0,0,2,0,0,0,0], [0,1,0,1,0,0,0], [1,0,0,0,1,0,2], [0,0,1,0,0,1,0],
+  [0,1,0,0,2,0,0], [1,0,0,1,0,0,3], [0,0,1,0,1,0,0], [0,1,0,0,0,1,0],
+];
+
+const STAT_HIGHLIGHTS = [
+  { emoji: '🔥', label: 'Current streak', value: '3 events' },
+  { emoji: '📍', label: 'Most visited', value: 'TD Garden (4x)' },
+  { emoji: '⭐', label: 'Avg rating', value: '4.8' },
+  { emoji: '🎫', label: 'First log', value: 'Jan 15, 2026' },
+];
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 20, gap: 24 },
 
-  // Header row
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.glassBorder,
-  },
-  headerTitle: {
-    ...Typography.pageHeader,
-    color: Colors.text,
-  },
-  gearButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  // Compact profile header
+  profileHeader: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  avatarRing: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: 'rgba(45, 212, 191, 0.35)', padding: 2 },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 26 },
+  avatarFallback: { width: '100%', height: '100%', borderRadius: 26, backgroundColor: Colors.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontFamily: FontFamily.headlineExtraBold, fontSize: 20, color: Colors.primaryContainer },
+  infoCol: { flex: 1 },
+  displayName: { fontFamily: FontFamily.headlineExtraBold, fontSize: 22, letterSpacing: -0.3, color: Colors.text },
+  username: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.textMuted, marginTop: 3 },
+
+  // Stats row
+  statsRow: { flexDirection: 'row', backgroundColor: Colors.glass, borderRadius: 20, borderWidth: 1, borderColor: Colors.glassBorder, paddingVertical: 16 },
+  statItem: { flex: 1, alignItems: 'center', gap: 4 },
+  statNumber: { fontFamily: FontFamily.headlineExtraBold, fontSize: 22, color: Colors.text },
+  statLabel: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, letterSpacing: 1.5, color: Colors.textMuted, textTransform: 'uppercase' },
+
+  // Section
+  sectionWrap: { gap: 10 },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, letterSpacing: 1.5, color: Colors.textMuted, marginLeft: 4 },
+  sectionSubtitle: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.textMuted, marginRight: 4 },
+  editLink: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.primaryContainer, marginRight: 4 },
+
+  // Event type bars
+  breakdownCard: { padding: 16, gap: 0 },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
+  barLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.text, width: 70, letterSpacing: LetterSpacing.wide },
+  barTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.06)', overflow: 'hidden' },
+  barFill: { height: '100%', borderRadius: 3, opacity: 0.85 },
+  barCount: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.textMuted, width: 24, textAlign: 'right' },
+  barDivider: { height: 1, backgroundColor: Colors.glassBorder, marginLeft: 24 },
+
+  // Top 4
+  top4Row: { gap: 10 },
+  top4Card: {
+    width: 90,
     backgroundColor: Colors.glass,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.glassBorder,
+    padding: 12,
+    alignItems: 'center',
+    gap: 8,
+  },
+  top4Icon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    gap: 20,
-  },
-
-  // Profile card
-  profileCard: {
-    padding: 32,
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: 16,
-  },
-  avatarRing: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: 'rgba(0, 255, 194, 0.4)',
-    padding: 4,
-    ...Shadows.glowPrimary,
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 56,
-  },
-  avatarFallback: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 56,
-    backgroundColor: Colors.surfaceContainerHigh,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 42,
-    color: Colors.primaryContainer,
-  },
-  editButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: -8,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: Colors.glass,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Shadows.card,
-  },
-  displayName: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 28,
-    letterSpacing: -0.5,
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  usernamePill: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  usernameText: {
+  top4Title: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: Colors.textMuted,
-    textTransform: 'uppercase',
-  },
-
-  // Stats
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 14,
-  },
-  totalLogsCard: {
-    width: '100%',
-    padding: 24,
-    overflow: 'hidden',
-  },
-  totalLogsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  totalLogsNumber: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 80,
+    fontSize: 11,
     color: Colors.text,
-    lineHeight: 88,
+    textAlign: 'center',
+    lineHeight: 14,
   },
-  totalLogsIcon: {
-    opacity: 0.8,
-  },
-  statLabel: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: Colors.textMuted,
-    marginBottom: 4,
-  },
-  statCard: {
-    flex: 1,
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  statNumber: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 44,
-    color: Colors.text,
-  },
-  statPill: {
+  top4Rating: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
+    gap: 3,
   },
-  statPillText: {
+  top4RatingText: {
     fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    color: '#facc15',
+  },
+
+  // Activity Heatmap
+  heatmapCard: { padding: 16, gap: 12 },
+  heatmapGrid: { flexDirection: 'row', gap: 4, justifyContent: 'center' },
+  heatmapCol: { gap: 4 },
+  heatmapDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 3,
+  },
+  heatmapDot0: { backgroundColor: 'rgba(255, 255, 255, 0.06)' },
+  heatmapDot1: { backgroundColor: 'rgba(45, 212, 191, 0.25)' },
+  heatmapDot2: { backgroundColor: 'rgba(45, 212, 191, 0.5)' },
+  heatmapDot3: { backgroundColor: 'rgba(45, 212, 191, 0.85)' },
+  heatmapLegend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+  },
+  heatmapLegendText: {
+    fontFamily: FontFamily.bodyRegular,
     fontSize: 9,
-    letterSpacing: 2,
+    color: Colors.textMuted,
+  },
+  heatmapLegendDot: { width: 10, height: 10 },
+
+  // Stats Highlights
+  highlightsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  highlightCard: {
+    width: '47%' as any,
+    backgroundColor: Colors.glass,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    padding: 14,
+    gap: 4,
+  },
+  highlightEmoji: { fontSize: 20 },
+  highlightLabel: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  highlightValue: {
+    fontFamily: FontFamily.headlineBold,
+    fontSize: 14,
     color: Colors.text,
   },
 
-  // Settings
-  settingsCard: {
-    overflow: 'hidden',
-    marginTop: 8,
-  },
-  settingsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-  },
-  settingsLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  settingsIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingsLabel: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: Colors.text,
-    letterSpacing: 0.3,
-  },
-  settingsDivider: {
-    height: 1,
-    backgroundColor: Colors.glassBorder,
-    marginLeft: 76,
-  },
-  logoutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-  },
-  logoutIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(255, 113, 108, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 113, 108, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoutLabel: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: Colors.error,
-    letterSpacing: 0.3,
-  },
+  // Action buttons
+  actionsRow: { flexDirection: 'row', gap: 12 },
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(45, 212, 191, 0.25)', backgroundColor: 'rgba(45, 212, 191, 0.06)' },
+  actionBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.primaryContainer, letterSpacing: 0.3 },
 });

@@ -1,26 +1,20 @@
 /**
- * SocialModal — Full-screen social hub (Notifications + Friends)
- * Design language matches EventDetailModal: glass card, drag handle,
- * clean sections, dark overlay.
+ * SocialModal — Notifications + Friends hub
+ * Uses SharedModal for the unified shell; only contains content-specific UI.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   TextInput,
-  Animated,
-  PanResponder,
-  Modal,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { Typography, FontFamily, LetterSpacing } from '@/constants/typography';
+import { FontFamily, LetterSpacing } from '@/constants/typography';
+import { SharedModal } from '@/components/ui/SharedModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,156 +58,62 @@ const SUGGESTED_FRIENDS = [
   { id: 's-3', name: 'James Park', username: '@jpark', initial: 'J', color: '#facc15', mutuals: 2 },
 ];
 
-const DISMISS_THRESHOLD = 120;
-const DISMISS_VELOCITY = 0.7;
+const BORDER = 'rgba(255, 255, 255, 0.1)';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SocialModal({ visible, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<SocialTab>('notifications');
   const [friendSearch, setFriendSearch] = useState('');
-  const translateY = useRef(new Animated.Value(900)).current;
 
-  const onCloseRef = useRef(onClose);
-  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  const tabSelector = (
+    <View>
+      <View style={s.tabRow}>
+        {(['notifications', 'friends'] as const).map((tab) => {
+          const isActive = activeTab === tab;
+          const icon = tab === 'notifications' ? 'notifications-outline' : 'people-outline';
+          const label = tab === 'notifications' ? 'Notifications' : 'Friends';
+          const badge = tab === 'notifications'
+            ? MOCK_NOTIFICATIONS.filter(n => n.isNew).length
+            : FRIEND_REQUESTS.length;
 
-  useEffect(() => {
-    if (visible) {
-      translateY.setValue(900);
-      Animated.spring(translateY, {
-        toValue: 0,
-        tension: 65,
-        friction: 11,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [visible]);
-
-  const dismiss = useRef(() => {
-    Animated.timing(translateY, {
-      toValue: 900,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      translateY.setValue(900);
-      onCloseRef.current();
-    });
-  }).current;
-
-  const overlayOpacity = translateY.interpolate({
-    inputRange: [0, 600],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gs) => {
-        if (gs.dy > 0) translateY.setValue(gs.dy);
-      },
-      onPanResponderRelease: (_, gs) => {
-        if (gs.dy > DISMISS_THRESHOLD || gs.vy > DISMISS_VELOCITY) {
-          dismiss();
-        } else {
-          Animated.spring(translateY, {
-            toValue: 0,
-            tension: 120,
-            friction: 10,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    })
-  ).current;
-
-  if (!visible) return null;
+          return (
+            <TouchableOpacity
+              key={tab}
+              style={[s.tabPill, isActive && s.tabPillActive]}
+              onPress={() => setActiveTab(tab)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={icon as any} size={15} color={isActive ? Colors.primaryContainer : Colors.textMuted} />
+              <Text style={[s.tabText, isActive && s.tabTextActive]}>{label}</Text>
+              {badge > 0 && (
+                <View style={[s.badge, tab === 'friends' && { backgroundColor: '#ff716c' }]}>
+                  <Text style={s.badgeText}>{badge}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+      <View style={s.tabDivider} />
+    </View>
+  );
 
   return (
-    <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={dismiss}>
-      {/* Dim overlay */}
-      <Animated.View style={[s.overlay, { opacity: overlayOpacity }]} pointerEvents="none" />
-
-      {/* Draggable content */}
-      <Animated.View style={[s.contentLayer, { transform: [{ translateY }] }]}>
-        {/* Tap backdrop to close */}
-        <TouchableWithoutFeedback onPress={dismiss}>
-          <View style={s.tapClose} />
-        </TouchableWithoutFeedback>
-
-        {/* Card */}
-        <View style={s.card}>
-          <View style={[StyleSheet.absoluteFill, s.cardBgClip]}>
-            <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={[StyleSheet.absoluteFill, s.cardTint]} />
-          </View>
-
-          {/* Drag handle */}
-          <View style={s.dragStrip} {...panResponder.panHandlers}>
-            <View style={s.handleBar} />
-          </View>
-
-          {/* Header row */}
-          <View style={s.header}>
-            <Text style={s.headerTitle}>Social</Text>
-            <TouchableOpacity onPress={dismiss} style={s.closeButton} activeOpacity={0.7}>
-              <Ionicons name="close" size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Tab selector */}
-          <View style={s.tabRow}>
-            {(['notifications', 'friends'] as const).map((tab) => {
-              const isActive = activeTab === tab;
-              const icon = tab === 'notifications' ? 'notifications-outline' : 'people-outline';
-              const label = tab === 'notifications' ? 'Notifications' : 'Friends';
-              const badge = tab === 'notifications'
-                ? MOCK_NOTIFICATIONS.filter(n => n.isNew).length
-                : FRIEND_REQUESTS.length;
-
-              return (
-                <TouchableOpacity
-                  key={tab}
-                  style={[s.tabPill, isActive && s.tabPillActive]}
-                  onPress={() => setActiveTab(tab)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={icon as any}
-                    size={15}
-                    color={isActive ? Colors.primaryContainer : Colors.textMuted}
-                  />
-                  <Text style={[s.tabText, isActive && s.tabTextActive]}>{label}</Text>
-                  {badge > 0 && (
-                    <View style={[s.badge, tab === 'friends' && { backgroundColor: '#ff716c' }]}>
-                      <Text style={s.badgeText}>{badge}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Divider */}
-          <View style={s.divider} />
-
-          {/* Content */}
-          <ScrollView
-            style={s.scroll}
-            contentContainerStyle={s.scrollContent}
-            showsVerticalScrollIndicator={false}
-            bounces
-          >
-            {activeTab === 'notifications' ? (
-              <NotificationsTab />
-            ) : (
-              <FriendsTab search={friendSearch} onSearchChange={setFriendSearch} />
-            )}
-          </ScrollView>
-        </View>
-      </Animated.View>
-    </Modal>
+    <SharedModal
+      visible={visible}
+      onClose={onClose}
+      title="Social"
+      stickyContent={tabSelector}
+    >
+      <View style={s.tabContent}>
+        {activeTab === 'notifications' ? (
+          <NotificationsTab />
+        ) : (
+          <FriendsTab search={friendSearch} onSearchChange={setFriendSearch} />
+        )}
+      </View>
+    </SharedModal>
   );
 }
 
@@ -224,14 +124,13 @@ function NotificationsTab() {
   const olderItems = MOCK_NOTIFICATIONS.filter(n => !n.isNew);
 
   return (
-    <View style={s.tabContent}>
+    <View>
       {newItems.length > 0 && (
         <>
           <Text style={s.miniLabel}>NEW</Text>
           {newItems.map((item) => <NotifRow key={item.id} item={item} />)}
         </>
       )}
-
       {olderItems.length > 0 && (
         <>
           <Text style={[s.miniLabel, { marginTop: 24 }]}>EARLIER</Text>
@@ -268,7 +167,7 @@ function FriendsTab({ search, onSearchChange }: { search: string; onSearchChange
     : MY_FRIENDS;
 
   return (
-    <View style={s.tabContent}>
+    <View>
       {/* Search */}
       <View style={s.searchBar}>
         <Ionicons name="search" size={16} color={Colors.textMuted} />
@@ -365,94 +264,16 @@ function FriendsTab({ search, onSearchChange }: { search: string; onSearchChange
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const BORDER = 'rgba(255, 255, 255, 0.1)';
+// ─── Content-specific styles (NOT modal shell — that's in SharedModal) ────────
 
 const s = StyleSheet.create({
-  // Overlay + layout — matches EventDetailModal
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(3, 7, 18, 0.93)',
-  },
-  contentLayer: {
-    flex: 1,
-    paddingHorizontal: 12,
-  },
-  tapClose: {
-    height: 80,
-  },
-
-  // Card — glass ticket style
-  card: {
-    flex: 1,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: BORDER,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 30,
-    elevation: 20,
-  },
-  cardBgClip: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    overflow: 'hidden',
-  },
-  cardTint: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-  },
-
-  // Drag handle
-  dragStrip: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  handleBar: {
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 22,
-    paddingBottom: 12,
-  },
-  headerTitle: {
-    fontFamily: FontFamily.headlineExtraBold,
-    fontSize: 24,
-    color: Colors.text,
-    letterSpacing: LetterSpacing.tight,
-  },
-  closeButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
   // Tabs
   tabRow: {
     flexDirection: 'row',
-    paddingHorizontal: 22,
+    paddingHorizontal: 16,
     gap: 8,
-    marginBottom: 8,
+    marginTop: 10,
+    marginBottom: 10,
   },
   tabPill: {
     flex: 1,
@@ -493,18 +314,13 @@ const s = StyleSheet.create({
     color: Colors.onPrimary,
   },
 
-  divider: {
+  tabDivider: {
     height: 1,
     backgroundColor: BORDER,
-    marginHorizontal: 22,
   },
+  tabContent: { paddingHorizontal: 16, paddingTop: 4 },
 
-  // Scroll
-  scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 60 },
-  tabContent: { paddingHorizontal: 22, paddingTop: 4 },
-
-  // Section label — matches EventDetailModal's miniLabel
+  // Section label
   miniLabel: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 10,
