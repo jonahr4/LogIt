@@ -35,16 +35,13 @@
 - [x] **Notifications bell (top right)** — ✅ Social icon in PageHeader opens SocialModal (notifications + friends). Available on ALL screens
 - [x] **Profile/Account settings button** — ✅ Gear icon in PageHeader opens SettingsModal. Available on ALL screens
 - [x] **Logbook sticky header** — ✅ Implemented sticky header with search bar + filter chips
-- [ ] **Improve "Already Logged" button** — polish the button shown when an event has already been logged
-- [ ] **Fix statuses in EditLogModal** — game statuses are displaying lowercase (e.g. "final" instead of "Final"). Capitalize/format them properly
+- [x] **Improve "Already Logged" button** — ✅ Replaced iOS Alert with haptic vibration + animated glass toast pill (slides in from top, auto-dismisses after 2.2s)
+- [x] **Fix statuses in EditLogModal** — ✅ Added `formatStatus` helper that capitalizes raw ESPN statuses ("final" → "Final", "FINAL" → "Final", "in progress" → "In Progress"). Applied in EventDetailModal and EditLogModal
 
 ### Sports — Add Log Flow
-- [ ] **Make "Search All Games" more natural** — remove the button-to-search pattern. Replace with an always-visible search bar on the main sports page
-- [ ] **Restructure the sports page** — take the "find your sport" page (currently behind "Search All Games") and make it the main sports page layout:
-  - Search bar at top
-  - Browse by sport section below
-  - "Can't find what you're looking for? Add manually" pushed to the bottom, below browse by sport
-- [ ] **Search behavior** — when the user starts typing, hide the "browse by sport" options. Bring them back only when the search field is cleared
+- [x] **Make "Search All Games" more natural** — ✅ Replaced button with inline search bar on the sports hub page. Results appear inline as you type, browse-by-sport hides. Clear search to bring browse back.
+- [x] **Restructure the sports page** — ✅ Search bar at top, browse by sport below, "Can't find it? Add manually" at bottom
+- [x] **Search behavior** — ✅ Typing hides browse-by-sport, clearing search brings it back
 - [ ] **Apply same search pattern to other event types** (movies, concerts, food/drinks, theater)
 
 ### Sports Data & Filtering

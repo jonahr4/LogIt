@@ -47,6 +47,15 @@ const DISMISS_VELOCITY = 0.7;
 const INPUT_BG = 'rgba(0,0,0,0.35)';
 const INPUT_BORDER = 'rgba(255,255,255,0.07)';
 
+/** Format game status text: "final" → "Final", "in progress" → "In Progress" */
+function formatStatusText(raw: string): string {
+  if (!raw) return '';
+  const s = raw.trim();
+  if (s === s.toUpperCase() && s.length > 1) return s.charAt(0) + s.slice(1).toLowerCase();
+  if (s.charAt(0) === s.charAt(0).toUpperCase()) return s;
+  return s.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 const PRIVACY_OPTIONS = ['public', 'friends', 'private'] as const;
 const PRICE_LEVELS = ['$', '$$', '$$$', '$$$$'] as const;
 const VENUE_TYPES = ['Club', 'Bar', 'Lounge', 'Rooftop', 'Pub'] as const;
@@ -161,7 +170,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       setAwayTeamName(event.awayTeamName || '');
       setHomeScore(event.homeScore?.toString() || '');
       setAwayScore(event.awayScore?.toString() || '');
-      setStatus(event.status || '');
+      setStatus(formatStatusText(event.status || ''));
       setRootedTeam(event.rootedTeam || null);
       // Movie
       setDirector(event.director || '');

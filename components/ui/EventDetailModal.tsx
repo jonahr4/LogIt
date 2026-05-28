@@ -403,6 +403,20 @@ function TimeAgoBadge({ timeAgo }: { timeAgo?: string }) {
 }
 
 /** Orange season pill — polymorphic, works for any sport with a season field */
+/** Format game status text: "final" → "Final", "in progress" → "In Progress", etc. */
+function formatStatus(raw?: string | null): string {
+  if (!raw) return '';
+  const s = raw.trim();
+  // Already uppercase (FINAL, UPCOMING) — title-case it
+  if (s === s.toUpperCase() && s.length > 1) {
+    return s.charAt(0) + s.slice(1).toLowerCase();
+  }
+  // Already looks good
+  if (s.charAt(0) === s.charAt(0).toUpperCase()) return s;
+  // Lowercase — capitalize each word
+  return s.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function SeasonBadge({ season }: { season?: string }) {
   if (!season || season === 'Unknown') return null;
   return (
@@ -440,8 +454,8 @@ function SportsTop({
   // Merge live data on top of DB data — live takes priority when present
   const displayHome = liveScore?.homeScore ?? event.homeScore;
   const displayAway = liveScore?.awayScore ?? event.awayScore;
-  const displayStatus = liveScore?.status ?? event.status;
-  const isLiveNow = displayStatus && displayStatus !== 'FINAL' && displayStatus !== 'Upcoming' && displayStatus !== 'UPCOMING';
+  const displayStatus = formatStatus(liveScore?.status ?? event.status);
+  const isLiveNow = displayStatus && displayStatus !== 'Final' && displayStatus !== 'FINAL' && displayStatus !== 'Upcoming' && displayStatus !== 'UPCOMING';
 
   const homeWon = displayHome !== undefined && displayAway !== undefined && displayHome > displayAway;
   const awayWon = displayHome !== undefined && displayAway !== undefined && displayAway > displayHome;

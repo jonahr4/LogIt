@@ -2,6 +2,7 @@
 
 > **Last updated:** 2026-05-28
 > **Changes:**
+> - 2026-05-28: Toast notification system (inline animated glass pill, haptic vibration, swipe-up dismiss). Status capitalization fix (formatStatus helpers). Sports hub restructure — inline search bar replaces "Search All Games" button, results appear inline, browse-by-sport toggles based on search state.
 > - 2026-05-28: Major UI refactor — SharedModal unified modal system, PageHeader now has settings gear + social icon on ALL screens, profile redesigned (Letterboxd-style: Top 4, stats row, event breakdown, highlights grid), SocialModal/SettingsModal/StatDetailModal all use SharedModal shell, feed/logbook/explore sticky headers, explore page expanded with Top Rated/Categories/Venues Near You sections
 > - 2026-04-11: Added "MY TEAM" inline selector to EditLogModal rating row for sports events (two team logo pills, tap to pick/deselect). W/L badge in logbook now based on user's rooted team instead of home team. No W/L shown if no team selected. League badges display NCAAMB/NCAAWB via UI mapping while internal keys remain NCAAM/NCAAW.
 > - 2026-04-02: Added season type badges (PRE/R1/R2/R3/FIN) to logbook and add-log cards. Reordered logbook metadata row: league → stars → privacy → companions (left), season badge + W/L (right-aligned).

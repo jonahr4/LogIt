@@ -16,6 +16,7 @@ import {
   Alert,
   Image,
   Animated,
+  PanResponder,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -358,10 +359,54 @@ export default function AddLogScreen() {
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
   const [showSuccess, setShowSuccess] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(-20)).current;
   const PAGE_SIZE = 40;
   const { width: screenWidth } = useWindowDimensions();
   // 3-column team grid: screen - horizontal padding (32) - 2 gaps (24) / 3
   const teamTileWidth = (screenWidth - 32 - 24) / 3;
+
+  // ─── Toast notification (replaces iOS Alert for inline feedback) ─────
+  const toastDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dismissToast = useCallback(() => {
+    if (toastDismissTimer.current) clearTimeout(toastDismissTimer.current);
+    Animated.parallel([
+      Animated.timing(toastOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(toastTranslateY, { toValue: -40, duration: 200, useNativeDriver: true }),
+    ]).start(() => setToastMessage(''));
+  }, [toastOpacity, toastTranslateY]);
+
+  const toastPan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gs) => gs.dy < -5,
+      onPanResponderMove: (_, gs) => {
+        if (gs.dy < 0) toastTranslateY.setValue(gs.dy);
+      },
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dy < -20 || gs.vy < -0.3) {
+          dismissToast();
+        } else {
+          Animated.spring(toastTranslateY, { toValue: 0, tension: 120, friction: 10, useNativeDriver: true }).start();
+        }
+      },
+    })
+  ).current;
+
+  const showToast = useCallback((message: string) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    setToastMessage(message);
+    toastOpacity.setValue(0);
+    toastTranslateY.setValue(-20);
+    Animated.parallel([
+      Animated.spring(toastOpacity, { toValue: 1, tension: 80, friction: 10, useNativeDriver: true }),
+      Animated.spring(toastTranslateY, { toValue: 0, tension: 80, friction: 10, useNativeDriver: true }),
+    ]).start(() => {
+      toastDismissTimer.current = setTimeout(() => dismissToast(), 2500);
+    });
+  }, [toastOpacity, toastTranslateY, dismissToast]);
 
   // Fully reset sports browse + search state
   const resetAll = useCallback(() => {
@@ -567,7 +612,7 @@ export default function AddLogScreen() {
     } catch (err: any) {
       const code = err?.error?.code || err?.code || '';
       if (code === 'CONFLICT') {
-        Alert.alert('Already Logged', 'You have already logged this event!');
+        showToast('You\u2019ve already logged this event!');
       } else if (code === 'UNAUTHORIZED') {
         Alert.alert('Sign In Required', 'Please sign in to log events.');
       } else {
@@ -896,6 +941,27 @@ export default function AddLogScreen() {
             </Animated.View>
           </Animated.View>
         )}
+
+        {/* Toast notification */}
+        {toastMessage !== '' && (
+          <Animated.View
+            style={{
+              position: 'absolute',
+              top: 60,
+              left: 20,
+              right: 20,
+              zIndex: 1000,
+              opacity: toastOpacity,
+              transform: [{ translateY: toastTranslateY }],
+            }}
+            {...toastPan.panHandlers}
+          >
+            <View style={styles.toastContainer}>
+              <Ionicons name="checkmark-circle" size={18} color={Colors.primaryContainer} />
+              <Text style={styles.toastText}>{toastMessage}</Text>
+            </View>
+          </Animated.View>
+        )}
       </SafeAreaView>
     );
   }
@@ -961,56 +1027,165 @@ export default function AddLogScreen() {
             <Text style={styles.apiSearchTitle}>Sports</Text>
             <Text style={styles.apiSearchSubtitle}>Search for a game or browse by sport.</Text>
 
-            {/* Search All Games button */}
-            <TouchableOpacity
-              style={styles.searchAllButton}
-              activeOpacity={0.75}
-              onPress={() => {
-                setSelectedSport(null);
-                setActiveSearchQuery('');
-                setSearchResults([]);
-                setSportsStep('search');
-              }}
-            >
-              <Ionicons name="search" size={20} color={Colors.primaryContainer} />
-              <Text style={styles.searchAllText}>Search All Games</Text>
-              <Ionicons name="chevron-forward" size={18} color={Colors.primaryContainer} style={{ marginLeft: 'auto' }} />
-            </TouchableOpacity>
-
-            {/* Sport rows */}
-            <Text style={[styles.sectionLabel, { marginTop: 24 }]}>BROWSE BY SPORT</Text>
-            <View style={styles.sportRowsContainer}>
-              {SUPPORTED_SPORTS.map((sport) => (
-                <TouchableOpacity
-                  key={sport.key}
-                  activeOpacity={sport.active ? 0.7 : 1}
-                  onPress={() => {
-                    if (!sport.active) return;
-                    setSelectedSport(sport.key);
-                    setSportsStep('teams');
-                    setSelectedConference('All');
-                    setTeamFilterText('');
-                    scrollRef.current?.scrollTo({ y: 0, animated: false });
-                  }}
-                >
-                  <View style={[styles.sportRow, !sport.active && styles.sportRowInactive]}>
-                    <View style={styles.sportRowIcon}>
-                      <Ionicons name={sport.icon} size={20} color={sport.active ? Colors.primaryContainer : Colors.textMuted} />
-                    </View>
-                    <Text style={[styles.sportRowLabel, !sport.active && { color: Colors.textMuted }]}>
-                      {sport.label}
-                    </Text>
-                    {'badge' in sport && sport.active ? null
-                      : !sport.active ? (
-                        <Text style={styles.sportSoonText}>Soon</Text>
-                      ) : null}
-                    {sport.active && (
-                      <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} style={{ marginLeft: 'auto' }} />
-                    )}
-                  </View>
+            {/* Inline search bar (replaces old "Search All Games" button) */}
+            <GlassCard borderRadius={20} style={[styles.searchBar, { marginTop: 16 }]}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search teams or games..."
+                placeholderTextColor={Colors.textMuted}
+                value={activeSearchQuery}
+                onChangeText={(text) => {
+                  setSelectedSport(null);
+                  handleSearchChange(text);
+                }}
+                returnKeyType="search"
+              />
+              {isSearching ? (
+                <ActivityIndicator size="small" color={Colors.primaryContainer} />
+              ) : activeSearchQuery.length > 0 ? (
+                <TouchableOpacity onPress={() => {
+                  setActiveSearchQuery('');
+                  setSearchResults([]);
+                  setSearchError(null);
+                }}>
+                  <Ionicons name="close-circle" size={20} color={Colors.textMuted} />
                 </TouchableOpacity>
-              ))}
-            </View>
+              ) : (
+                <Ionicons name="search" size={22} color={Colors.textMuted} />
+              )}
+            </GlassCard>
+
+            {/* Search results (visible when user is typing) */}
+            {activeSearchQuery.length > 0 && (
+              <View style={styles.apiResultsList}>
+                {searchError && (
+                  <GlassCard borderRadius={16} style={styles.errorCard}>
+                    <Ionicons name="alert-circle-outline" size={20} color="#ff6b6b" />
+                    <Text style={styles.errorText}>{searchError}</Text>
+                  </GlassCard>
+                )}
+
+                {searchResults.length > 0 && (
+                  <Text style={styles.sectionLabel}>
+                    {searchResults.length} RESULT{searchResults.length !== 1 ? 'S' : ''}
+                  </Text>
+                )}
+
+                {activeSearchQuery.length >= 2 &&
+                  !isSearching &&
+                  searchResults.length === 0 &&
+                  !searchError && (
+                  <GlassCard borderRadius={16} style={styles.noResultsCard}>
+                    <Ionicons name="search-outline" size={24} color={Colors.textMuted} />
+                    <Text style={styles.noResultsText}>No games found for "{activeSearchQuery}"</Text>
+                  </GlassCard>
+                )}
+
+                {searchResults.map((event) => {
+                  const meta = event.type_metadata;
+                  const scoreLabel = meta?.home_score != null && meta?.away_score != null
+                    ? `${meta.away_score}–${meta.home_score}` : null;
+                  const dateStr = event.event_date
+                    ? new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '';
+                  const displayTitle = event.title || `${meta?.away_team_name || '?'} @ ${meta?.home_team_name || '?'}`;
+                  const daysUntilLabel = (() => {
+                    if (!event.event_date) return null;
+                    const diff = Math.ceil((new Date(event.event_date).getTime() - Date.now()) / 86400000);
+                    if (diff < 0) return null;
+                    if (diff === 0) return 'TODAY';
+                    return `IN ${diff} DAY${diff > 1 ? 'S' : ''}`;
+                  })();
+                  return (
+                    <View key={event.id}>
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => setSelectedEventToLog(mapEventForModal(event))}
+                      >
+                        <GlassCard borderRadius={16} style={styles.apiResultCard}>
+                          <View style={styles.searchLogoContainer}>
+                            {meta?.home_team_logo ? (
+                              <Image source={{ uri: meta.home_team_logo }} style={{ width: '72%', height: '72%' }} resizeMode="contain" />
+                            ) : (
+                              <Text style={styles.logoFallbackText}>{meta?.home_team_name?.charAt(0) || '?'}</Text>
+                            )}
+                          </View>
+                          <View style={styles.apiResultInfo}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                              <Text style={[styles.teamNamesText, { flex: 1 }]} numberOfLines={1}>{displayTitle}</Text>
+                              {scoreLabel ? (
+                                <View style={styles.scoreBugAddLog}>
+                                  <Text style={styles.scoreBugText}>{scoreLabel}</Text>
+                                </View>
+                              ) : daysUntilLabel ? (
+                                <View style={styles.daysUntilPill}>
+                                  <Text style={styles.daysUntilText}>{daysUntilLabel}</Text>
+                                </View>
+                              ) : null}
+                            </View>
+                            <Text style={styles.apiResultSub} numberOfLines={1}>
+                              {dateStr}{event.venue_name ? ` · ${event.venue_name}` : ''}
+                            </Text>
+                          </View>
+                        </GlassCard>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+
+                {hasMore && !isSearching && (
+                  <TouchableOpacity
+                    style={styles.loadMoreButton}
+                    activeOpacity={0.7}
+                    onPress={handleLoadMore}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore
+                      ? <ActivityIndicator size="small" color={Colors.primaryContainer} />
+                      : <Text style={styles.loadMoreText}>Load More Results</Text>}
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* Browse by Sport (hidden when searching) */}
+            {activeSearchQuery.length === 0 && (
+              <>
+                <Text style={[styles.sectionLabel, { marginTop: 24 }]}>BROWSE BY SPORT</Text>
+                <View style={styles.sportRowsContainer}>
+                  {SUPPORTED_SPORTS.map((sport) => (
+                    <TouchableOpacity
+                      key={sport.key}
+                      activeOpacity={sport.active ? 0.7 : 1}
+                      onPress={() => {
+                        if (!sport.active) return;
+                        setSelectedSport(sport.key);
+                        setSportsStep('teams');
+                        setSelectedConference('All');
+                        setTeamFilterText('');
+                        scrollRef.current?.scrollTo({ y: 0, animated: false });
+                      }}
+                    >
+                      <View style={[styles.sportRow, !sport.active && styles.sportRowInactive]}>
+                        <View style={styles.sportRowIcon}>
+                          <Ionicons name={sport.icon} size={20} color={sport.active ? Colors.primaryContainer : Colors.textMuted} />
+                        </View>
+                        <Text style={[styles.sportRowLabel, !sport.active && { color: Colors.textMuted }]}>
+                          {sport.label}
+                        </Text>
+                        {'badge' in sport && sport.active ? null
+                          : !sport.active ? (
+                            <Text style={styles.sportSoonText}>Soon</Text>
+                          ) : null}
+                        {sport.active && (
+                          <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} style={{ marginLeft: 'auto' }} />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
           </View>
 
         ) : selectedType === 'sports' && sportsStep === 'teams' ? (
@@ -1556,6 +1731,27 @@ export default function AddLogScreen() {
           >
             <Ionicons name="checkmark" size={36} color={Colors.onPrimary} />
           </Animated.View>
+        </Animated.View>
+      )}
+
+      {/* Toast notification */}
+      {toastMessage !== '' && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: 60,
+            left: 20,
+            right: 20,
+            zIndex: 1000,
+            opacity: toastOpacity,
+            transform: [{ translateY: toastTranslateY }],
+          }}
+          {...toastPan.panHandlers}
+        >
+          <View style={styles.toastContainer}>
+            <Ionicons name="checkmark-circle" size={18} color={Colors.primaryContainer} />
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
         </Animated.View>
       )}
     </SafeAreaView>
@@ -2130,6 +2326,28 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.headlineExtraBold,
     fontSize: 8,
     letterSpacing: 0.5,
+  },
+  toastContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(20, 25, 30, 0.92)',
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  toastText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: Colors.text,
+    flex: 1,
   },
 });
 
