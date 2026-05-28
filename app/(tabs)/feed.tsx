@@ -294,36 +294,36 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <PageHeader title="LogIt" />
+      <PageHeader title="Feed" />
+
+      {/* STICKY HEADER — tab pills */}
+      <View style={styles.stickyHeader}>
+        <GlassCard borderRadius={999} style={styles.tabContainer}>
+          {FEED_TABS.map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => setActiveTab(tab)}
+              style={[styles.tabPill, activeTab === tab && styles.tabPillActive]}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab && styles.tabTextActive,
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </GlassCard>
+      </View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Tab selector pills */}
-        <View style={styles.tabRow}>
-          <GlassCard borderRadius={999} style={styles.tabContainer}>
-            {FEED_TABS.map((tab) => (
-              <TouchableOpacity
-                key={tab}
-                onPress={() => setActiveTab(tab)}
-                style={[styles.tabPill, activeTab === tab && styles.tabPillActive]}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === tab && styles.tabTextActive,
-                  ]}
-                >
-                  {tab}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </GlassCard>
-        </View>
-
         {/* Feed cards */}
         {MOCK_CARDS.map((card) => (
           <FeedCard key={card.id} card={card} onPress={() => setSelectedEvent(card)} />
@@ -440,10 +440,14 @@ const styles = StyleSheet.create({
     gap: 20,
   },
 
-  // Tab pills
-  tabRow: {
+  // Sticky header — matches logbook/explore
+  stickyHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 8,
     alignItems: 'center',
-    marginBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.glassBorder,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -456,14 +460,15 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   tabPillActive: {
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
+    backgroundColor: 'rgba(45, 212, 191, 0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 194, 0.3)',
+    borderColor: 'rgba(45, 212, 191, 0.3)',
   },
   tabText: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
     color: Colors.textMuted,
+    letterSpacing: LetterSpacing.wide,
   },
   tabTextActive: {
     color: Colors.primaryContainer,

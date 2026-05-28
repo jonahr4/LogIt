@@ -1,23 +1,26 @@
 /**
  * SocialModal — Full-screen social hub (Notifications + Friends)
- * BeReal-inspired simple friends interface.
+ * Design language matches EventDetailModal: glass card, drag handle,
+ * clean sections, dark overlay.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   TextInput,
+  Animated,
+  PanResponder,
   Modal,
-  Image,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
-import { GlassCard } from '@/components/ui/GlassCard';
+import { Typography, FontFamily, LetterSpacing } from '@/constants/typography';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,14 +34,14 @@ interface Props {
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
 const MOCK_NOTIFICATIONS = [
-  { id: '1', icon: 'basketball-outline' as const, text: 'Celtics vs Lakers starts in 2 hours!', time: '2h ago', color: '#FF8A3D' },
-  { id: '2', icon: 'camera-outline' as const, text: 'How was the game last night? Add a log!', time: '5h ago', color: '#679cff' },
-  { id: '3', icon: 'person-add-outline' as const, text: '@sarah tagged you as a companion', time: '1d ago', color: '#00FFC2' },
-  { id: '4', icon: 'flame-outline' as const, text: '3 friends also logged Celtics vs Lakers', time: '1d ago', color: '#ac89ff' },
-  { id: '5', icon: 'trophy-outline' as const, text: "You've logged 10 events! 🎉", time: '3d ago', color: '#facc15' },
-  { id: '6', icon: 'heart-outline' as const, text: '@mike liked your Dune review', time: '3d ago', color: '#ff716c' },
-  { id: '7', icon: 'people-outline' as const, text: '@emma started following you', time: '4d ago', color: '#00FFC2' },
-  { id: '8', icon: 'star-outline' as const, text: 'Your Carbone review got 5 likes!', time: '5d ago', color: '#facc15' },
+  { id: '1', icon: 'basketball-outline' as const, text: 'Celtics vs Lakers starts in 2 hours!', time: '2h ago', color: '#FF8A3D', isNew: true },
+  { id: '2', icon: 'camera-outline' as const, text: 'How was the game last night? Add a log!', time: '5h ago', color: '#679cff', isNew: true },
+  { id: '3', icon: 'person-add-outline' as const, text: '@sarah tagged you as a companion', time: '1d ago', color: '#00FFC2', isNew: true },
+  { id: '4', icon: 'flame-outline' as const, text: '3 friends also logged Celtics vs Lakers', time: '1d ago', color: '#ac89ff', isNew: false },
+  { id: '5', icon: 'trophy-outline' as const, text: "You've logged 10 events! 🎉", time: '3d ago', color: '#facc15', isNew: false },
+  { id: '6', icon: 'heart-outline' as const, text: '@mike liked your Dune review', time: '3d ago', color: '#ff716c', isNew: false },
+  { id: '7', icon: 'people-outline' as const, text: '@emma started following you', time: '4d ago', color: '#00FFC2', isNew: false },
+  { id: '8', icon: 'star-outline' as const, text: 'Your Carbone review got 5 likes!', time: '5d ago', color: '#facc15', isNew: false },
 ];
 
 const FRIEND_REQUESTS = [
@@ -61,82 +64,155 @@ const SUGGESTED_FRIENDS = [
   { id: 's-3', name: 'James Park', username: '@jpark', initial: 'J', color: '#facc15', mutuals: 2 },
 ];
 
+const DISMISS_THRESHOLD = 120;
+const DISMISS_VELOCITY = 0.7;
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SocialModal({ visible, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<SocialTab>('notifications');
   const [friendSearch, setFriendSearch] = useState('');
+  const translateY = useRef(new Animated.Value(900)).current;
+
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+  useEffect(() => {
+    if (visible) {
+      translateY.setValue(900);
+      Animated.spring(translateY, {
+        toValue: 0,
+        tension: 65,
+        friction: 11,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
+
+  const dismiss = useRef(() => {
+    Animated.timing(translateY, {
+      toValue: 900,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      translateY.setValue(900);
+      onCloseRef.current();
+    });
+  }).current;
+
+  const overlayOpacity = translateY.interpolate({
+    inputRange: [0, 600],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gs) => {
+        if (gs.dy > 0) translateY.setValue(gs.dy);
+      },
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dy > DISMISS_THRESHOLD || gs.vy > DISMISS_VELOCITY) {
+          dismiss();
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            tension: 120,
+            friction: 10,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  if (!visible) return null;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View style={s.container}>
-        {/* Header */}
-        <View style={s.header}>
-          <Text style={s.headerTitle}>Social</Text>
-          <TouchableOpacity onPress={onClose} style={s.closeButton} activeOpacity={0.7}>
-            <Ionicons name={'close' as const} size={20} color={Colors.text} />
-          </TouchableOpacity>
-        </View>
+    <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={dismiss}>
+      {/* Dim overlay */}
+      <Animated.View style={[s.overlay, { opacity: overlayOpacity }]} pointerEvents="none" />
 
-        {/* Tab pills */}
-        <View style={s.tabRow}>
-          <TouchableOpacity
-            style={[s.tabPill, activeTab === 'notifications' && s.tabPillActive]}
-            onPress={() => setActiveTab('notifications')}
-            activeOpacity={0.7}
+      {/* Draggable content */}
+      <Animated.View style={[s.contentLayer, { transform: [{ translateY }] }]}>
+        {/* Tap backdrop to close */}
+        <TouchableWithoutFeedback onPress={dismiss}>
+          <View style={s.tapClose} />
+        </TouchableWithoutFeedback>
+
+        {/* Card */}
+        <View style={s.card}>
+          <View style={[StyleSheet.absoluteFill, s.cardBgClip]}>
+            <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, s.cardTint]} />
+          </View>
+
+          {/* Drag handle */}
+          <View style={s.dragStrip} {...panResponder.panHandlers}>
+            <View style={s.handleBar} />
+          </View>
+
+          {/* Header row */}
+          <View style={s.header}>
+            <Text style={s.headerTitle}>Social</Text>
+            <TouchableOpacity onPress={dismiss} style={s.closeButton} activeOpacity={0.7}>
+              <Ionicons name="close" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Tab selector */}
+          <View style={s.tabRow}>
+            {(['notifications', 'friends'] as const).map((tab) => {
+              const isActive = activeTab === tab;
+              const icon = tab === 'notifications' ? 'notifications-outline' : 'people-outline';
+              const label = tab === 'notifications' ? 'Notifications' : 'Friends';
+              const badge = tab === 'notifications'
+                ? MOCK_NOTIFICATIONS.filter(n => n.isNew).length
+                : FRIEND_REQUESTS.length;
+
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  style={[s.tabPill, isActive && s.tabPillActive]}
+                  onPress={() => setActiveTab(tab)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={icon as any}
+                    size={15}
+                    color={isActive ? Colors.primaryContainer : Colors.textMuted}
+                  />
+                  <Text style={[s.tabText, isActive && s.tabTextActive]}>{label}</Text>
+                  {badge > 0 && (
+                    <View style={[s.badge, tab === 'friends' && { backgroundColor: '#ff716c' }]}>
+                      <Text style={s.badgeText}>{badge}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Divider */}
+          <View style={s.divider} />
+
+          {/* Content */}
+          <ScrollView
+            style={s.scroll}
+            contentContainerStyle={s.scrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces
           >
-            <Ionicons
-              name="notifications-outline"
-              size={16}
-              color={activeTab === 'notifications' ? Colors.primaryContainer : Colors.textMuted}
-            />
-            <Text style={[s.tabText, activeTab === 'notifications' && s.tabTextActive]}>
-              Notifications
-            </Text>
-            {/* Badge count */}
-            <View style={s.tabBadge}>
-              <Text style={s.tabBadgeText}>{MOCK_NOTIFICATIONS.length}</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[s.tabPill, activeTab === 'friends' && s.tabPillActive]}
-            onPress={() => setActiveTab('friends')}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="people-outline"
-              size={16}
-              color={activeTab === 'friends' ? Colors.primaryContainer : Colors.textMuted}
-            />
-            <Text style={[s.tabText, activeTab === 'friends' && s.tabTextActive]}>
-              Friends
-            </Text>
-            {FRIEND_REQUESTS.length > 0 && (
-              <View style={[s.tabBadge, { backgroundColor: '#ff716c' }]}>
-                <Text style={s.tabBadgeText}>{FRIEND_REQUESTS.length}</Text>
-              </View>
+            {activeTab === 'notifications' ? (
+              <NotificationsTab />
+            ) : (
+              <FriendsTab search={friendSearch} onSearchChange={setFriendSearch} />
             )}
-          </TouchableOpacity>
+          </ScrollView>
         </View>
-
-        {/* Content */}
-        <ScrollView
-          style={s.scroll}
-          contentContainerStyle={s.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {activeTab === 'notifications' ? (
-            <NotificationsTab />
-          ) : (
-            <FriendsTab search={friendSearch} onSearchChange={setFriendSearch} />
-          )}
-        </ScrollView>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
@@ -144,42 +220,39 @@ export function SocialModal({ visible, onClose }: Props) {
 // ─── Notifications Tab ────────────────────────────────────────────────────────
 
 function NotificationsTab() {
+  const newItems = MOCK_NOTIFICATIONS.filter(n => n.isNew);
+  const olderItems = MOCK_NOTIFICATIONS.filter(n => !n.isNew);
+
   return (
     <View style={s.tabContent}>
-      {/* Today section */}
-      <Text style={s.sectionLabel}>TODAY</Text>
-      {MOCK_NOTIFICATIONS.slice(0, 3).map((item) => (
-        <NotificationRow key={item.id} item={item} />
-      ))}
+      {newItems.length > 0 && (
+        <>
+          <Text style={s.miniLabel}>NEW</Text>
+          {newItems.map((item) => <NotifRow key={item.id} item={item} />)}
+        </>
+      )}
 
-      {/* This week */}
-      <Text style={[s.sectionLabel, { marginTop: 24 }]}>THIS WEEK</Text>
-      {MOCK_NOTIFICATIONS.slice(3, 6).map((item) => (
-        <NotificationRow key={item.id} item={item} />
-      ))}
-
-      {/* Earlier */}
-      <Text style={[s.sectionLabel, { marginTop: 24 }]}>EARLIER</Text>
-      {MOCK_NOTIFICATIONS.slice(6).map((item) => (
-        <NotificationRow key={item.id} item={item} />
-      ))}
+      {olderItems.length > 0 && (
+        <>
+          <Text style={[s.miniLabel, { marginTop: 24 }]}>EARLIER</Text>
+          {olderItems.map((item) => <NotifRow key={item.id} item={item} />)}
+        </>
+      )}
     </View>
   );
 }
 
-function NotificationRow({ item }: { item: typeof MOCK_NOTIFICATIONS[0] }) {
+function NotifRow({ item }: { item: typeof MOCK_NOTIFICATIONS[0] }) {
   return (
     <TouchableOpacity style={s.notifRow} activeOpacity={0.6}>
-      <View style={s.notifIconWrap}>
-        <View style={[s.notifDot, { backgroundColor: item.color }]} />
-        <View style={[s.notifIconCircle, { borderColor: `${item.color}30` }]}>
-          <Ionicons name={item.icon} size={18} color={item.color} />
-        </View>
+      <View style={[s.notifIcon, { backgroundColor: `${item.color}15`, borderColor: `${item.color}30` }]}>
+        <Ionicons name={item.icon} size={18} color={item.color} />
       </View>
-      <View style={s.notifTextWrap}>
+      <View style={s.notifBody}>
         <Text style={s.notifText} numberOfLines={2}>{item.text}</Text>
         <Text style={s.notifTime}>{item.time}</Text>
       </View>
+      {item.isNew && <View style={[s.newDot, { backgroundColor: item.color }]} />}
     </TouchableOpacity>
   );
 }
@@ -187,7 +260,7 @@ function NotificationRow({ item }: { item: typeof MOCK_NOTIFICATIONS[0] }) {
 // ─── Friends Tab ──────────────────────────────────────────────────────────────
 
 function FriendsTab({ search, onSearchChange }: { search: string; onSearchChange: (t: string) => void }) {
-  const filteredFriends = search
+  const filtered = search
     ? MY_FRIENDS.filter(f =>
         f.name.toLowerCase().includes(search.toLowerCase()) ||
         f.username.toLowerCase().includes(search.toLowerCase())
@@ -197,11 +270,11 @@ function FriendsTab({ search, onSearchChange }: { search: string; onSearchChange
   return (
     <View style={s.tabContent}>
       {/* Search */}
-      <View style={s.friendSearchBar}>
-        <Ionicons name="search" size={18} color={Colors.textMuted} />
+      <View style={s.searchBar}>
+        <Ionicons name="search" size={16} color={Colors.textMuted} />
         <TextInput
-          style={s.friendSearchInput}
-          placeholder="Search friends..."
+          style={s.searchInput}
+          placeholder="Find friends..."
           placeholderTextColor={Colors.textMuted}
           value={search}
           onChangeText={onSearchChange}
@@ -209,92 +282,84 @@ function FriendsTab({ search, onSearchChange }: { search: string; onSearchChange
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => onSearchChange('')}>
-            <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+            <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Friend Requests */}
+      {/* Requests */}
       {FRIEND_REQUESTS.length > 0 && (
         <>
-          <Text style={s.sectionLabel}>FRIEND REQUESTS</Text>
+          <Text style={s.miniLabel}>REQUESTS</Text>
           {FRIEND_REQUESTS.map((req) => (
             <View key={req.id} style={s.friendRow}>
-              <View style={[s.friendAvatar, { backgroundColor: `${req.color}25`, borderColor: `${req.color}40` }]}>
-                <Text style={[s.friendAvatarText, { color: req.color }]}>{req.initial}</Text>
+              <View style={[s.avatar, { backgroundColor: `${req.color}20`, borderColor: `${req.color}35` }]}>
+                <Text style={[s.avatarLetter, { color: req.color }]}>{req.initial}</Text>
               </View>
               <View style={s.friendInfo}>
                 <Text style={s.friendName}>{req.name}</Text>
-                <Text style={s.friendSub}>{req.username} · {req.mutuals} mutual friends</Text>
+                <Text style={s.friendMeta}>{req.mutuals} mutual friends</Text>
               </View>
-              <View style={s.requestButtons}>
-                <TouchableOpacity style={s.acceptButton} activeOpacity={0.7}>
-                  <Ionicons name="checkmark" size={18} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity style={s.declineButton} activeOpacity={0.7}>
-                  <Ionicons name="close" size={18} color={Colors.textMuted} />
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity style={s.acceptBtn} activeOpacity={0.7}>
+                <Ionicons name="checkmark" size={16} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={s.declineBtn} activeOpacity={0.7}>
+                <Ionicons name="close" size={16} color={Colors.textMuted} />
+              </TouchableOpacity>
             </View>
           ))}
         </>
       )}
 
       {/* My Friends */}
-      <View style={s.friendsHeaderRow}>
-        <Text style={s.sectionLabel}>MY FRIENDS</Text>
-        <Text style={s.friendCount}>{MY_FRIENDS.length}</Text>
+      <View style={s.sectionRow}>
+        <Text style={s.miniLabel}>FRIENDS</Text>
+        <View style={s.countPill}>
+          <Text style={s.countText}>{MY_FRIENDS.length}</Text>
+        </View>
       </View>
-      {filteredFriends.map((friend) => (
-        <TouchableOpacity key={friend.id} style={s.friendRow} activeOpacity={0.6}>
-          <View style={[s.friendAvatar, { backgroundColor: `${friend.color}25`, borderColor: `${friend.color}40` }]}>
-            <Text style={[s.friendAvatarText, { color: friend.color }]}>{friend.initial}</Text>
+      {filtered.map((f) => (
+        <TouchableOpacity key={f.id} style={s.friendRow} activeOpacity={0.6}>
+          <View style={[s.avatar, { backgroundColor: `${f.color}20`, borderColor: `${f.color}35` }]}>
+            <Text style={[s.avatarLetter, { color: f.color }]}>{f.initial}</Text>
           </View>
           <View style={s.friendInfo}>
-            <Text style={s.friendName}>{friend.name}</Text>
-            <Text style={s.friendSub} numberOfLines={1}>
-              {friend.lastLog} · {friend.lastLogTime}
-            </Text>
+            <Text style={s.friendName}>{f.name}</Text>
+            <Text style={s.friendMeta} numberOfLines={1}>{f.lastLog} · {f.lastLogTime}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+          <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
         </TouchableOpacity>
       ))}
 
-      {filteredFriends.length === 0 && search.length > 0 && (
-        <View style={s.emptyState}>
-          <Ionicons name="search-outline" size={32} color={Colors.textMuted} />
-          <Text style={s.emptyStateText}>No friends match "{search}"</Text>
+      {filtered.length === 0 && search.length > 0 && (
+        <View style={s.empty}>
+          <Ionicons name="search-outline" size={28} color={Colors.textMuted} />
+          <Text style={s.emptyText}>No results for "{search}"</Text>
         </View>
       )}
 
-      {/* Suggested / People you may know */}
-      <Text style={[s.sectionLabel, { marginTop: 28 }]}>PEOPLE YOU MAY KNOW</Text>
-      {SUGGESTED_FRIENDS.map((person) => (
-        <View key={person.id} style={s.friendRow}>
-          <View style={[s.friendAvatar, { backgroundColor: `${person.color}25`, borderColor: `${person.color}40` }]}>
-            <Text style={[s.friendAvatarText, { color: person.color }]}>{person.initial}</Text>
+      {/* Suggested */}
+      <Text style={[s.miniLabel, { marginTop: 28 }]}>SUGGESTED</Text>
+      {SUGGESTED_FRIENDS.map((p) => (
+        <View key={p.id} style={s.friendRow}>
+          <View style={[s.avatar, { backgroundColor: `${p.color}20`, borderColor: `${p.color}35` }]}>
+            <Text style={[s.avatarLetter, { color: p.color }]}>{p.initial}</Text>
           </View>
           <View style={s.friendInfo}>
-            <Text style={s.friendName}>{person.name}</Text>
-            <Text style={s.friendSub}>{person.username} · {person.mutuals} mutual friends</Text>
+            <Text style={s.friendName}>{p.name}</Text>
+            <Text style={s.friendMeta}>{p.mutuals} mutual friends</Text>
           </View>
-          <TouchableOpacity style={s.addButton} activeOpacity={0.7}>
-            <Ionicons name="person-add-outline" size={14} color={Colors.primaryContainer} />
-            <Text style={s.addButtonText}>Add</Text>
+          <TouchableOpacity style={s.addBtn} activeOpacity={0.7}>
+            <Text style={s.addBtnText}>Add</Text>
           </TouchableOpacity>
         </View>
       ))}
 
       {/* Invite */}
-      <TouchableOpacity style={s.inviteCard} activeOpacity={0.7}>
-        <View style={s.inviteIconCircle}>
-          <Ionicons name="share-outline" size={22} color={Colors.primaryContainer} />
-        </View>
-        <View style={s.inviteTextWrap}>
-          <Text style={s.inviteTitle}>Invite Friends to LogIt</Text>
-          <Text style={s.inviteSub}>Share your invite link</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+      <TouchableOpacity style={s.inviteRow} activeOpacity={0.7}>
+        <Ionicons name="share-outline" size={18} color={Colors.primaryContainer} />
+        <Text style={s.inviteText}>Invite Friends to LogIt</Text>
+        <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
       </TouchableOpacity>
     </View>
   );
@@ -302,10 +367,59 @@ function FriendsTab({ search, onSearchChange }: { search: string; onSearchChange
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
+const BORDER = 'rgba(255, 255, 255, 0.1)';
+
 const s = StyleSheet.create({
-  container: {
+  // Overlay + layout — matches EventDetailModal
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(3, 7, 18, 0.93)',
+  },
+  contentLayer: {
     flex: 1,
-    backgroundColor: Colors.background,
+    paddingHorizontal: 12,
+  },
+  tapClose: {
+    height: 80,
+  },
+
+  // Card — glass ticket style
+  card: {
+    flex: 1,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 0,
+    borderColor: BORDER,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 30,
+    elevation: 20,
+  },
+  cardBgClip: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
+  cardTint: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+
+  // Drag handle
+  dragStrip: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  handleBar: {
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
 
   // Header
@@ -313,22 +427,22 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.glassBorder,
+    paddingHorizontal: 22,
+    paddingBottom: 12,
   },
   headerTitle: {
-    ...Typography.pageHeader,
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 24,
     color: Colors.text,
+    letterSpacing: LetterSpacing.tight,
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.glass,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: Colors.glassBorder,
+    borderColor: BORDER,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -336,27 +450,25 @@ const s = StyleSheet.create({
   // Tabs
   tabRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 22,
     gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.glassBorder,
+    marginBottom: 8,
   },
   tabPill: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: Colors.glass,
+    gap: 5,
+    paddingVertical: 9,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: Colors.glassBorder,
+    borderColor: BORDER,
   },
   tabPillActive: {
-    backgroundColor: 'rgba(45, 212, 191, 0.12)',
-    borderColor: 'rgba(45, 212, 191, 0.3)',
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
+    borderColor: 'rgba(45, 212, 191, 0.25)',
   },
   tabText: {
     fontFamily: FontFamily.bodySemiBold,
@@ -366,43 +478,41 @@ const s = StyleSheet.create({
   tabTextActive: {
     color: Colors.primaryContainer,
   },
-  tabBadge: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+  badge: {
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: Colors.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
-    marginLeft: 2,
   },
-  tabBadgeText: {
+  badgeText: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 10,
+    fontSize: 9,
     color: Colors.onPrimary,
   },
 
-  // Scroll
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  tabContent: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
+  divider: {
+    height: 1,
+    backgroundColor: BORDER,
+    marginHorizontal: 22,
   },
 
-  // Section
-  sectionLabel: {
+  // Scroll
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 60 },
+  tabContent: { paddingHorizontal: 22, paddingTop: 4 },
+
+  // Section label — matches EventDetailModal's miniLabel
+  miniLabel: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.textMuted,
-    letterSpacing: 1.5,
+    letterSpacing: 2,
     textTransform: 'uppercase',
-    marginTop: 20,
-    marginBottom: 12,
+    marginTop: 18,
+    marginBottom: 10,
   },
 
   // ─── Notifications ─────────────────────────────────────────────────
@@ -410,64 +520,56 @@ const s = StyleSheet.create({
   notifRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 11,
     gap: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.04)',
   },
-  notifIconWrap: {
-    position: 'relative',
-  },
-  notifDot: {
-    position: 'absolute',
-    top: -2,
-    left: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    zIndex: 1,
-  },
-  notifIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.glassSurface,
+  notifIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notifTextWrap: {
+  notifBody: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   notifText: {
     fontFamily: FontFamily.bodyMedium,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.text,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   notifTime: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 11,
     color: Colors.textMuted,
   },
+  newDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
 
   // ─── Friends ────────────────────────────────────────────────────────
 
-  friendSearchBar: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.glass,
-    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.glassBorder,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 10,
-    marginTop: 16,
-    marginBottom: 8,
+    borderColor: BORDER,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    gap: 8,
+    marginTop: 14,
+    marginBottom: 4,
   },
-  friendSearchInput: {
+  searchInput: {
     flex: 1,
     fontFamily: FontFamily.bodyRegular,
     fontSize: 14,
@@ -475,22 +577,23 @@ const s = StyleSheet.create({
     padding: 0,
   },
 
-  friendsHeaderRow: {
+  sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 24,
-    marginBottom: 12,
+    gap: 8,
+    marginTop: 22,
+    marginBottom: 10,
   },
-  friendCount: {
+  countPill: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  countText: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 12,
+    fontSize: 10,
     color: Colors.textMuted,
-    backgroundColor: Colors.glass,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    overflow: 'hidden',
   },
 
   friendRow: {
@@ -501,122 +604,95 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.04)',
   },
-  friendAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  friendAvatarText: {
+  avatarLetter: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 16,
+    fontSize: 15,
   },
   friendInfo: {
     flex: 1,
-    gap: 2,
+    gap: 1,
   },
   friendName: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.text,
   },
-  friendSub: {
+  friendMeta: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
     color: Colors.textMuted,
   },
 
-  // Request buttons
-  requestButtons: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  acceptButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  // Buttons
+  acceptBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: Colors.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  declineButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.glass,
+  declineBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: Colors.glassBorder,
+    borderColor: BORDER,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Add button
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
-    backgroundColor: 'rgba(45, 212, 191, 0.12)',
+  addBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(45, 212, 191, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(45, 212, 191, 0.3)',
+    borderColor: 'rgba(45, 212, 191, 0.25)',
   },
-  addButtonText: {
+  addBtnText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
     color: Colors.primaryContainer,
   },
 
-  // Invite card
-  inviteCard: {
+  // Invite
+  inviteRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 10,
     marginTop: 24,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.glass,
-    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.glassBorder,
+    borderColor: BORDER,
   },
-  inviteIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(45, 212, 191, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(45, 212, 191, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inviteTextWrap: {
+  inviteText: {
     flex: 1,
-    gap: 2,
-  },
-  inviteTitle: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.text,
   },
-  inviteSub: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.textMuted,
-  },
 
-  // Empty state
-  emptyState: {
+  // Empty
+  empty: {
     alignItems: 'center',
-    paddingVertical: 32,
-    gap: 8,
+    paddingVertical: 28,
+    gap: 6,
   },
-  emptyStateText: {
+  emptyText: {
     fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.textMuted,
   },
 });

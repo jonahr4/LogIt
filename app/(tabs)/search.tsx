@@ -255,31 +255,25 @@ export default function SearchScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <PageHeader title="Explore" />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+      {/* STICKY HEADER — search + filter chips */}
+      <View style={styles.stickyHeader}>
         {/* Search bar */}
-        <View style={styles.searchBarContainer}>
-          <GlassCard borderRadius={20} style={styles.searchBar}>
-            <Ionicons name="search" size={20} color={Colors.textMuted} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search events, venues, people..."
-              placeholderTextColor={Colors.textMuted}
-              value={searchText}
-              onChangeText={setSearchText}
-              returnKeyType="search"
-            />
-            {searchText.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchText('')} activeOpacity={0.7}>
-                <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
-              </TouchableOpacity>
-            )}
-          </GlassCard>
-        </View>
+        <GlassCard borderRadius={20} style={styles.searchBar}>
+          <Ionicons name="search" size={20} color={Colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search events, venues, people..."
+            placeholderTextColor={Colors.textMuted}
+            value={searchText}
+            onChangeText={setSearchText}
+            returnKeyType="search"
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchText('')} activeOpacity={0.7}>
+              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </GlassCard>
 
         {/* Type filter chips */}
         <ScrollView
@@ -305,6 +299,14 @@ export default function SearchScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+      </View>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
 
         {/* Recent searches (when empty) */}
         {searchText.length === 0 && (
@@ -592,10 +594,17 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
 
-  // Search bar
-  searchBarContainer: {
-    marginBottom: 16,
+  // Sticky header — matches logbook
+  stickyHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 8,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.glassBorder,
   },
+
+  // Search bar
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -615,7 +624,7 @@ const styles = StyleSheet.create({
   filtersRow: {
     flexDirection: 'row',
     gap: 8,
-    paddingBottom: 16,
+    paddingBottom: 4,
   },
   filterChip: {
     flexDirection: 'row',

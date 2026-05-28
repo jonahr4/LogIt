@@ -21,7 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '@/constants/colors';
-import { Typography, FontFamily } from '@/constants/typography';
+import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EventDetailModal } from '@/components/ui/EventDetailModal';
 import { EditLogModal } from '@/components/ui/EditLogModal';
@@ -85,7 +85,14 @@ export type EventDetail = {
 };
 
 // --- Constants ---
-const FILTER_CHIPS = ['All', 'Sports', 'Movies', 'Concerts', 'Food & Drinks', 'Theater'] as const;
+const FILTER_CHIPS = [
+  { key: 'All', label: 'All', icon: 'apps-outline' as const },
+  { key: 'Sports', label: 'Sports', icon: 'basketball-outline' as const },
+  { key: 'Movies', label: 'Movies', icon: 'film-outline' as const },
+  { key: 'Concerts', label: 'Concerts', icon: 'musical-notes-outline' as const },
+  { key: 'Food & Drinks', label: 'Food & Drinks', icon: 'restaurant-outline' as const },
+  { key: 'Theater', label: 'Theater', icon: 'ticket-outline' as const },
+] as const;
 
 const SUB_FILTERS: Record<string, string[]> = {
   Sports: ['All', 'NBA', 'WNBA', 'NFL', 'MLB', 'NHL', 'NCAAF', 'NCAAM', 'NCAAW', 'NCAAMH', 'NCAAWH', 'NCAABS'],
@@ -561,7 +568,7 @@ export default function LogbookScreen() {
       <View style={styles.stickyHeader}>
 
         {/* Search bar */}
-        <GlassCard borderRadius={16} style={styles.searchBar}>
+        <GlassCard borderRadius={20} style={styles.searchBar}>
           <Ionicons name="search" size={20} color={Colors.textMuted} />
           <TextInput
             style={styles.searchInput}
@@ -570,6 +577,11 @@ export default function LogbookScreen() {
             value={searchText}
             onChangeText={setSearchText}
           />
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchText('')} activeOpacity={0.7}>
+              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
         </GlassCard>
 
         {/* Filter chips & Sort */}
@@ -583,12 +595,17 @@ export default function LogbookScreen() {
             >
               {FILTER_CHIPS.map((chip) => (
                 <TouchableOpacity
-                  key={chip}
-                  onPress={() => handleFilterPress(chip)}
-                  style={[styles.chip, activeFilter === chip && styles.chipActive]}
+                  key={chip.key}
+                  onPress={() => handleFilterPress(chip.key)}
+                  style={[styles.chip, activeFilter === chip.key && styles.chipActive]}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.chipText, activeFilter === chip && styles.chipTextActive]}>{chip}</Text>
+                  <Ionicons
+                    name={chip.icon}
+                    size={14}
+                    color={activeFilter === chip.key ? Colors.primaryContainer : Colors.textMuted}
+                  />
+                  <Text style={[styles.chipText, activeFilter === chip.key && styles.chipTextActive]}>{chip.label}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -751,7 +768,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   stickyHeader: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 8,
     gap: 10,
@@ -777,46 +794,48 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
 
-  // Search
+  // Search — matches explore page
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingVertical: 14,
     gap: 10,
   },
   searchInput: {
     flex: 1,
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 15,
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: FontSize.base,
     color: Colors.text,
-    paddingVertical: 12,
+    padding: 0,
   },
 
-  // Filter chips
+  // Filter chips — matches explore page
   chipsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     paddingBottom: 4,
   },
   chip: {
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 18,
-    backgroundColor: Colors.glass,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: Colors.glassBorder,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   chipActive: {
-    backgroundColor: 'rgba(0, 255, 194, 0.15)',
-    borderColor: 'rgba(0, 255, 194, 0.3)',
+    backgroundColor: 'rgba(45, 212, 191, 0.12)',
+    borderColor: 'rgba(45, 212, 191, 0.3)',
   },
   chipText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 11,
-    letterSpacing: 2,
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
     color: Colors.textMuted,
-    textTransform: 'uppercase',
+    letterSpacing: LetterSpacing.wide,
   },
   chipTextActive: {
     color: Colors.primaryContainer,
@@ -881,9 +900,9 @@ const styles = StyleSheet.create({
     width: 32,
   },
   sortIconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: Colors.glass,
     borderWidth: 1,
     borderColor: Colors.glassBorder,
