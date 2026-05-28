@@ -1,20 +1,24 @@
 /**
  * SocialModal — Notifications + Friends hub
  * Uses SharedModal for the unified shell; only contains content-specific UI.
+ * Friends tab wired to real API: search users, send/accept/decline requests, friend list with mutual count.
+ * Notifications tab stays mock for now.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { FontFamily, LetterSpacing } from '@/constants/typography';
+import { FontFamily } from '@/constants/typography';
 import { SharedModal } from '@/components/ui/SharedModal';
+import { api } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,7 +29,7 @@ interface Props {
   onClose: () => void;
 }
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// ─── Mock Notifications (stays mock for now) ──────────────────────────────────
 
 const MOCK_NOTIFICATIONS = [
   { id: '1', icon: 'basketball-outline' as const, text: 'Celtics vs Lakers starts in 2 hours!', time: '2h ago', color: '#FF8A3D', isNew: true },
@@ -38,33 +42,126 @@ const MOCK_NOTIFICATIONS = [
   { id: '8', icon: 'star-outline' as const, text: 'Your Carbone review got 5 likes!', time: '5d ago', color: '#facc15', isNew: false },
 ];
 
-const FRIEND_REQUESTS = [
-  { id: 'req-1', name: 'Alex Chen', username: '@alexc', initial: 'A', color: '#679cff', mutuals: 4 },
-  { id: 'req-2', name: 'Maya Johnson', username: '@maya_j', initial: 'M', color: '#ac89ff', mutuals: 2 },
-];
-
-const MY_FRIENDS = [
-  { id: 'f-1', name: 'Jake Wilson', username: '@jake', initial: 'J', color: '#FF8A3D', lastLog: 'Celtics vs Knicks', lastLogTime: '2h ago' },
-  { id: 'f-2', name: 'Emma Davis', username: '@emma', initial: 'E', color: '#facc15', lastLog: 'Carbone', lastLogTime: '5h ago' },
-  { id: 'f-3', name: 'Sarah Kim', username: '@sarah', initial: 'S', color: '#00FFC2', lastLog: 'Dune: Part Two', lastLogTime: '8h ago' },
-  { id: 'f-4', name: 'Mike Thompson', username: '@mike', initial: 'M', color: '#ff716c', lastLog: 'SZA — SOS Tour', lastLogTime: '1d ago' },
-  { id: 'f-5', name: 'Chris Lee', username: '@chris', initial: 'C', color: '#679cff', lastLog: 'Oppenheimer', lastLogTime: '2d ago' },
-  { id: 'f-6', name: 'Rachel Park', username: '@rachel', initial: 'R', color: '#ac89ff', lastLog: "L'Artusi", lastLogTime: '3d ago' },
-];
-
-const SUGGESTED_FRIENDS = [
-  { id: 's-1', name: 'Daniel Rivera', username: '@dan_r', initial: 'D', color: '#FF8A3D', mutuals: 3 },
-  { id: 's-2', name: 'Olivia Nguyen', username: '@livng', initial: 'O', color: '#00FFC2', mutuals: 5 },
-  { id: 's-3', name: 'James Park', username: '@jpark', initial: 'J', color: '#facc15', mutuals: 2 },
-];
-
 const BORDER = 'rgba(255, 255, 255, 0.1)';
+
+// ─── Avatar colors for letter avatars ─────────────────────────────────────────
+const AVATAR_COLORS = ['#FF8A3D', '#679cff', '#ac89ff', '#00FFC2', '#facc15', '#ff716c'];
+
+function getAvatarColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SocialModal({ visible, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<SocialTab>('notifications');
   const [friendSearch, setFriendSearch] = useState('');
+
+  // Friends data state
+  const [friends, setFriends] = useState<any[]>([]);
+  const [incoming, setIncoming] = useState<any[]>([]);
+  const [outgoing, setOutgoing] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [respondingTo, setRespondingTo] = useState<string | null>(null);
+  const [requestingTo, setRequestingTo] = useState<string | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Fetch friends list when modal opens on friends tab
+  const fetchFriendsList = useCallback(async () => {
+    setIsLoadingFriends(true);
+    try {
+      const data = await api.get<any>('/friends/list');
+      setFriends(data.friends || []);
+      setIncoming(data.incoming || []);
+      setOutgoing(data.outgoing || []);
+    } catch (err) {
+      console.warn('Friends list error:', err);
+    } finally {
+      setIsLoadingFriends(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (visible && activeTab === 'friends') {
+      fetchFriendsList();
+    }
+  }, [visible, activeTab]);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+
+    if (friendSearch.length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const data = await api.get<any>('/friends/search', { q: friendSearch });
+        setSearchResults(data.users || []);
+      } catch (err) {
+        console.warn('Friend search error:', err);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [friendSearch]);
+
+  // Send friend request
+  const handleSendRequest = useCallback(async (userId: string) => {
+    setRequestingTo(userId);
+    try {
+      await api.post('/friends/request', { addressee_id: userId });
+      // Update search results to reflect new status
+      setSearchResults(prev => prev.map(u =>
+        u.id === userId ? { ...u, friendship_status: 'pending_outgoing' } : u
+      ));
+      // Refresh friends list
+      fetchFriendsList();
+    } catch (err: any) {
+      console.warn('Friend request error:', err);
+      // If auto-accepted (mutual request), refresh
+      if (err?.error?.code !== 'CONFLICT') return;
+      fetchFriendsList();
+    } finally {
+      setRequestingTo(null);
+    }
+  }, [fetchFriendsList]);
+
+  // Respond to request
+  const handleRespond = useCallback(async (friendshipId: string, action: 'accept' | 'decline') => {
+    setRespondingTo(friendshipId);
+    try {
+      await api.post('/friends/respond', { friendship_id: friendshipId, action });
+      fetchFriendsList();
+    } catch (err) {
+      console.warn('Friend respond error:', err);
+    } finally {
+      setRespondingTo(null);
+    }
+  }, [fetchFriendsList]);
+
+  // Remove friend
+  const handleRemoveFriend = useCallback(async (friendshipId: string) => {
+    try {
+      await api.delete('/friends/remove', { friendship_id: friendshipId });
+      fetchFriendsList();
+    } catch (err) {
+      console.warn('Friend remove error:', err);
+    }
+  }, [fetchFriendsList]);
 
   const tabSelector = (
     <View>
@@ -75,7 +172,7 @@ export function SocialModal({ visible, onClose }: Props) {
           const label = tab === 'notifications' ? 'Notifications' : 'Friends';
           const badge = tab === 'notifications'
             ? MOCK_NOTIFICATIONS.filter(n => n.isNew).length
-            : FRIEND_REQUESTS.length;
+            : incoming.length;
 
           return (
             <TouchableOpacity
@@ -110,14 +207,28 @@ export function SocialModal({ visible, onClose }: Props) {
         {activeTab === 'notifications' ? (
           <NotificationsTab />
         ) : (
-          <FriendsTab search={friendSearch} onSearchChange={setFriendSearch} />
+          <FriendsTab
+            search={friendSearch}
+            onSearchChange={setFriendSearch}
+            friends={friends}
+            incoming={incoming}
+            outgoing={outgoing}
+            searchResults={searchResults}
+            isLoading={isLoadingFriends}
+            isSearching={isSearching}
+            respondingTo={respondingTo}
+            requestingTo={requestingTo}
+            onSendRequest={handleSendRequest}
+            onRespond={handleRespond}
+            onRemoveFriend={handleRemoveFriend}
+          />
         )}
       </View>
     </SharedModal>
   );
 }
 
-// ─── Notifications Tab ────────────────────────────────────────────────────────
+// ─── Notifications Tab (stays mock) ───────────────────────────────────────────
 
 function NotificationsTab() {
   const newItems = MOCK_NOTIFICATIONS.filter(n => n.isNew);
@@ -156,15 +267,39 @@ function NotifRow({ item }: { item: typeof MOCK_NOTIFICATIONS[0] }) {
   );
 }
 
-// ─── Friends Tab ──────────────────────────────────────────────────────────────
+// ─── Friends Tab (real data) ──────────────────────────────────────────────────
 
-function FriendsTab({ search, onSearchChange }: { search: string; onSearchChange: (t: string) => void }) {
-  const filtered = search
-    ? MY_FRIENDS.filter(f =>
-        f.name.toLowerCase().includes(search.toLowerCase()) ||
-        f.username.toLowerCase().includes(search.toLowerCase())
+interface FriendsTabProps {
+  search: string;
+  onSearchChange: (t: string) => void;
+  friends: any[];
+  incoming: any[];
+  outgoing: any[];
+  searchResults: any[];
+  isLoading: boolean;
+  isSearching: boolean;
+  respondingTo: string | null;
+  requestingTo: string | null;
+  onSendRequest: (userId: string) => void;
+  onRespond: (friendshipId: string, action: 'accept' | 'decline') => void;
+  onRemoveFriend: (friendshipId: string) => void;
+}
+
+function FriendsTab({
+  search, onSearchChange,
+  friends, incoming, outgoing, searchResults,
+  isLoading, isSearching, respondingTo, requestingTo,
+  onSendRequest, onRespond, onRemoveFriend,
+}: FriendsTabProps) {
+  const isSearchMode = search.length >= 2;
+
+  // Filter local friends when searching (for quick in-list filtering)
+  const filteredFriends = search.length > 0 && !isSearchMode
+    ? friends.filter(f =>
+        f.user.display_name?.toLowerCase().includes(search.toLowerCase()) ||
+        f.user.username?.toLowerCase().includes(search.toLowerCase())
       )
-    : MY_FRIENDS;
+    : friends;
 
   return (
     <View>
@@ -173,93 +308,222 @@ function FriendsTab({ search, onSearchChange }: { search: string; onSearchChange
         <Ionicons name="search" size={16} color={Colors.textMuted} />
         <TextInput
           style={s.searchInput}
-          placeholder="Find friends..."
+          placeholder="Search users..."
           placeholderTextColor={Colors.textMuted}
           value={search}
           onChangeText={onSearchChange}
           autoCapitalize="none"
+          autoCorrect={false}
         />
-        {search.length > 0 && (
+        {isSearching && <ActivityIndicator size="small" color={Colors.primaryContainer} />}
+        {search.length > 0 && !isSearching && (
           <TouchableOpacity onPress={() => onSearchChange('')}>
             <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Requests */}
-      {FRIEND_REQUESTS.length > 0 && (
+      {/* Search Results (when actively searching) */}
+      {isSearchMode && (
         <>
-          <Text style={s.miniLabel}>REQUESTS</Text>
-          {FRIEND_REQUESTS.map((req) => (
-            <View key={req.id} style={s.friendRow}>
-              <View style={[s.avatar, { backgroundColor: `${req.color}20`, borderColor: `${req.color}35` }]}>
-                <Text style={[s.avatarLetter, { color: req.color }]}>{req.initial}</Text>
-              </View>
-              <View style={s.friendInfo}>
-                <Text style={s.friendName}>{req.name}</Text>
-                <Text style={s.friendMeta}>{req.mutuals} mutual friends</Text>
-              </View>
-              <TouchableOpacity style={s.acceptBtn} activeOpacity={0.7}>
-                <Ionicons name="checkmark" size={16} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={s.declineBtn} activeOpacity={0.7}>
-                <Ionicons name="close" size={16} color={Colors.textMuted} />
-              </TouchableOpacity>
+          <Text style={s.miniLabel}>SEARCH RESULTS</Text>
+          {isSearching && searchResults.length === 0 && (
+            <View style={s.empty}>
+              <ActivityIndicator size="small" color={Colors.primaryContainer} />
+              <Text style={s.emptyText}>Searching...</Text>
             </View>
-          ))}
+          )}
+          {!isSearching && searchResults.length === 0 && (
+            <View style={s.empty}>
+              <Ionicons name="search-outline" size={28} color={Colors.textMuted} />
+              <Text style={s.emptyText}>No users found for "{search}"</Text>
+            </View>
+          )}
+          {searchResults.map((user) => {
+            const color = getAvatarColor(user.username || user.id);
+            const status = user.friendship_status;
+            const isRequesting = requestingTo === user.id;
+
+            return (
+              <View key={user.id} style={s.friendRow}>
+                <View style={[s.avatar, { backgroundColor: `${color}20`, borderColor: `${color}35` }]}>
+                  <Text style={[s.avatarLetter, { color }]}>{(user.display_name || user.username || '?')[0].toUpperCase()}</Text>
+                </View>
+                <View style={s.friendInfo}>
+                  <Text style={s.friendName}>{user.display_name || user.username}</Text>
+                  <Text style={s.friendMeta}>@{user.username}</Text>
+                </View>
+                {status === 'none' && (
+                  <TouchableOpacity
+                    style={s.addBtn}
+                    activeOpacity={0.7}
+                    onPress={() => onSendRequest(user.id)}
+                    disabled={isRequesting}
+                  >
+                    {isRequesting ? (
+                      <ActivityIndicator size="small" color={Colors.primaryContainer} />
+                    ) : (
+                      <Text style={s.addBtnText}>Add</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+                {status === 'pending_outgoing' && (
+                  <View style={s.pendingPill}>
+                    <Text style={s.pendingText}>Pending</Text>
+                  </View>
+                )}
+                {status === 'pending_incoming' && (
+                  <TouchableOpacity style={s.acceptBtn} activeOpacity={0.7}>
+                    <Text style={s.addBtnText}>Accept</Text>
+                  </TouchableOpacity>
+                )}
+                {status === 'accepted' && (
+                  <View style={s.friendsPill}>
+                    <Ionicons name="checkmark" size={12} color={Colors.primaryContainer} />
+                    <Text style={s.friendsPillText}>Friends</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </>
       )}
 
-      {/* My Friends */}
-      <View style={s.sectionRow}>
-        <Text style={s.miniLabel}>FRIENDS</Text>
-        <View style={s.countPill}>
-          <Text style={s.countText}>{MY_FRIENDS.length}</Text>
-        </View>
-      </View>
-      {filtered.map((f) => (
-        <TouchableOpacity key={f.id} style={s.friendRow} activeOpacity={0.6}>
-          <View style={[s.avatar, { backgroundColor: `${f.color}20`, borderColor: `${f.color}35` }]}>
-            <Text style={[s.avatarLetter, { color: f.color }]}>{f.initial}</Text>
-          </View>
-          <View style={s.friendInfo}>
-            <Text style={s.friendName}>{f.name}</Text>
-            <Text style={s.friendMeta} numberOfLines={1}>{f.lastLog} · {f.lastLogTime}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
-        </TouchableOpacity>
-      ))}
+      {/* Non-search mode: show requests + friends list */}
+      {!isSearchMode && (
+        <>
+          {/* Loading */}
+          {isLoading && (
+            <View style={s.empty}>
+              <ActivityIndicator size="small" color={Colors.primaryContainer} />
+              <Text style={s.emptyText}>Loading friends...</Text>
+            </View>
+          )}
 
-      {filtered.length === 0 && search.length > 0 && (
-        <View style={s.empty}>
-          <Ionicons name="search-outline" size={28} color={Colors.textMuted} />
-          <Text style={s.emptyText}>No results for "{search}"</Text>
-        </View>
-      )}
+          {/* Incoming Requests */}
+          {incoming.length > 0 && (
+            <>
+              <Text style={s.miniLabel}>REQUESTS</Text>
+              {incoming.map((req) => {
+                const color = getAvatarColor(req.user.username || req.user.id);
+                const isResponding = respondingTo === req.friendship_id;
 
-      {/* Suggested */}
-      <Text style={[s.miniLabel, { marginTop: 28 }]}>SUGGESTED</Text>
-      {SUGGESTED_FRIENDS.map((p) => (
-        <View key={p.id} style={s.friendRow}>
-          <View style={[s.avatar, { backgroundColor: `${p.color}20`, borderColor: `${p.color}35` }]}>
-            <Text style={[s.avatarLetter, { color: p.color }]}>{p.initial}</Text>
-          </View>
-          <View style={s.friendInfo}>
-            <Text style={s.friendName}>{p.name}</Text>
-            <Text style={s.friendMeta}>{p.mutuals} mutual friends</Text>
-          </View>
-          <TouchableOpacity style={s.addBtn} activeOpacity={0.7}>
-            <Text style={s.addBtnText}>Add</Text>
+                return (
+                  <View key={req.friendship_id} style={s.friendRow}>
+                    <View style={[s.avatar, { backgroundColor: `${color}20`, borderColor: `${color}35` }]}>
+                      <Text style={[s.avatarLetter, { color }]}>{(req.user.display_name || '?')[0].toUpperCase()}</Text>
+                    </View>
+                    <View style={s.friendInfo}>
+                      <Text style={s.friendName}>{req.user.display_name}</Text>
+                      <Text style={s.friendMeta}>@{req.user.username}</Text>
+                    </View>
+                    {isResponding ? (
+                      <ActivityIndicator size="small" color={Colors.primaryContainer} />
+                    ) : (
+                      <>
+                        <TouchableOpacity
+                          style={s.acceptBtn}
+                          activeOpacity={0.7}
+                          onPress={() => onRespond(req.friendship_id, 'accept')}
+                        >
+                          <Ionicons name="checkmark" size={16} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={s.declineBtn}
+                          activeOpacity={0.7}
+                          onPress={() => onRespond(req.friendship_id, 'decline')}
+                        >
+                          <Ionicons name="close" size={16} color={Colors.textMuted} />
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                );
+              })}
+            </>
+          )}
+
+          {/* Outgoing Requests */}
+          {outgoing.length > 0 && (
+            <>
+              <Text style={s.miniLabel}>SENT REQUESTS</Text>
+              {outgoing.map((req) => {
+                const color = getAvatarColor(req.user.username || req.user.id);
+                return (
+                  <View key={req.friendship_id} style={s.friendRow}>
+                    <View style={[s.avatar, { backgroundColor: `${color}20`, borderColor: `${color}35` }]}>
+                      <Text style={[s.avatarLetter, { color }]}>{(req.user.display_name || '?')[0].toUpperCase()}</Text>
+                    </View>
+                    <View style={s.friendInfo}>
+                      <Text style={s.friendName}>{req.user.display_name}</Text>
+                      <Text style={s.friendMeta}>@{req.user.username}</Text>
+                    </View>
+                    <View style={s.pendingPill}>
+                      <Text style={s.pendingText}>Pending</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </>
+          )}
+
+          {/* Friends List */}
+          {!isLoading && (
+            <>
+              <View style={s.sectionRow}>
+                <Text style={s.miniLabel}>FRIENDS</Text>
+                <View style={s.countPill}>
+                  <Text style={s.countText}>{friends.length}</Text>
+                </View>
+              </View>
+
+              {friends.length === 0 && (
+                <View style={s.empty}>
+                  <Ionicons name="people-outline" size={32} color={Colors.textMuted} />
+                  <Text style={s.emptyText}>No friends yet</Text>
+                  <Text style={[s.emptyText, { fontSize: 12 }]}>Search for users above to add friends</Text>
+                </View>
+              )}
+
+              {filteredFriends.map((f) => {
+                const color = getAvatarColor(f.user.username || f.user.id);
+                const mutualText = f.mutual_friends > 0
+                  ? `${f.mutual_friends} mutual friend${f.mutual_friends > 1 ? 's' : ''}`
+                  : null;
+
+                return (
+                  <TouchableOpacity key={f.friendship_id} style={s.friendRow} activeOpacity={0.6}>
+                    <View style={[s.avatar, { backgroundColor: `${color}20`, borderColor: `${color}35` }]}>
+                      <Text style={[s.avatarLetter, { color }]}>{(f.user.display_name || '?')[0].toUpperCase()}</Text>
+                    </View>
+                    <View style={s.friendInfo}>
+                      <Text style={s.friendName}>{f.user.display_name}</Text>
+                      <Text style={s.friendMeta} numberOfLines={1}>
+                        @{f.user.username}{mutualText ? ` · ${mutualText}` : ''}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+                  </TouchableOpacity>
+                );
+              })}
+
+              {filteredFriends.length === 0 && search.length > 0 && friends.length > 0 && (
+                <View style={s.empty}>
+                  <Ionicons name="search-outline" size={28} color={Colors.textMuted} />
+                  <Text style={s.emptyText}>No results for "{search}"</Text>
+                </View>
+              )}
+            </>
+          )}
+
+          {/* Invite */}
+          <TouchableOpacity style={s.inviteRow} activeOpacity={0.7}>
+            <Ionicons name="share-outline" size={18} color={Colors.primaryContainer} />
+            <Text style={s.inviteText}>Invite Friends to LogIt</Text>
+            <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
           </TouchableOpacity>
-        </View>
-      ))}
-
-      {/* Invite */}
-      <TouchableOpacity style={s.inviteRow} activeOpacity={0.7}>
-        <Ionicons name="share-outline" size={18} color={Colors.primaryContainer} />
-        <Text style={s.inviteText}>Invite Friends to LogIt</Text>
-        <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
-      </TouchableOpacity>
+        </>
+      )}
     </View>
   );
 }
@@ -473,10 +737,41 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(45, 212, 191, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(45, 212, 191, 0.25)',
+    minWidth: 48,
+    alignItems: 'center',
   },
   addBtnText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
+    color: Colors.primaryContainer,
+  },
+  pendingPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  pendingText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    color: Colors.textMuted,
+  },
+  friendsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: 'rgba(45, 212, 191, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(45, 212, 191, 0.2)',
+  },
+  friendsPillText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
     color: Colors.primaryContainer,
   },
 

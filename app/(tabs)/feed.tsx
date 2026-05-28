@@ -1,9 +1,10 @@
 /**
  * LogIt — Feed Screen
+ * Real data from /api/feed endpoints. Global/Following/You tabs.
  * Spatial Green v2 design: header, tab pills, large image cards
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,286 +12,213 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Shadows } from '@/constants/colors';
-import { Typography, FontFamily, FontSize, LetterSpacing } from '@/constants/typography';
+import { Colors } from '@/constants/colors';
+import { FontFamily, LetterSpacing } from '@/constants/typography';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { OrbBackground } from '@/components/ui/OrbBackground';
 import { EditLogModal } from '@/components/ui/EditLogModal';
 import { EventDetailModal, type EventDetail } from '@/components/ui/EventDetailModal';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { api } from '@/lib/api';
 
 import { useAuthStore } from '@/store/authStore';
 
 const FEED_TABS = ['Global', 'Following', 'You'] as const;
 type FeedTab = (typeof FEED_TABS)[number];
 
-type MockCard = EventDetail & {
-  image: string;
-  eventIcon: React.ComponentProps<typeof Ionicons>['name'];
-  score?: string;
-  timeAgo: string;
-  secondaryPill?: string;
-  secondaryPillColor?: string;
+// Map tab to API endpoint path
+const TAB_ENDPOINTS: Record<FeedTab, string> = {
+  Global: '/feed/global',
+  Following: '/feed/following',
+  You: '/feed/me',
 };
 
-function getSecondaryPill(card: MockCard): { text: string; color: string } | null {
-  const t = card.eventType?.toLowerCase() || '';
-  if (card.score) return { text: card.score, color: '#FF8A3D' };
-  if (t === 'movie' && card.runtime) return { text: `${card.runtime} min`, color: '#679cff' };
-  if (t === 'concert' && card.genre) return { text: card.genre, color: '#ac89ff' };
-  if (t === 'restaurant' && card.priceLevel) return { text: card.priceLevel, color: '#facc15' };
-  if ((t === 'food_drinks' || t === 'food & drinks') && card.priceLevel) return { text: card.priceLevel, color: '#facc15' };
-  if (t === 'nightlife' && card.vibe) return { text: card.vibe, color: '#00FFC2' };
-  if ((t === 'theater' || t === 'theatre') && (card as any).showType) return { text: (card as any).showType, color: '#ac89ff' };
+/** Map a feed card from API response to EventDetail for modals */
+function feedCardToEventDetail(card: any): EventDetail {
+  const event = card.event || {};
+  const meta = event.type_metadata || {};
+  const eventType = meta.league || event.event_type || 'Custom';
+
+  return {
+    id: card.log_id,
+    user: {
+      name: card.user ? `@${card.user.username}` : '@unknown',
+      avatar: card.user?.avatar_url || '',
+    },
+    timeAgo: card.logged_at ? timeAgo(card.logged_at) : '',
+    title: event.title || 'Untitled',
+    venue: event.venue_name || '',
+    venueCity: event.venue_city || '',
+    venueState: event.venue_state || '',
+    date: event.event_date
+      ? new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : '',
+    eventType,
+    // Sports metadata
+    homeTeamName: meta.home_team_name,
+    awayTeamName: meta.away_team_name,
+    homeTeamLogo: meta.home_team_logo,
+    awayTeamLogo: meta.away_team_logo,
+    homeScore: meta.home_score,
+    awayScore: meta.away_score,
+    league: meta.league,
+    season: meta.season,
+    sport: meta.sport,
+    status: event.status,
+    // Log data
+    privacy: card.privacy,
+    rating: card.rating || 0,
+    note: card.notes || '',
+    photos: (card.photos || []).map((p: any) => ({ id: p.id || '', url: p.url, firebase_path: p.firebase_path || '', display_order: p.display_order })),
+    companions: (card.companions || []).map((c: any) => ({ name: c.name })),
+    rootedTeam: card.rooted_team || null,
+  };
+}
+
+/** Get event type icon */
+function getEventIcon(eventType: string): React.ComponentProps<typeof Ionicons>['name'] {
+  const t = eventType?.toLowerCase() || '';
+  if (t.includes('nba') || t.includes('wnba') || t.includes('ncaa') && t.includes('basketball')) return 'basketball-outline';
+  if (t.includes('nfl') || t.includes('ncaaf') || t.includes('football')) return 'american-football-outline';
+  if (t.includes('mlb') || t.includes('baseball')) return 'baseball-outline';
+  if (t.includes('nhl') || t.includes('hockey')) return 'ice-cream-outline';
+  if (t === 'movie' || t === 'movies') return 'film-outline';
+  if (t === 'concert' || t === 'concerts') return 'musical-notes-outline';
+  if (t === 'restaurant' || t === 'food_drinks' || t === 'food & drinks') return 'restaurant-outline';
+  if (t === 'theater' || t === 'theatre') return 'ticket-outline';
+  if (t === 'sports') return 'trophy-outline';
+  return 'calendar-outline';
+}
+
+/** Get secondary pill (score, runtime, etc.) */
+function getSecondaryPill(card: any): { text: string; color: string } | null {
+  const meta = card.event?.type_metadata || {};
+  if (meta.home_score != null && meta.away_score != null) {
+    return { text: `${meta.away_score} - ${meta.home_score}`, color: '#FF8A3D' };
+  }
   return null;
 }
 
-const MOCK_CARDS: MockCard[] = [
-  // ── Sports (NBA) ──
-  {
-    id: '1',
-    user: { name: '@jonah', avatar: 'https://i.pravatar.cc/100?img=33' },
-    timeAgo: '2 hours ago',
-    image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop',
-    title: 'Celtics vs Lakers',
-    venue: 'Crypto.com Arena',
-    venueCity: 'Los Angeles',
-    venueState: 'CA',
-    date: 'Mar 15, 2026',
-    eventType: 'NBA',
-    eventIcon: 'basketball-outline',
-    score: '108 - 112',
-    status: 'FINAL • OT',
-    homeTeamName: 'Celtics',
-    awayTeamName: 'Lakers',
-    homeTeamLogo: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8f/Boston_Celtics.svg/1200px-Boston_Celtics.svg.png',
-    awayTeamLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Los_Angeles_Lakers_logo.svg/1200px-Los_Angeles_Lakers_logo.svg.png',
-    homeScore: 112,
-    awayScore: 108,
-    league: 'NBA',
-    season: '2025-26',
-    sport: 'basketball',
-    privacy: 'public',
-    rating: 5,
-    note: 'Incredible game, went to OT! Tatum was on fire in the 4th quarter. Sat in section 301, great view of the court. The energy was electric.',
-    photos: [
-      'https://images.unsplash.com/photo-1504450758481-7338bbe75c8e?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1518063319789-7217e6706b04?q=80&w=400&auto=format&fit=crop',
-    ],
-    companions: [
-      { name: 'Alex', avatar: 'https://i.pravatar.cc/100?img=1' },
-      { name: 'Sarah', avatar: 'https://i.pravatar.cc/100?img=2' },
-    ],
-  },
-  {
-    id: '2',
-    user: { name: '@sarah', avatar: 'https://i.pravatar.cc/100?img=5' },
-    timeAgo: '5 hours ago',
-    image: 'https://images.unsplash.com/photo-1577223625816-7546f13df25d?q=80&w=800&auto=format&fit=crop',
-    title: 'Knicks vs 76ers',
-    venue: 'Madison Square Garden',
-    venueCity: 'New York',
-    venueState: 'NY',
-    date: 'Mar 14, 2026',
-    eventType: 'NBA',
-    eventIcon: 'basketball-outline',
-    score: '104 - 98',
-    status: 'FINAL',
-    homeTeamName: 'Knicks',
-    awayTeamName: '76ers',
-    homeTeamLogo: 'https://upload.wikimedia.org/wikipedia/en/thumb/2/25/New_York_Knicks_logo.svg/1200px-New_York_Knicks_logo.svg.png',
-    awayTeamLogo: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/0e/Philadelphia_76ers_logo.svg/1200px-Philadelphia_76ers_logo.svg.png',
-    homeScore: 98,
-    awayScore: 104,
-    league: 'NBA',
-    season: '2025-26',
-    sport: 'basketball',
-    privacy: 'friends',
-    rating: 4,
-    note: 'MSG was electric tonight. Brunson with 42 points! Lost but still an amazing atmosphere.',
-    companions: [
-      { name: 'Mike', avatar: 'https://i.pravatar.cc/100?img=7' },
-    ],
-  },
-  // ── Sports (NFL) ──
-  {
-    id: '3',
-    user: { name: '@mike', avatar: 'https://i.pravatar.cc/100?img=12' },
-    timeAgo: '1 day ago',
-    image: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?q=80&w=800&auto=format&fit=crop',
-    title: 'Chiefs vs Eagles',
-    venue: 'Arrowhead Stadium',
-    venueCity: 'Kansas City',
-    venueState: 'MO',
-    date: 'Mar 12, 2026',
-    eventType: 'NFL',
-    eventIcon: 'american-football-outline',
-    score: '24 - 31',
-    status: 'FINAL',
-    homeTeamName: 'Chiefs',
-    awayTeamName: 'Eagles',
-    homeScore: 31,
-    awayScore: 24,
-    league: 'NFL',
-    season: '2025-26',
-    sport: 'football',
-    privacy: 'public',
-    rating: 5,
-    note: 'Mahomes threw 4 TDs. Tailgate was unreal — best BBQ I\'ve ever had. Seats were 10 rows up on the 50.',
-    photos: [
-      'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=400&auto=format&fit=crop',
-    ],
-    companions: [
-      { name: 'Dad' },
-      { name: 'Jake', avatar: 'https://i.pravatar.cc/100?img=15' },
-    ],
-  },
-  // ── Movie ──
-  {
-    id: '4',
-    user: { name: '@alex', avatar: 'https://i.pravatar.cc/100?img=1' },
-    timeAgo: '3 hours ago',
-    image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop',
-    title: 'Dune: Part Two',
-    venue: 'AMC Lincoln Square',
-    venueCity: 'New York',
-    venueState: 'NY',
-    date: 'Mar 14, 2026',
-    eventType: 'Movie',
-    eventIcon: 'film-outline',
-    director: 'Denis Villeneuve',
-    genre: 'Sci-Fi',
-    runtime: 166,
-    cast: ['Timothée Chalamet', 'Zendaya', 'Austin Butler', 'Florence Pugh'],
-    watchedAt: 'IMAX',
-    theaterName: 'AMC Lincoln Square',
-    privacy: 'public',
-    rating: 5,
-    note: 'Absolutely stunning in IMAX. The sandworm riding sequence was breathtaking. Denis Villeneuve outdid himself.',
-    photos: [
-      'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=400&auto=format&fit=crop',
-    ],
-    companions: [
-      { name: 'Sarah', avatar: 'https://i.pravatar.cc/100?img=2' },
-    ],
-  },
-  // ── Concert ──
-  {
-    id: '5',
-    user: { name: '@maya', avatar: 'https://i.pravatar.cc/100?img=9' },
-    timeAgo: '8 hours ago',
-    image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=800&auto=format&fit=crop',
-    title: 'SZA',
-    venue: 'Madison Square Garden',
-    venueCity: 'New York',
-    venueState: 'NY',
-    date: 'Mar 13, 2026',
-    eventType: 'Concert',
-    eventIcon: 'musical-notes-outline',
-    artist: 'SZA',
-    tourName: 'SOS Tour',
-    opener: 'Omar Apollo',
-    genre: 'R&B',
-    setlist: ['Kill Bill', 'Snooze', 'Shirt', 'Love Galore', 'Kiss Me More', 'Good Days'],
-    privacy: 'public',
-    rating: 5,
-    note: 'SZA\'s vocals were insane live. She played for almost 2 hours straight. Omar Apollo opened and was incredible too.',
-    photos: [
-      'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?q=80&w=400&auto=format&fit=crop',
-    ],
-    companions: [
-      { name: 'Lily', avatar: 'https://i.pravatar.cc/100?img=10' },
-      { name: 'Marcus', avatar: 'https://i.pravatar.cc/100?img=11' },
-    ],
-  },
-  // ── Food & Drinks (merged restaurant + nightlife) ──
-  {
-    id: '6',
-    user: { name: '@emma', avatar: 'https://i.pravatar.cc/100?img=20' },
-    timeAgo: '1 day ago',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop',
-    title: 'Carbone',
-    venue: 'Carbone',
-    venueCity: 'New York',
-    venueState: 'NY',
-    date: 'Mar 12, 2026',
-    eventType: 'Food & Drinks',
-    eventIcon: 'restaurant-outline',
-    cuisine: 'Italian-American',
-    priceLevel: '$$$$',
-    venueType: 'Restaurant',
-    privacy: 'public',
-    rating: 4,
-    note: 'Finally got a reservation. The spicy rigatoni lived up to the hype. Veal parm was unreal. Definitely going back.',
-    photos: [
-      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=400&auto=format&fit=crop',
-    ],
-    companions: [
-      { name: 'Tom', avatar: 'https://i.pravatar.cc/100?img=22' },
-    ],
-  },
-  // ── Theater ──
-  {
-    id: '7',
-    user: { name: '@jake', avatar: 'https://i.pravatar.cc/100?img=15' },
-    timeAgo: '2 days ago',
-    image: 'https://images.unsplash.com/photo-1503095396549-807759245b35?q=80&w=800&auto=format&fit=crop',
-    title: 'Hamilton',
-    venue: 'Richard Rodgers Theatre',
-    venueCity: 'New York',
-    venueState: 'NY',
-    date: 'Mar 10, 2026',
-    eventType: 'Theater',
-    eventIcon: 'ticket-outline',
-    showName: 'Hamilton',
-    showType: 'Musical',
-    performer: 'Broadway Cast',
-    seatSection: 'Orchestra',
-    privacy: 'public',
-    rating: 5,
-    note: 'Absolutely incredible. The Act 2 opener gave me chills. Orchestra seats were worth every penny. Lin-Manuel is a genius.',
-    companions: [
-      { name: 'Alex', avatar: 'https://i.pravatar.cc/100?img=1' },
-      { name: 'Maya', avatar: 'https://i.pravatar.cc/100?img=9' },
-    ],
-  },
-  // ── Custom ──
-  {
-    id: '8',
-    user: { name: '@jonah', avatar: 'https://i.pravatar.cc/100?img=33' },
-    timeAgo: '2 days ago',
-    image: 'https://images.unsplash.com/photo-1523050854058-8df90110c476?q=80&w=800&auto=format&fit=crop',
-    title: 'Graduation Day',
-    venue: 'Boston University',
-    venueCity: 'Boston',
-    venueState: 'MA',
-    date: 'May 18, 2025',
-    eventType: 'Custom',
-    eventIcon: 'calendar-outline',
-    privacy: 'public',
-    rating: 5,
-    note: 'Finally walked across that stage. 4 years of hard work paid off. So grateful for everyone who came out to celebrate.',
-    photos: [
-      'https://images.unsplash.com/photo-1627556704302-624286467c65?q=80&w=400&auto=format&fit=crop',
-    ],
-    companions: [
-      { name: 'Mom' },
-      { name: 'Dad' },
-      { name: 'Sarah', avatar: 'https://i.pravatar.cc/100?img=2' },
-    ],
-  },
-];
+/** Format time ago */
+function timeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = now - then;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'JUST NOW';
+  if (mins < 60) return `${mins}M AGO`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}H AGO`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}D AGO`;
+  const weeks = Math.floor(days / 7);
+  return `${weeks}W AGO`;
+}
 
 export default function FeedScreen() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<FeedTab>('Following');
+  const [activeTab, setActiveTab] = useState<FeedTab>('Global');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
   const [editEvent, setEditEvent] = useState<EventDetail | null>(null);
+
+  // Feed data state
+  const [feedData, setFeedData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const LIMIT = 20;
+
+  const fetchFeed = useCallback(async (tab: FeedTab, reset = true) => {
+    try {
+      if (reset) {
+        setIsLoading(true);
+        setError(null);
+      }
+
+      const currentOffset = reset ? 0 : offset;
+      const response = await api.get<any>(TAB_ENDPOINTS[tab], {
+        limit: String(LIMIT),
+        offset: String(currentOffset),
+      });
+
+      const newCards = response.data || [];
+
+      if (reset) {
+        setFeedData(newCards);
+        setOffset(LIMIT);
+      } else {
+        setFeedData(prev => [...prev, ...newCards]);
+        setOffset(prev => prev + LIMIT);
+      }
+
+      setHasMore(response.pagination?.has_more || false);
+    } catch (err: any) {
+      console.warn('Feed fetch error:', err);
+      if (reset) {
+        setError(err?.error?.message || 'Failed to load feed');
+        setFeedData([]);
+      }
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+      setIsLoadingMore(false);
+    }
+  }, [offset]);
+
+  // Fetch on mount and tab change
+  useEffect(() => {
+    fetchFeed(activeTab, true);
+  }, [activeTab]);
+
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    fetchFeed(activeTab, true);
+  }, [activeTab, fetchFeed]);
+
+  const handleLoadMore = useCallback(() => {
+    if (isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    fetchFeed(activeTab, false);
+  }, [activeTab, fetchFeed, isLoadingMore, hasMore]);
+
+  const handleScroll = useCallback((event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 200;
+    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+      handleLoadMore();
+    }
+  }, [handleLoadMore]);
+
+  /** Empty state per tab */
+  const renderEmptyState = () => {
+    if (isLoading) return null;
+
+    const configs: Record<FeedTab, { icon: React.ComponentProps<typeof Ionicons>['name']; title: string; subtitle: string }> = {
+      Global: { icon: 'earth-outline', title: 'No public logs yet', subtitle: 'Be the first to log an event!' },
+      Following: { icon: 'people-outline', title: 'No friend activity', subtitle: 'Add friends to see their logs here' },
+      You: { icon: 'bookmarks-outline', title: 'No logs yet', subtitle: 'Start logging events to see them here' },
+    };
+
+    const config = configs[activeTab];
+
+    return (
+      <View style={styles.emptyState}>
+        <GlassCard borderRadius={24} style={styles.emptyCard}>
+          <Ionicons name={config.icon} size={48} color={Colors.textMuted} />
+          <Text style={styles.emptyTitle}>{config.title}</Text>
+          <Text style={styles.emptySubtitle}>{config.subtitle}</Text>
+        </GlassCard>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -323,11 +251,50 @@ export default function FeedScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={400}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={Colors.primaryContainer}
+          />
+        }
       >
+        {/* Loading state */}
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primaryContainer} />
+            <Text style={styles.loadingText}>Loading feed...</Text>
+          </View>
+        )}
+
+        {/* Error state */}
+        {error && !isLoading && (
+          <GlassCard borderRadius={16} style={styles.errorCard}>
+            <Ionicons name="alert-circle-outline" size={20} color="#ff6b6b" />
+            <Text style={styles.errorText}>{error}</Text>
+          </GlassCard>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && !error && feedData.length === 0 && renderEmptyState()}
+
         {/* Feed cards */}
-        {MOCK_CARDS.map((card) => (
-          <FeedCard key={card.id} card={card} onPress={() => setSelectedEvent(card)} />
+        {feedData.map((card) => (
+          <FeedCard
+            key={card.log_id}
+            card={card}
+            onPress={() => setSelectedEvent(feedCardToEventDetail(card))}
+          />
         ))}
+
+        {/* Load more indicator */}
+        {isLoadingMore && (
+          <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={Colors.primaryContainer} />
+          </View>
+        )}
 
         {/* Bottom spacer for floating nav */}
         <View style={{ height: 140 }} />
@@ -346,6 +313,7 @@ export default function FeedScreen() {
         onSave={(data) => {
           console.log('Saved log:', data);
           setEditEvent(null);
+          handleRefresh();
         }}
       />
 
@@ -357,10 +325,25 @@ function FeedCard({
   card,
   onPress,
 }: {
-  card: MockCard;
+  card: any;
   onPress: () => void;
 }) {
+  const event = card.event || {};
+  const meta = event.type_metadata || {};
+  const eventType = meta.league || event.event_type || 'Custom';
+  const eventIcon = getEventIcon(eventType);
   const pill = getSecondaryPill(card);
+  const userAvatar = card.user?.avatar_url;
+  const username = card.user?.username ? `@${card.user.username}` : 'Unknown';
+  const eventTitle = event.title || 'Untitled';
+  const venueName = event.venue_name || '';
+  const rating = card.rating || 0;
+  const notes = card.notes || '';
+  const loggedAt = card.logged_at ? timeAgo(card.logged_at) : '';
+
+  // Use first photo as card image, or event image, or a fallback
+  const photos = (card.photos || []).map((p: any) => p.url || p);
+  const cardImage = photos[0] || event.image_url || meta.home_team_logo;
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
@@ -368,58 +351,89 @@ function FeedCard({
         <View style={styles.cardInner}>
           {/* User info */}
           <View style={styles.cardHeader}>
-            <Image source={{ uri: card.user.avatar }} style={styles.avatar} />
+            {userAvatar ? (
+              <Image source={{ uri: userAvatar }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Text style={styles.avatarFallbackText}>
+                  {card.user?.display_name?.charAt(0)?.toUpperCase() || '?'}
+                </Text>
+              </View>
+            )}
             <View>
               <Text style={styles.cardUserText}>
-                <Text style={styles.cardUsername}>{card.user.name} </Text>
+                <Text style={styles.cardUsername}>{username} </Text>
                 <Text style={styles.cardAction}>logged this</Text>
               </Text>
-              <Text style={styles.cardTime}>{card.timeAgo.toUpperCase()}</Text>
+              <Text style={styles.cardTime}>{loggedAt}</Text>
             </View>
           </View>
 
           {/* Large image */}
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: card.image }} style={styles.cardImage} />
+          {cardImage ? (
+            <View style={styles.imageContainer}>
+              <Image source={{ uri: cardImage }} style={styles.cardImage} />
 
-            {/* Gradient overlay with info */}
-            <View style={styles.imageOverlay}>
-              <Text style={styles.cardTitle}>{card.title}</Text>
-              <View style={styles.imageBottom}>
-                <Text style={styles.cardVenue}>{card.venue.toUpperCase()}</Text>
-                <View style={styles.starsRow}>
-                  {Array.from({ length: 5 }).map((_, i) => {
-                    const threshold = i + 1;
-                    const r = card.rating || 0;
-                    const iconName = r >= threshold
-                      ? 'star' as const
-                      : r >= threshold - 0.5
-                        ? 'star-half' as const
-                        : 'star-outline' as const;
-                    return (
-                      <Ionicons key={`star-${i}`} name={iconName} size={14} color={r > i ? '#facc15' : Colors.textMuted} />
-                    );
-                  })}
+              {/* Gradient overlay with info */}
+              <View style={styles.imageOverlay}>
+                <Text style={styles.cardTitle}>{eventTitle}</Text>
+                <View style={styles.imageBottom}>
+                  <Text style={styles.cardVenue}>{venueName.toUpperCase()}</Text>
+                  <View style={styles.starsRow}>
+                    {Array.from({ length: 5 }).map((_, i) => {
+                      const threshold = i + 1;
+                      const iconName = rating >= threshold
+                        ? 'star' as const
+                        : rating >= threshold - 0.5
+                          ? 'star-half' as const
+                          : 'star-outline' as const;
+                      return (
+                        <Ionicons key={`star-${i}`} name={iconName} size={14} color={rating > i ? '#facc15' : Colors.textMuted} />
+                      );
+                    })}
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {/* Event type pill (top left) */}
-            <View style={styles.eventPill}>
-              <Ionicons name={card.eventIcon} size={13} color="#fff" />
-              <Text style={styles.eventPillText}>{card.eventType}</Text>
-            </View>
-
-            {/* Secondary pill (top right) — type-aware */}
-            {pill && (
-              <View style={[styles.scorePill, { borderColor: `${pill.color}35` }]}>
-                <Text style={[styles.scoreText, { color: pill.color }]}>{pill.text}</Text>
+              {/* Event type pill (top left) */}
+              <View style={styles.eventPill}>
+                <Ionicons name={eventIcon} size={13} color="#fff" />
+                <Text style={styles.eventPillText}>{eventType.toUpperCase()}</Text>
               </View>
-            )}
-          </View>
+
+              {/* Secondary pill (top right) — score */}
+              {pill && (
+                <View style={[styles.scorePill, { borderColor: `${pill.color}35` }]}>
+                  <Text style={[styles.scoreText, { color: pill.color }]}>{pill.text}</Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            /* No image fallback — title card */
+            <GlassCard borderRadius={24} style={styles.noImageCard}>
+              <Ionicons name={eventIcon} size={32} color={Colors.primaryContainer} />
+              <Text style={styles.noImageTitle}>{eventTitle}</Text>
+              <Text style={styles.noImageVenue}>{venueName}</Text>
+              <View style={styles.starsRow}>
+                {Array.from({ length: 5 }).map((_, i) => {
+                  const threshold = i + 1;
+                  const iconName = rating >= threshold
+                    ? 'star' as const
+                    : rating >= threshold - 0.5
+                      ? 'star-half' as const
+                      : 'star-outline' as const;
+                  return (
+                    <Ionicons key={`star-${i}`} name={iconName} size={14} color={rating > i ? '#facc15' : Colors.textMuted} />
+                  );
+                })}
+              </View>
+            </GlassCard>
+          )}
 
           {/* Note */}
-          <Text style={styles.noteText} numberOfLines={2}>{card.note}</Text>
+          {notes ? (
+            <Text style={styles.noteText} numberOfLines={2}>{notes}</Text>
+          ) : null}
         </View>
       </GlassCard>
     </TouchableOpacity>
@@ -474,6 +488,53 @@ const styles = StyleSheet.create({
     color: Colors.primaryContainer,
   },
 
+  // Loading
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 60,
+    gap: 12,
+  },
+  loadingText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+
+  // Error
+  errorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 16,
+  },
+  errorText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: '#ff6b6b',
+    flex: 1,
+  },
+
+  // Empty state
+  emptyState: {
+    paddingTop: 40,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    padding: 40,
+    gap: 12,
+  },
+  emptyTitle: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 18,
+    color: Colors.text,
+  },
+  emptySubtitle: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
+
   // Card
   card: {
     padding: 4,
@@ -499,6 +560,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.glassBorder,
+  },
+  avatarFallback: {
+    backgroundColor: 'rgba(45, 212, 191, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarFallbackText: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 16,
+    color: Colors.primaryContainer,
   },
   cardUserText: {
     fontSize: 13,
@@ -601,6 +672,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 2,
     color: '#FF8A3D',
+  },
+
+  // No image fallback
+  noImageCard: {
+    alignItems: 'center',
+    padding: 28,
+    gap: 8,
+  },
+  noImageTitle: {
+    fontFamily: FontFamily.headlineExtraBold,
+    fontSize: 20,
+    color: Colors.text,
+    textAlign: 'center',
+  },
+  noImageVenue: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: Colors.textMuted,
+    textAlign: 'center',
   },
 
   // Note
