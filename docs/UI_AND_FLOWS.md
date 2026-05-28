@@ -87,23 +87,29 @@ graph TB
 
 ### 1. Feed
 
-The default screen when opening the app.
+The default screen when opening the app. Now wired to real API data.
 
 **Layout:**
 - **PageHeader:** "Feed" title (left), "LogIt" brand with timeline dots (center), settings gear + social icon (right)
 - **Sticky header:** `Global` · `Following` · `You` tab pills with bottom border — stays fixed while feed scrolls
-- Scrollable list of log cards
-- Each card shows: user avatar, name, event title, teams, date, venue
+- Scrollable list of log cards fetched from `/api/feed/global`, `/api/feed/following`, `/api/feed/me`
+- Each card shows: user avatar, @username, event title, venue, star rating, note preview
+- Type-specific secondary pill (score for sports, runtime for movies, etc.)
 - Tapping a card → Event Detail
+
+> **📋 Feed Card Templates:** See [FEED_CARD_TEMPLATES.md](./FEED_CARD_TEMPLATES.md) for the canonical UI spec for how feed cards look for each event type (Sports, Movie, Concert, Food & Drinks, Theater, Custom) — including icons, secondary pills, metadata fields, and reference images.
 
 **Behavior:**
 - `Following` tab stays visible even when empty — prompts invite/add-friend flows to drive growth
-- Privacy controls filter what appears (public logs only in `Global`)
-- Pull-to-refresh
+- Privacy controls filter what appears (public logs only in `Global`, public + friends in `Following`)
+- Pull-to-refresh (RefreshControl)
+- Infinite scroll pagination (loads more on scroll near bottom)
+- Loading, error, and empty states per tab
 
 **Empty States:**
-- First time: "Welcome! Log your first game →"
-- No friends: Growth-focused prompt — invite friends, tease overlap insights, early adopter badges
+- Global: "No public logs yet — Be the first to log an event!"
+- Following: "No friend activity — Add friends to see their logs here"
+- You: "No logs yet — Start logging events to see them here"
 
 ---
 
