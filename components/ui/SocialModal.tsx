@@ -74,7 +74,7 @@ export function SocialModal({ visible, onClose }: Props) {
   const fetchFriendsList = useCallback(async () => {
     setIsLoadingFriends(true);
     try {
-      const data = await api.get<any>('/friends/list');
+      const data = await api.get<any>('/api/friends/list');
       setFriends(data.friends || []);
       setIncoming(data.incoming || []);
       setOutgoing(data.outgoing || []);
@@ -104,7 +104,7 @@ export function SocialModal({ visible, onClose }: Props) {
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
-        const data = await api.get<any>('/friends/search', { q: friendSearch });
+        const data = await api.get<any>('/api/friends/search', { q: friendSearch });
         setSearchResults(data.users || []);
       } catch (err) {
         console.warn('Friend search error:', err);
@@ -123,7 +123,7 @@ export function SocialModal({ visible, onClose }: Props) {
   const handleSendRequest = useCallback(async (userId: string) => {
     setRequestingTo(userId);
     try {
-      await api.post('/friends/request', { addressee_id: userId });
+      await api.post('/api/friends/request', { addressee_id: userId });
       // Update search results to reflect new status
       setSearchResults(prev => prev.map(u =>
         u.id === userId ? { ...u, friendship_status: 'pending_outgoing' } : u
@@ -144,7 +144,7 @@ export function SocialModal({ visible, onClose }: Props) {
   const handleRespond = useCallback(async (friendshipId: string, action: 'accept' | 'decline') => {
     setRespondingTo(friendshipId);
     try {
-      await api.post('/friends/respond', { friendship_id: friendshipId, action });
+      await api.post('/api/friends/respond', { friendship_id: friendshipId, action });
       fetchFriendsList();
     } catch (err) {
       console.warn('Friend respond error:', err);
@@ -156,7 +156,7 @@ export function SocialModal({ visible, onClose }: Props) {
   // Remove friend
   const handleRemoveFriend = useCallback(async (friendshipId: string) => {
     try {
-      await api.delete('/friends/remove', { friendship_id: friendshipId });
+      await api.delete('/api/friends/remove', { friendship_id: friendshipId });
       fetchFriendsList();
     } catch (err) {
       console.warn('Friend remove error:', err);
