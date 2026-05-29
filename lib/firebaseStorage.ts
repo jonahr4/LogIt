@@ -60,3 +60,39 @@ export async function deletePhotoFromStorage(firebasePath: string): Promise<void
   const storageRef = ref(storage, firebasePath);
   await deleteObject(storageRef);
 }
+
+/**
+ * Upload a profile avatar to Firebase Storage.
+ * Compresses to ≤600px wide @ quality 0.7 → typically 100–200KB output.
+ * Stored at: avatars/{userId}/{timestamp}.jpg
+ *
+ * @returns { url, firebasePath } — download URL + path for future deletion
+ */
+export async function uploadAvatar(
+  localUri: string,
+  userId: string
+): Promise<{ url: string; firebasePath: string }> {
+  // Validate file size before compressing
+  const response = await fetch(localUri);
+  const rawBlob = await response.blob();
+  if (rawBlob.size > MAX_FILE_BYTES) {
+    throw new Error('Photo must be under 5MB.');
+  }
+
+  // Compress — resize to 600px wide, JPEG at 0.7 quality (smaller than log photos)
+  const compressed = await ImageManipulator.manipulateAsync(
+    localUri,
+    [{ resize: { width: 600 } }],
+    { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+  );
+
+  const blob = await uriToBlob(compressed.uri);
+  const storage = getStorage(firebaseApp);
+  const firebasePath = `avatars/${userId}/${Date.now()}.jpg`;
+  const storageRef = ref(storage, firebasePath);
+
+  await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+  const url = await getDownloadURL(storageRef);
+
+  return { url, firebasePath };
+}

@@ -77,6 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Filter allowed update fields
     const allowedFields = [
+      'username',
       'first_name',
       'last_name',
       'display_name',
@@ -103,6 +104,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Username validation & uniqueness check
+    if (updates.username) {
+      const username = updates.username as string;
+      const usernameRegex = /^[a-z0-9_]{3,30}$/;
+      if (!usernameRegex.test(username)) {
+        return res.status(422).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Username must be 3-30 characters, lowercase letters, numbers, and underscores only',
+            status: 422,
+          },
+        });
+      }
+
+      // Check if username is taken by another user
+      const { data: existing } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', username)
+        .neq('id', id)
+        .maybeSingle();
+
+      if (existing) {
+        return res.status(409).json({
+          error: {
+            code: 'CONFLICT',
+            message: 'Username is already taken',
+            status: 409,
+          },
+        });
+      }
+    }
+
+    updates.updated_at = new Date().toISOString();
+
     const { data: user, error } = await supabase
       .from('users')
       .update(updates)
@@ -112,6 +148,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error) {
       console.error('Update error:', error);
+      // Handle unique constraint violation
+      if (error.code === '23505' && error.message?.includes('username')) {
+        return res.status(409).json({
+          error: { code: 'CONFLICT', message: 'Username is already taken', status: 409 },
+        });
+      }
       return res.status(500).json({
         error: {
           code: 'SERVER_ERROR',

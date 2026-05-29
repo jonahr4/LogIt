@@ -23,6 +23,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { EditLogModal } from '@/components/ui/EditLogModal';
 import { EventDetailModal, type EventDetail } from '@/components/ui/EventDetailModal';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { UserProfileModal } from '@/components/ui/UserProfileModal';
 import { api } from '@/lib/api';
 
 import { useAuthStore } from '@/store/authStore';
@@ -124,6 +125,7 @@ export default function FeedScreen() {
   const [activeTab, setActiveTab] = useState<FeedTab>('Global');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
   const [editEvent, setEditEvent] = useState<EventDetail | null>(null);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
   // Feed data state
   const [feedData, setFeedData] = useState<any[]>([]);
@@ -286,6 +288,7 @@ export default function FeedScreen() {
             key={card.log_id}
             card={card}
             onPress={() => setSelectedEvent(feedCardToEventDetail(card))}
+            onUserPress={(userId) => setProfileUserId(userId)}
           />
         ))}
 
@@ -317,6 +320,12 @@ export default function FeedScreen() {
         }}
       />
 
+      <UserProfileModal
+        visible={!!profileUserId}
+        onClose={() => setProfileUserId(null)}
+        userId={profileUserId}
+      />
+
     </SafeAreaView>
   );
 }
@@ -324,9 +333,11 @@ export default function FeedScreen() {
 function FeedCard({
   card,
   onPress,
+  onUserPress,
 }: {
   card: any;
   onPress: () => void;
+  onUserPress: (userId: string) => void;
 }) {
   const event = card.event || {};
   const meta = event.type_metadata || {};
@@ -350,7 +361,7 @@ function FeedCard({
       <GlassCard borderRadius={32} style={styles.card}>
         <View style={styles.cardInner}>
           {/* User info */}
-          <View style={styles.cardHeader}>
+          <TouchableOpacity style={styles.cardHeader} onPress={() => card.user?.id && onUserPress(card.user.id)} activeOpacity={0.7}>
             {userAvatar ? (
               <Image source={{ uri: userAvatar }} style={styles.avatar} />
             ) : (
@@ -367,7 +378,7 @@ function FeedCard({
               </Text>
               <Text style={styles.cardTime}>{loggedAt}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Large image */}
           {cardImage ? (

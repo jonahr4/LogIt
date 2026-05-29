@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { FontFamily } from '@/constants/typography';
 import { SharedModal } from '@/components/ui/SharedModal';
+import { UserProfileModal } from '@/components/ui/UserProfileModal';
 import { api } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ export function SocialModal({ visible, onClose }: Props) {
   const [isSearching, setIsSearching] = useState(false);
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
   const [requestingTo, setRequestingTo] = useState<string | null>(null);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch friends list when modal opens on friends tab
@@ -197,34 +199,43 @@ export function SocialModal({ visible, onClose }: Props) {
   );
 
   return (
-    <SharedModal
-      visible={visible}
-      onClose={onClose}
-      title="Social"
-      stickyContent={tabSelector}
-    >
-      <View style={s.tabContent}>
-        {activeTab === 'notifications' ? (
-          <NotificationsTab />
-        ) : (
-          <FriendsTab
-            search={friendSearch}
-            onSearchChange={setFriendSearch}
-            friends={friends}
-            incoming={incoming}
-            outgoing={outgoing}
-            searchResults={searchResults}
-            isLoading={isLoadingFriends}
-            isSearching={isSearching}
-            respondingTo={respondingTo}
-            requestingTo={requestingTo}
-            onSendRequest={handleSendRequest}
-            onRespond={handleRespond}
-            onRemoveFriend={handleRemoveFriend}
-          />
-        )}
-      </View>
-    </SharedModal>
+    <>
+      <SharedModal
+        visible={visible}
+        onClose={onClose}
+        title="Social"
+        stickyContent={tabSelector}
+      >
+        <View style={s.tabContent}>
+          {activeTab === 'notifications' ? (
+            <NotificationsTab />
+          ) : (
+            <FriendsTab
+              search={friendSearch}
+              onSearchChange={setFriendSearch}
+              friends={friends}
+              incoming={incoming}
+              outgoing={outgoing}
+              searchResults={searchResults}
+              isLoading={isLoadingFriends}
+              isSearching={isSearching}
+              respondingTo={respondingTo}
+              requestingTo={requestingTo}
+              onSendRequest={handleSendRequest}
+              onRespond={handleRespond}
+              onRemoveFriend={handleRemoveFriend}
+              onUserPress={(userId) => setProfileUserId(userId)}
+            />
+          )}
+        </View>
+      </SharedModal>
+
+      <UserProfileModal
+        visible={!!profileUserId}
+        onClose={() => setProfileUserId(null)}
+        userId={profileUserId}
+      />
+    </>
   );
 }
 
@@ -283,13 +294,14 @@ interface FriendsTabProps {
   onSendRequest: (userId: string) => void;
   onRespond: (friendshipId: string, action: 'accept' | 'decline') => void;
   onRemoveFriend: (friendshipId: string) => void;
+  onUserPress: (userId: string) => void;
 }
 
 function FriendsTab({
   search, onSearchChange,
   friends, incoming, outgoing, searchResults,
   isLoading, isSearching, respondingTo, requestingTo,
-  onSendRequest, onRespond, onRemoveFriend,
+  onSendRequest, onRespond, onRemoveFriend, onUserPress,
 }: FriendsTabProps) {
   const isSearchMode = search.length >= 2;
 
@@ -345,7 +357,7 @@ function FriendsTab({
             const isRequesting = requestingTo === user.id;
 
             return (
-              <View key={user.id} style={s.friendRow}>
+              <TouchableOpacity key={user.id} style={s.friendRow} activeOpacity={0.6} onPress={() => onUserPress(user.id)}>
                 <View style={[s.avatar, { backgroundColor: `${color}20`, borderColor: `${color}35` }]}>
                   <Text style={[s.avatarLetter, { color }]}>{(user.display_name || user.username || '?')[0].toUpperCase()}</Text>
                 </View>
@@ -383,7 +395,7 @@ function FriendsTab({
                     <Text style={s.friendsPillText}>Friends</Text>
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             );
           })}
         </>
@@ -409,7 +421,7 @@ function FriendsTab({
                 const isResponding = respondingTo === req.friendship_id;
 
                 return (
-                  <View key={req.friendship_id} style={s.friendRow}>
+                  <TouchableOpacity key={req.friendship_id} style={s.friendRow} activeOpacity={0.6} onPress={() => onUserPress(req.user.id)}>
                     <View style={[s.avatar, { backgroundColor: `${color}20`, borderColor: `${color}35` }]}>
                       <Text style={[s.avatarLetter, { color }]}>{(req.user.display_name || '?')[0].toUpperCase()}</Text>
                     </View>
@@ -437,7 +449,7 @@ function FriendsTab({
                         </TouchableOpacity>
                       </>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </>
@@ -450,7 +462,7 @@ function FriendsTab({
               {outgoing.map((req) => {
                 const color = getAvatarColor(req.user.username || req.user.id);
                 return (
-                  <View key={req.friendship_id} style={s.friendRow}>
+                  <TouchableOpacity key={req.friendship_id} style={s.friendRow} activeOpacity={0.6} onPress={() => onUserPress(req.user.id)}>
                     <View style={[s.avatar, { backgroundColor: `${color}20`, borderColor: `${color}35` }]}>
                       <Text style={[s.avatarLetter, { color }]}>{(req.user.display_name || '?')[0].toUpperCase()}</Text>
                     </View>
@@ -461,7 +473,7 @@ function FriendsTab({
                     <View style={s.pendingPill}>
                       <Text style={s.pendingText}>Pending</Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </>
@@ -492,7 +504,7 @@ function FriendsTab({
                   : null;
 
                 return (
-                  <TouchableOpacity key={f.friendship_id} style={s.friendRow} activeOpacity={0.6}>
+                  <TouchableOpacity key={f.friendship_id} style={s.friendRow} activeOpacity={0.6} onPress={() => onUserPress(f.user.id)}>
                     <View style={[s.avatar, { backgroundColor: `${color}20`, borderColor: `${color}35` }]}>
                       <Text style={[s.avatarLetter, { color }]}>{(f.user.display_name || '?')[0].toUpperCase()}</Text>
                     </View>

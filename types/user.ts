@@ -50,6 +50,7 @@ export interface SignupData {
 
 /** Data for updating user profile */
 export interface UpdateProfileData {
+  username?: string;
   first_name?: string;
   last_name?: string;
   display_name?: string;

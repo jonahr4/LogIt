@@ -11,6 +11,7 @@ import { Colors } from '@/constants/colors';
 import { FontFamily, LetterSpacing } from '@/constants/typography';
 import { SocialModal } from '@/components/ui/SocialModal';
 import { SettingsModal } from '@/components/ui/SettingsModal';
+import { EditProfileModal } from '@/components/ui/EditProfileModal';
 
 interface Props {
   title: string;
@@ -23,6 +24,7 @@ const GLOW_GREEN = 'rgba(45, 212, 191,';
 export function PageHeader({ title, rightAction }: Props) {
   const [showSocial, setShowSocial] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   return (
     <>
@@ -72,7 +74,15 @@ export function PageHeader({ title, rightAction }: Props) {
       </View>
 
       <SocialModal visible={showSocial} onClose={() => setShowSocial(false)} />
-      <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
+      <SettingsModal
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+        onEditProfile={() => setShowEditProfile(true)}
+      />
+      <EditProfileModal
+        visible={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+      />
     </>
   );
 }
