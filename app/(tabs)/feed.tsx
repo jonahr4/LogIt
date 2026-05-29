@@ -14,6 +14,7 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,17 +25,18 @@ import { EditLogModal } from '@/components/ui/EditLogModal';
 import { EventDetailModal, type EventDetail } from '@/components/ui/EventDetailModal';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { UserProfileModal } from '@/components/ui/UserProfileModal';
+import { SocialModal } from '@/components/ui/SocialModal';
 import { api } from '@/lib/api';
 
 import { useAuthStore } from '@/store/authStore';
 
-const FEED_TABS = ['Global', 'Following', 'You'] as const;
+const FEED_TABS = ['Global', 'Friends', 'You'] as const;
 type FeedTab = (typeof FEED_TABS)[number];
 
 // Map tab to API endpoint path
 const TAB_ENDPOINTS: Record<FeedTab, string> = {
   Global: '/api/feed/global',
-  Following: '/api/feed/following',
+  Friends: '/api/feed/following',
   You: '/api/feed/me',
 };
 
@@ -124,8 +126,21 @@ export default function FeedScreen() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<FeedTab>('Global');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
+  const [selectedEventOwnerId, setSelectedEventOwnerId] = useState<string | null>(null);
   const [editEvent, setEditEvent] = useState<EventDetail | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [showSocialModal, setShowSocialModal] = useState(false);
+
+  // TODO: Replace with real App Store link once published
+  const handleInvite = async () => {
+    try {
+      await Share.share({
+        message: 'Check out LogIt — log every event you attend and share with friends! Download here: https://logit.app/download',
+      });
+    } catch {
+      // user cancelled
+    }
+  };
 
   // Feed data state
   const [feedData, setFeedData] = useState<any[]>([]);
@@ -203,13 +218,38 @@ export default function FeedScreen() {
   const renderEmptyState = () => {
     if (isLoading) return null;
 
+    // Friends tab gets a special empty state
+    if (activeTab === 'Friends') {
+      return (
+        <View style={styles.emptyState}>
+          <GlassCard borderRadius={24} style={styles.emptyCard}>
+            <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>No friends yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Add friends to see what events they're logging
+            </Text>
+            <View style={styles.emptyActions}>
+              <TouchableOpacity style={styles.emptyBtnPrimary} onPress={handleInvite} activeOpacity={0.7}>
+                <Ionicons name="share-outline" size={16} color={Colors.onPrimary} />
+                <Text style={styles.emptyBtnPrimaryText}>Invite Friends</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.emptyBtnSecondary} onPress={() => setShowSocialModal(true)} activeOpacity={0.7}>
+                <Ionicons name="search-outline" size={16} color={Colors.primaryContainer} />
+                <Text style={styles.emptyBtnSecondaryText}>Find Friends</Text>
+              </TouchableOpacity>
+            </View>
+          </GlassCard>
+        </View>
+      );
+    }
+
     const configs: Record<FeedTab, { icon: React.ComponentProps<typeof Ionicons>['name']; title: string; subtitle: string }> = {
       Global: { icon: 'earth-outline', title: 'No public logs yet', subtitle: 'Be the first to log an event!' },
-      Following: { icon: 'people-outline', title: 'No friend activity', subtitle: 'Add friends to see their logs here' },
+      Friends: { icon: 'people-outline', title: 'No friend activity', subtitle: 'Add friends to see their logs here' },
       You: { icon: 'bookmarks-outline', title: 'No logs yet', subtitle: 'Start logging events to see them here' },
     };
 
-    const config = configs[activeTab];
+    const config = configs[activeTab] || { icon: 'information-circle-outline' as const, title: 'Nothing here yet', subtitle: '' };
 
     return (
       <View style={styles.emptyState}>
@@ -287,8 +327,9 @@ export default function FeedScreen() {
           <FeedCard
             key={card.log_id}
             card={card}
-            onPress={() => setSelectedEvent(feedCardToEventDetail(card))}
+            onPress={() => { setSelectedEventOwnerId(card.user?.id || null); setSelectedEvent(feedCardToEventDetail(card)); }}
             onUserPress={(userId) => setProfileUserId(userId)}
+            currentUserId={user?.id}
           />
         ))}
 
@@ -307,6 +348,7 @@ export default function FeedScreen() {
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
         onEdit={(ev) => setEditEvent(ev)}
+        mode={selectedEventOwnerId === user?.id ? 'owner' : 'viewer'}
       />
 
       <EditLogModal
@@ -326,6 +368,8 @@ export default function FeedScreen() {
         userId={profileUserId}
       />
 
+      <SocialModal visible={showSocialModal} onClose={() => setShowSocialModal(false)} initialTab="friends" />
+
     </SafeAreaView>
   );
 }
@@ -334,10 +378,12 @@ function FeedCard({
   card,
   onPress,
   onUserPress,
+  currentUserId,
 }: {
   card: any;
   onPress: () => void;
   onUserPress: (userId: string) => void;
+  currentUserId: string | undefined;
 }) {
   const event = card.event || {};
   const meta = event.type_metadata || {};
@@ -345,7 +391,8 @@ function FeedCard({
   const eventIcon = getEventIcon(eventType);
   const pill = getSecondaryPill(card);
   const userAvatar = card.user?.avatar_url;
-  const username = card.user?.username ? `@${card.user.username}` : 'Unknown';
+  const isSelf = currentUserId && card.user?.id === currentUserId;
+  const displayLabel = isSelf ? 'You' : (card.user?.display_name || card.user?.username || 'Unknown');
   const eventTitle = event.title || 'Untitled';
   const venueName = event.venue_name || '';
   const rating = card.rating || 0;
@@ -373,7 +420,7 @@ function FeedCard({
             )}
             <View>
               <Text style={styles.cardUserText}>
-                <Text style={styles.cardUsername}>{username} </Text>
+                <Text style={styles.cardUsername}>{displayLabel} </Text>
                 <Text style={styles.cardAction}>logged this</Text>
               </Text>
               <Text style={styles.cardTime}>{loggedAt}</Text>
@@ -544,6 +591,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textMuted,
     textAlign: 'center',
+  },
+  emptyActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  emptyBtnPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.primaryContainer,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  emptyBtnPrimaryText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.onPrimary,
+  },
+  emptyBtnSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.glass,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+  },
+  emptyBtnSecondaryText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.primaryContainer,
   },
 
   // Card

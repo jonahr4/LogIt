@@ -13,6 +13,8 @@ import { Typography, FontFamily } from '@/constants/typography';
 import { EventTypes, PrivacyLevels, type EventType, type PrivacyLevel } from '@/constants/config';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/authStore';
+import { uploadAvatar } from '@/lib/firebaseStorage';
+import { firebaseAuth } from '@/lib/firebase';
 
 const EVENT_TYPE_CONFIG: Record<EventType, { icon: keyof typeof Ionicons.glyphMap; label: string; description: string }> = {
   sports: { icon: 'american-football-outline', label: 'Sports', description: 'Games, matches, races' },
@@ -35,6 +37,7 @@ export default function PreferencesScreen() {
     lastName: string;
     username: string;
     displayName: string;
+    avatarUri: string;
   }>();
 
   const [selectedTypes, setSelectedTypes] = useState<EventType[]>(['sports']);
@@ -72,6 +75,21 @@ export default function PreferencesScreen() {
 
   const handleComplete = async () => {
     try {
+      let avatarUrl: string | undefined;
+
+      // Upload avatar if selected
+      if (params.avatarUri) {
+        const firebaseUid = firebaseAuth.currentUser?.uid;
+        if (firebaseUid) {
+          try {
+            const { url } = await uploadAvatar(params.avatarUri, firebaseUid);
+            avatarUrl = url;
+          } catch {
+            // Don't block signup if avatar upload fails
+          }
+        }
+      }
+
       await completeOnboarding({
         username: params.username!,
         first_name: params.firstName!,
@@ -79,6 +97,7 @@ export default function PreferencesScreen() {
         display_name: params.displayName!,
         event_preferences: selectedTypes,
         default_privacy: defaultPrivacy,
+        avatar_url: avatarUrl,
       });
       router.replace('/(onboarding)/done');
     } catch {
@@ -93,7 +112,7 @@ export default function PreferencesScreen() {
       <View style={styles.orb2} />
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { flexGrow: 1 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Back button */}

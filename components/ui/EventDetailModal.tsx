@@ -102,6 +102,8 @@ interface Props {
   onClose: () => void;
   onEdit?: (event: EventDetail) => void;
   onDelete?: (event: EventDetail) => void;
+  /** 'owner' = your log (edit/delete visible), 'viewer' = friend's log (read-only) */
+  mode?: 'owner' | 'viewer';
 }
 
 // Module-level cache — persists for the app session across modal open/close.
@@ -171,7 +173,7 @@ function useLiveScore(event: EventDetail | null) {
   return { liveScore, isFetching };
 }
 
-export function EventDetailModal({ event, onClose, onEdit, onDelete }: Props) {
+export function EventDetailModal({ event, onClose, onEdit, onDelete, mode = 'owner' }: Props) {
   const translateY = useRef(new Animated.Value(800)).current;
   const [topHeight, setTopHeight] = useState(0);
 
@@ -333,7 +335,7 @@ export function EventDetailModal({ event, onClose, onEdit, onDelete }: Props) {
               showsVerticalScrollIndicator={false}
               bounces
             >
-              <BottomContent event={event} onClose={dismiss} onEdit={onEdit} onDelete={onDelete} />
+              <BottomContent event={event} onClose={dismiss} onEdit={onEdit} onDelete={onDelete} mode={mode} />
             </ScrollView>
             {/* Soft fade at the top to blend the clip edge into the separator */}
             <LinearGradient
@@ -714,7 +716,7 @@ function MetaCell({
 
 // ─── BOTTOM CONTENT ───────────────────────────────────────────────────────────
 
-function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetail; onClose: () => void; onEdit?: (event: EventDetail) => void; onDelete?: (event: EventDetail) => void }) {
+function BottomContent({ event, onClose, onEdit, onDelete, mode }: { event: EventDetail; onClose: () => void; onEdit?: (event: EventDetail) => void; onDelete?: (event: EventDetail) => void; mode: 'owner' | 'viewer' }) {
   // Photo viewer state — viewerOpen drives visibility, viewerInitialIndex sets starting photo
   // currentIndexRef tracks swipe position WITHOUT causing re-renders (prevents flicker)
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -879,7 +881,7 @@ function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetai
 
 
       {/* ── Rating (all types) ── */}
-      <Text style={styles.miniLabel}>YOUR RATING</Text>
+      <Text style={styles.miniLabel}>{mode === 'owner' ? 'YOUR RATING' : 'RATING'}</Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View style={styles.starsRow}>
           {Array.from({ length: 5 }).map((_, i) => {
@@ -921,7 +923,7 @@ function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetai
       {/* ── Notes (all types) ── */}
       <View style={styles.sectionHeader}>
         <Ionicons name="document-text-outline" size={16} color={Colors.primaryContainer} />
-        <Text style={styles.sectionTitle}>Personal Notes</Text>
+        <Text style={styles.sectionTitle}>Notes</Text>
       </View>
       <View style={styles.notesBox}>
         {event.note && event.note.trim().length > 0 ? (
@@ -986,30 +988,31 @@ function BottomContent({ event, onClose, onEdit, onDelete }: { event: EventDetai
 
       <View style={styles.divider} />
 
-      {/* ── Action buttons ── */}
-      <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={() => { if (onEdit) { onClose(); setTimeout(() => onEdit(event), 300); } }}>
-          <Ionicons name="create-outline" size={18} color={Colors.text} />
-          <Text style={styles.editButtonText}>Edit Log</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          activeOpacity={0.8}
-          onPress={() => {
-            Alert.alert(
-              'Are you sure?',
-              'This cannot be undone.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete', style: 'destructive', onPress: () => { if (onDelete) { onClose(); setTimeout(() => onDelete(event), 300); } } }
-              ]
-            );
-          }}
-        >
-          <Ionicons name="trash-outline" size={18} color={Colors.error} />
-          <Text style={styles.deleteButtonText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
+      {mode === 'owner' && (
+        <View style={styles.actionsRow}>
+          <TouchableOpacity style={styles.editButton} activeOpacity={0.8} onPress={() => { if (onEdit) { onClose(); setTimeout(() => onEdit(event), 300); } }}>
+            <Ionicons name="create-outline" size={18} color={Colors.text} />
+            <Text style={styles.editButtonText}>Edit Log</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            activeOpacity={0.8}
+            onPress={() => {
+              Alert.alert(
+                'Are you sure?',
+                'This cannot be undone.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: () => { if (onDelete) { onClose(); setTimeout(() => onDelete(event), 300); } } }
+                ]
+              );
+            }}
+          >
+            <Ionicons name="trash-outline" size={18} color={Colors.error} />
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* ── Close ── */}
       <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>

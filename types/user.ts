@@ -46,6 +46,7 @@ export interface SignupData {
   display_name: string;
   event_preferences: EventType[];
   default_privacy: PrivacyLevel;
+  avatar_url?: string;
 }
 
 /** Data for updating user profile */

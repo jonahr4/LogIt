@@ -137,17 +137,19 @@ export function SharedModal({
             <View style={[StyleSheet.absoluteFill, s.cardTint]} />
           </View>
 
-          {/* Drag handle */}
-          <View style={s.dragStrip} {...panResponder.panHandlers}>
-            <View style={s.handleBar} />
-          </View>
+          {/* Drag zone — handle + header, whole area is draggable */}
+          <View {...panResponder.panHandlers}>
+            <View style={s.dragStrip}>
+              <View style={s.handleBar} />
+            </View>
 
-          {/* Header row */}
-          <View style={s.header}>
-            <Text style={s.headerTitle}>{title}</Text>
-            <TouchableOpacity onPress={dismiss} style={s.closeButton} activeOpacity={0.7}>
-              <Ionicons name="close" size={18} color={Colors.textMuted} />
-            </TouchableOpacity>
+            {/* Header row */}
+            <View style={s.header}>
+              <Text style={s.headerTitle}>{title}</Text>
+              <TouchableOpacity onPress={dismiss} style={s.closeButton} activeOpacity={0.7}>
+                <Ionicons name="close" size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Optional sticky content (tabs, filters, etc.) */}

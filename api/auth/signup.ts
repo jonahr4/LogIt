@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const isAuthenticated = await verifyAuth(authReq, res);
   if (!isAuthenticated) return;
 
-  const { email, username, first_name, last_name, display_name, event_preferences, default_privacy } =
+  const { email, username, first_name, last_name, display_name, event_preferences, default_privacy, avatar_url } =
     req.body;
 
   // Validate required fields
@@ -91,6 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       event_preferences: event_preferences || [],
       default_privacy: default_privacy || 'public',
       firebase_uid: authReq.firebaseUid,
+      ...(avatar_url && { avatar_url }),
     })
     .select()
     .single();

@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Animated, Easing, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +23,7 @@ export default function ProfileSetupScreen() {
   const [username, setUsername] = useState('');
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const { signOut } = useAuthStore();
 
   // Pulse animation for active progress bar
@@ -101,8 +103,21 @@ export default function ProfileSetupScreen() {
         lastName: lastName.trim(),
         username: username.trim(),
         displayName: firstName.trim(),
+        avatarUri: avatarUri || '',
       },
     });
+  };
+
+  const handlePickPhoto = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setAvatarUri(result.assets[0].uri);
+    }
   };
 
   const usernameRightElement = () => {
@@ -125,7 +140,7 @@ export default function ProfileSetupScreen() {
       <View style={styles.orb2} />
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { flexGrow: 1 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -147,9 +162,20 @@ export default function ProfileSetupScreen() {
           <Text style={styles.subtitle}>Tell us a bit about yourself</Text>
         </View>
 
-        {/* Glass form panel */}
         <View style={styles.glassPanel}>
           <View style={styles.form}>
+            {/* Avatar picker */}
+            <TouchableOpacity style={styles.avatarSection} onPress={handlePickPhoto} activeOpacity={0.7}>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Ionicons name="camera" size={28} color={Colors.textMuted} />
+                </View>
+              )}
+              <Text style={styles.avatarHint}>{avatarUri ? 'Change Photo' : 'Add Profile Photo'}</Text>
+            </TouchableOpacity>
+
             <View style={styles.nameRow}>
               <Input
                 label="First Name"
@@ -320,6 +346,35 @@ const styles = StyleSheet.create({
   },
   halfInput: {
     flex: 1,
+  },
+
+  // Avatar picker
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 8,
+  },
+  avatarImage: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
+    borderColor: Colors.glassBorder,
+  },
+  avatarFallback: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 2,
+    borderColor: Colors.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarHint: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.primaryContainer,
   },
 
   // Display name preview — nested glass

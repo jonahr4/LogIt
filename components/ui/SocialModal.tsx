@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
@@ -28,6 +29,7 @@ type SocialTab = 'notifications' | 'friends';
 interface Props {
   visible: boolean;
   onClose: () => void;
+  initialTab?: SocialTab;
 }
 
 // ─── Mock Notifications (stays mock for now) ──────────────────────────────────
@@ -56,8 +58,13 @@ function getAvatarColor(str: string): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function SocialModal({ visible, onClose }: Props) {
-  const [activeTab, setActiveTab] = useState<SocialTab>('notifications');
+export function SocialModal({ visible, onClose, initialTab }: Props) {
+  const [activeTab, setActiveTab] = useState<SocialTab>(initialTab || 'notifications');
+
+  // Sync initialTab when modal opens
+  useEffect(() => {
+    if (visible && initialTab) setActiveTab(initialTab);
+  }, [visible]);
   const [friendSearch, setFriendSearch] = useState('');
 
   // Friends data state
@@ -493,7 +500,19 @@ function FriendsTab({
                 <View style={s.empty}>
                   <Ionicons name="people-outline" size={32} color={Colors.textMuted} />
                   <Text style={s.emptyText}>No friends yet</Text>
-                  <Text style={[s.emptyText, { fontSize: 12 }]}>Search for users above to add friends</Text>
+                  <TouchableOpacity
+                    style={s.inviteBtn}
+                    activeOpacity={0.7}
+                    onPress={async () => {
+                      try {
+                        // TODO: Replace with real App Store link
+                        await Share.share({ message: 'Check out LogIt \u2014 log every event you attend and share with friends! Download here: https://logit.app/download' });
+                      } catch {}
+                    }}
+                  >
+                    <Ionicons name="share-outline" size={14} color={Colors.onPrimary} />
+                    <Text style={s.inviteBtnText}>Invite Friends</Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -527,13 +546,6 @@ function FriendsTab({
               )}
             </>
           )}
-
-          {/* Invite */}
-          <TouchableOpacity style={s.inviteRow} activeOpacity={0.7}>
-            <Ionicons name="share-outline" size={18} color={Colors.primaryContainer} />
-            <Text style={s.inviteText}>Invite Friends to LogIt</Text>
-            <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
-          </TouchableOpacity>
         </>
       )}
     </View>
@@ -817,5 +829,20 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.bodyRegular,
     fontSize: 13,
     color: Colors.textMuted,
+  },
+  inviteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.primaryContainer,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  inviteBtnText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.onPrimary,
   },
 });

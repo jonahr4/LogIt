@@ -402,7 +402,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         first_name: data.first_name,
         last_name: data.last_name,
         display_name: data.display_name || data.first_name,
-        avatar_url: fbUser?.photoURL || null,
+        avatar_url: data.avatar_url || fbUser?.photoURL || null,
         bio: null,
         event_preferences: data.event_preferences || [],
         default_privacy: data.default_privacy || 'public',
