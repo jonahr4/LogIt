@@ -15,6 +15,7 @@ import {
   ModalPill,
   ModalRightText,
 } from '@/components/ui/SharedModal';
+import { EditProfileModal } from '@/components/ui/EditProfileModal';
 import { useAuthStore } from '@/store/authStore';
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -22,11 +23,11 @@ import { useAuthStore } from '@/store/authStore';
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onEditProfile?: () => void;
 }
 
-export function SettingsModal({ visible, onClose, onEditProfile }: Props) {
+export function SettingsModal({ visible, onClose }: Props) {
   const { signOut } = useAuthStore();
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   // Privacy toggles
   const [profileVisibility, setProfileVisibility] = useState(true);
@@ -52,11 +53,12 @@ export function SettingsModal({ visible, onClose, onEditProfile }: Props) {
   );
 
   return (
+    <>
       <SharedModal visible={visible} onClose={onClose} title="Settings">
         {/* Account & Profile */}
         <ModalSectionHeader title="Account & Profile" />
         <ModalSectionCard>
-          <ModalRow icon={'person-circle-outline' as const} label="Edit Profile" onPress={() => { onClose(); setTimeout(() => onEditProfile?.(), 350); }} />
+          <ModalRow icon={'person-circle-outline' as const} label="Edit Profile" onPress={() => setShowEditProfile(true)} />
           <ModalDivider />
           <ModalRow icon={'mail-outline' as const} label="Change Email" subtitle="Coming soon" />
           <ModalDivider />
@@ -145,5 +147,11 @@ export function SettingsModal({ visible, onClose, onEditProfile }: Props) {
           <ModalRow icon={'warning-outline' as const} label="Delete Account" danger />
         </ModalSectionCard>
       </SharedModal>
+
+      <EditProfileModal
+        visible={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+      />
+    </>
   );
 }

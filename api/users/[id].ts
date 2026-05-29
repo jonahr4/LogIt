@@ -59,13 +59,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'PATCH') {
     // Verify user is updating their own profile
+    // Accept either Supabase UUID or Firebase UID as the id param
     const { data: requestingUser } = await supabase
       .from('users')
       .select('id')
       .eq('firebase_uid', authReq.firebaseUid!)
       .single();
 
-    if (requestingUser?.id !== id) {
+    if (!requestingUser) {
+      return res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'User not found', status: 404 },
+      });
+    }
+
+    // Allow if id matches either their Supabase ID or their Firebase UID
+    const isOwnProfile = requestingUser.id === id || authReq.firebaseUid === id;
+    if (!isOwnProfile) {
       return res.status(403).json({
         error: {
           code: 'FORBIDDEN',
@@ -74,6 +83,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
       });
     }
+
+    // Always use the Supabase UUID for the actual update
+    const targetId = requestingUser.id;
 
     // Filter allowed update fields
     const allowedFields = [
@@ -123,7 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('users')
         .select('id')
         .eq('username', username)
-        .neq('id', id)
+        .neq('id', targetId)
         .maybeSingle();
 
       if (existing) {
@@ -142,7 +154,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: user, error } = await supabase
       .from('users')
       .update(updates)
-      .eq('id', id)
+      .eq('id', targetId)
       .select()
       .single();
 

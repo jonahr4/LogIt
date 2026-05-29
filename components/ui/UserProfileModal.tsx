@@ -34,8 +34,11 @@ interface ProfileUser {
   id: string;
   username: string;
   display_name: string;
+  first_name: string | null;
+  last_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  created_at: string | null;
 }
 
 interface Friendship {
@@ -189,7 +192,7 @@ export function UserProfileModal({ visible, onClose, userId }: UserProfileModalP
   const headerTitle = user ? `@${user.username}` : 'Profile';
 
   return (
-    <SharedModal visible={visible} onClose={onClose} title={headerTitle} noScroll>
+    <SharedModal visible={visible} onClose={onClose} title={headerTitle} scrollPadding={{ paddingHorizontal: 0, paddingTop: 0 }}>
       {loading || !profile ? (
         /* ── Loading state ────────────────────────────────────────────────── */
         <View style={s.loadingContainer}>
@@ -225,10 +228,24 @@ export function UserProfileModal({ visible, onClose, userId }: UserProfileModalP
           <View style={s.nameArea}>
             <Text style={s.displayName}>{user?.display_name}</Text>
 
+            {/* Full name if available */}
+            {(user?.first_name || user?.last_name) && (
+              <Text style={s.fullName}>
+                {[user.first_name, user.last_name].filter(Boolean).join(' ')}
+              </Text>
+            )}
+
             {/* Friends for X time */}
             {friendshipStatus === 'accepted' && friendship?.since && (
               <Text style={s.friendsSince}>
                 Friends for {getRelativeTime(friendship.since)}
+              </Text>
+            )}
+
+            {/* Joined date */}
+            {user?.created_at && (
+              <Text style={s.friendsSince}>
+                Joined {getRelativeTime(user.created_at)} ago
               </Text>
             )}
 
@@ -440,6 +457,12 @@ const s = StyleSheet.create({
     fontSize: 28,
     color: Colors.text,
     letterSpacing: -0.5,
+  },
+  fullName: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 16,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
   friendsSince: {
     fontFamily: FontFamily.bodyRegular,
