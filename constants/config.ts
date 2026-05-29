@@ -9,7 +9,10 @@ export const Config = {
     version: '1.0.0',
   },
   api: {
-    baseUrl: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
+    baseUrl: (() => {
+      const url = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+      return url.endsWith('/api') ? url : `${url}/api`;
+    })(),
     timeout: 30000, // 30 seconds — matches Vercel function maxDuration
   },
   supabase: {

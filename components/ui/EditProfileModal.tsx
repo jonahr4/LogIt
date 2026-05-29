@@ -79,7 +79,7 @@ export function EditProfileModal({ visible, onClose }: Props) {
     setIsCheckingUsername(true);
     const timeout = setTimeout(async () => {
       try {
-        const result = await api.get<{ available: boolean }>('/api/users/check-username', {
+        const result = await api.get<{ available: boolean }>('/users/check-username', {
           username,
         });
         if (!result.available) {
@@ -145,7 +145,7 @@ export function EditProfileModal({ visible, onClose }: Props) {
         return;
       }
 
-      const updatedUser = await api.patch<any>(`/api/users/${user.id}`, updates);
+      const updatedUser = await api.patch<any>(`/users/${user.id}`, updates);
       setUser(updatedUser);
       onClose();
     } catch (err: any) {

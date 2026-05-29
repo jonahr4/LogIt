@@ -457,7 +457,7 @@ export default function AddLogScreen() {
           const response = await api.get<{
             data: EventSearchResult[];
             meta: { count: number; query: string; has_more: boolean };
-          }>('/api/events/search', params);
+          }>('/events/search', params);
 
           setSearchResults(response.data || []);
           setHasMore(response.meta?.has_more ?? false);
@@ -491,7 +491,7 @@ export default function AddLogScreen() {
       const response = await api.get<{
         data: EventSearchResult[];
         meta: { count: number; query: string; has_more: boolean };
-      }>('/api/events/search', params);
+      }>('/events/search', params);
       const newData = response.data || [];
       // Deduplicate by id
       setSearchResults(prev => {
@@ -556,7 +556,7 @@ export default function AddLogScreen() {
 
     setIsSaving(true);
     try {
-      const response = await api.post<{ id: string }>('/api/logs/create', {
+      const response = await api.post<{ id: string }>('/logs/create', {
         event_id: selectedEventToLog.id,
         notes: data.note || null,
         privacy: data.privacy || 'public',
@@ -574,7 +574,7 @@ export default function AddLogScreen() {
             data.pendingPhotos.map(async (localUri: string, index: number) => {
               try {
                 const { url, firebasePath } = await uploadPhoto(localUri, userId, newLogId);
-                await api.post('/api/logs/photos', {
+                await api.post('/logs/photos', {
                   log_id: newLogId,
                   firebase_path: firebasePath,
                   url,
@@ -665,7 +665,7 @@ export default function AddLogScreen() {
       const response = await api.get<{
         data: EventSearchResult[];
         meta: { count: number; query: string; has_more: boolean };
-      }>('/api/events/search', params);
+      }>('/events/search', params);
       setSearchResults(response.data || []);
       setHasMore(response.meta?.has_more ?? false);
       setCurrentOffset(100);

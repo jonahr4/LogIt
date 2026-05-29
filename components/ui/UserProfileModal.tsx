@@ -107,7 +107,7 @@ export function UserProfileModal({ visible, onClose, userId }: UserProfileModalP
     setLoading(true);
     setProfile(null);
     try {
-      const data = await api.get<ProfileResponse>('/api/users/profile', { id });
+      const data = await api.get<ProfileResponse>('/users/profile', { id });
       setProfile(data);
     } catch (err) {
       console.warn('UserProfileModal fetch error:', err);
@@ -131,7 +131,7 @@ export function UserProfileModal({ visible, onClose, userId }: UserProfileModalP
     if (!userId) return;
     setActionLoading(true);
     try {
-      await api.post('/api/friends/request', { addressee_id: userId });
+      await api.post('/friends/request', { addressee_id: userId });
       // Optimistically update friendship status
       setProfile((prev) =>
         prev
@@ -156,7 +156,7 @@ export function UserProfileModal({ visible, onClose, userId }: UserProfileModalP
     if (!profile?.friendship?.friendship_id) return;
     setActionLoading(true);
     try {
-      await api.post('/api/friends/respond', {
+      await api.post('/friends/respond', {
         friendship_id: profile.friendship.friendship_id,
         action: 'accept',
       });

@@ -35,9 +35,9 @@ type FeedTab = (typeof FEED_TABS)[number];
 
 // Map tab to API endpoint path
 const TAB_ENDPOINTS: Record<FeedTab, string> = {
-  Global: '/api/feed/global',
-  Friends: '/api/feed/following',
-  You: '/api/feed/me',
+  Global: '/feed/global',
+  Friends: '/feed/following',
+  You: '/feed/me',
 };
 
 /** Map a feed card from API response to EventDetail for modals */

@@ -308,7 +308,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
           try {
             const { url, firebasePath } = await uploadPhoto(asset.uri, userId, event.id);
             const response = await api.post<{ photo: { id: string; url: string; firebase_path: string; display_order: number } }>(
-              '/api/logs/photos',
+              '/logs/photos',
               { log_id: event.id, firebase_path: firebasePath, url, display_order: index }
             );
             setPhotos(prev => {
@@ -339,7 +339,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
         await deletePhotoFromStorage(photo.firebase_path);
       }
       if (photo.id) {
-        await api.delete('/api/logs/photos', { photo_id: photo.id });
+        await api.delete('/logs/photos', { photo_id: photo.id });
       }
     } catch (err: any) {
       // Restore on failure

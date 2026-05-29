@@ -278,7 +278,7 @@ export default function LogbookScreen() {
     else setIsLoading(true);
 
     try {
-      const data = await api.get<{ logs: any[]; total: number }>('/api/logs/mine');
+      const data = await api.get<{ logs: any[]; total: number }>('/logs/mine');
       const mapped = (data.logs || []).map(mapLogToEventDetail);
       setEntries(mapped);
     } catch (err) {
@@ -299,7 +299,7 @@ export default function LogbookScreen() {
   const handleDeleteLog = useCallback(async (event: EventDetail) => {
     try {
       setIsLoading(true);
-      await api.post('/api/logs/delete', { log_id: event.id });
+      await api.post('/logs/delete', { log_id: event.id });
       fetchLogs(true);
     } catch (err) {
       console.error('Failed to delete log:', err);
@@ -319,7 +319,7 @@ export default function LogbookScreen() {
     if (!editingLog) return;
     try {
       setIsLoading(true);
-      await api.post('/api/logs/update', {
+      await api.post('/logs/update', {
         log_id: editingLog.id,
         notes: updatedData.note,
         privacy: updatedData.privacy,

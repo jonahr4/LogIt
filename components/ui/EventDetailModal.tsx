@@ -1051,7 +1051,7 @@ function BoxScoreSection({ event }: { event: EventDetail }) {
     try {
       const meta = (event as any).type_metadata;
       const league = meta?.league || (event as any).league || 'NBA';
-      const data = await api.get<any>(`/api/events/box-score?external_id=${extId}&league=${league}`);
+      const data = await api.get<any>(`/events/box-score?external_id=${extId}&league=${league}`);
       if (!data.available) {
         setBsError('Box score not available yet');
       } else {
