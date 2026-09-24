@@ -38,6 +38,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { EditLogModal } from '@/components/ui/EditLogModal';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { api } from '@/lib/api';
+import { scoreLabelFor, MANUAL_EVENT_UNSUPPORTED_MESSAGE } from '@/lib/addEventHelpers';
 import type { EventSearchResult } from '@/types/event';
 import { LinearGradient } from 'expo-linear-gradient';
 import { uploadPhoto } from '@/lib/firebaseStorage';
@@ -356,6 +357,9 @@ export default function AddLogScreen() {
   const [currentOffset, setCurrentOffset] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks the most recent search query so stale (slower) responses can't
+  // overwrite results for a newer query.
+  const latestSearchQuery = useRef('');
   const successScale = useRef(new Animated.Value(0)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
   const [showSuccess, setShowSuccess] = useState(false);
@@ -410,12 +414,21 @@ export default function AddLogScreen() {
 
   // Fully reset sports browse + search state
   const resetAll = useCallback(() => {
+    // Cancel any pending debounced search so it can't repopulate results after reset
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
+    latestSearchQuery.current = '';
     setSelectedType(null);
     setSportsStep('hub');
     setSelectedSport(null);
+    setTeamFilterText('');
+    setSelectedConference('All');
     setActiveSearchQuery('');
     setSearchResults([]);
     setSearchError(null);
+    setIsSearching(false);
     setHasMore(false);
     setCurrentOffset(0);
   }, []);
@@ -432,6 +445,7 @@ export default function AddLogScreen() {
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current);
       }
+      latestSearchQuery.current = text.trim();
 
       // Don't search for very short queries
       if (text.trim().length < 2) {
@@ -444,9 +458,10 @@ export default function AddLogScreen() {
 
       // Debounce 500ms
       debounceTimer.current = setTimeout(async () => {
+        const requestQuery = text.trim();
         try {
           const params: Record<string, string> = {
-            q: text.trim(),
+            q: requestQuery,
             limit: String(PAGE_SIZE),
             offset: '0',
           };
@@ -459,16 +474,23 @@ export default function AddLogScreen() {
             meta: { count: number; query: string; has_more: boolean };
           }>('/api/events/search', params);
 
+          // Ignore stale responses — a newer query has already been issued
+          if (latestSearchQuery.current !== requestQuery) return;
+
           setSearchResults(response.data || []);
           setHasMore(response.meta?.has_more ?? false);
           setCurrentOffset(PAGE_SIZE);
           setSearchError(null);
         } catch (err: any) {
+          // Ignore errors from stale requests too
+          if (latestSearchQuery.current !== requestQuery) return;
           console.error('Search error:', err);
           setSearchError(err?.error?.message || 'Search failed. Try again.');
           setSearchResults([]);
         } finally {
-          setIsSearching(false);
+          if (latestSearchQuery.current === requestQuery) {
+            setIsSearching(false);
+          }
         }
       }, 500);
     },
@@ -546,7 +568,10 @@ export default function AddLogScreen() {
   // ─── Save handler — create log via API ───────────────────────────────
   const handleSaveLog = async (data: any) => {
     if (!selectedEventToLog?.id) {
-      console.log('Manual/fallback log (no event_id):', data);
+      // Manual/custom events can't be persisted yet — the logs API requires a
+      // canonical event_id and there is no manual-event endpoint. Say so clearly
+      // instead of silently discarding the user's input.
+      showToast(MANUAL_EVENT_UNSUPPORTED_MESSAGE);
       setSelectedEventToLog(null);
       setSelectedType(null);
       setActiveSearchQuery('');
@@ -820,8 +845,7 @@ export default function AddLogScreen() {
                     if (diffDays === 1) return 'TOMORROW';
                     return `IN ${diffDays} DAYS`;
                   })();
-                  const scoreLabel = meta?.home_score != null && event.status !== 'upcoming'
-                    ? `${meta.away_score} \u2013 ${meta.home_score}` : null;
+                  const scoreLabel = scoreLabelFor(event.status, meta?.home_score, meta?.away_score);
                   const shortAway = meta?.away_team_name?.trim().split(' ').slice(-1)[0] || '';
                   const shortHome = meta?.home_team_name?.trim().split(' ').slice(-1)[0] || '';
                   const displayTitle = shortAway && shortHome ? `${shortAway} vs ${shortHome}` : event.title;
@@ -1083,8 +1107,7 @@ export default function AddLogScreen() {
 
                 {searchResults.map((event) => {
                   const meta = event.type_metadata;
-                  const scoreLabel = meta?.home_score != null && meta?.away_score != null
-                    ? `${meta.away_score}–${meta.home_score}` : null;
+                  const scoreLabel = scoreLabelFor(event.status, meta?.home_score, meta?.away_score);
                   const dateStr = event.event_date
                     ? new Date(event.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : '';
@@ -1424,8 +1447,7 @@ export default function AddLogScreen() {
                               if (diffDays === 1) return 'TOMORROW';
                               return `IN ${diffDays} DAYS`;
                             })();
-                            const scoreLabel = meta?.home_score != null && event.status !== 'upcoming'
-                              ? `${meta.away_score} \u2013 ${meta.home_score}` : null;
+                            const scoreLabel = scoreLabelFor(event.status, meta?.home_score, meta?.away_score);
                             const shortAway = meta?.away_team_name?.trim().split(' ').slice(-1)[0] || '';
                             const shortHome = meta?.home_team_name?.trim().split(' ').slice(-1)[0] || '';
                             const displayTitle = shortAway && shortHome ? `${shortAway} vs ${shortHome}` : event.title;
@@ -1587,8 +1609,7 @@ export default function AddLogScreen() {
                     if (diffDays === 1) return 'TOMORROW';
                     return `IN ${diffDays} DAYS`;
                   })();
-                  const scoreLabel = meta?.home_score != null && event.status !== 'upcoming'
-                    ? `${meta.away_score} – ${meta.home_score}` : null;
+                  const scoreLabel = scoreLabelFor(event.status, meta?.home_score, meta?.away_score);
                   const shortAway = meta?.away_team_name?.trim().split(' ').slice(-1)[0] || meta?.away_team_name || '';
                   const shortHome = meta?.home_team_name?.trim().split(' ').slice(-1)[0] || meta?.home_team_name || '';
                   const displayTitle = isSports && shortAway && shortHome

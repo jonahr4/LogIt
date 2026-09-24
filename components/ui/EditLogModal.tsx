@@ -34,6 +34,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/colors';
 import { FontFamily, FontSize } from '@/constants/typography';
+import { formatEventDateLabel } from '@/lib/addEventHelpers';
 import type { EventDetail } from './EventDetailModal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -151,7 +152,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       setVenue(event.venue || '');
       setVenueCity(event.venueCity || '');
       setVenueState(event.venueState || '');
-      setDate(event.date || '');
+      setDate(event.date || (isEdit ? '' : formatEventDateLabel()));
       setNote(event.note || '');
       setRating(event.rating || 0);
       setPrivacy(event.privacy || 'public');
@@ -198,9 +199,9 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       setSeatSection(event.seatSection || '');
       setShowType(event.showType || '');
     } else {
-      // Reset for create mode
+      // Reset for create mode — date defaults to today so new logs timestamp to now
       setTitle(''); setVenue(''); setVenueCity(''); setVenueState('');
-      setDate(''); setNote(''); setRating(0); setPrivacy('public'); setRootedTeam(null);
+      setDate(isEdit ? '' : formatEventDateLabel()); setNote(''); setRating(0); setPrivacy('public'); setRootedTeam(null);
       setCompanions([]); setCompanionInput('');
       setSport(''); setLeague(''); setSeason('');
       setHomeTeamName(''); setAwayTeamName('');
@@ -214,7 +215,7 @@ export function EditLogModal({ visible, onClose, onSave, event, eventType, mode 
       setShowName(''); setPerformer(''); setSeatSection(''); setShowType('');
       setPhotos([]);
     }
-  }, [event]);
+  }, [event, isEdit]);
 
   // ─── Entrance / exit animations ──────────────────────────────────────
   useEffect(() => {
